@@ -1,7 +1,20 @@
 //! Text extraction from various document formats
 
 use log::{info, warn};
+use once_cell::sync::Lazy;
+use regex::Regex;
 use thiserror::Error;
+
+// Pre-compiled regexes to avoid runtime panics
+static RE_HTML_TAGS: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"<[^>]+>").expect("Invalid HTML tag regex")
+});
+static RE_WHITESPACE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"\s+").expect("Invalid whitespace regex")
+});
+static RE_NEWLINES: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"\n{3,}").expect("Invalid newlines regex")
+});
 
 #[derive(Error, Debug)]
 pub enum TextExtractorError {
@@ -98,10 +111,9 @@ fn extract_plain_text(data: &[u8]) -> Result<String, TextExtractorError> {
 fn extract_html(data: &[u8]) -> Result<String, TextExtractorError> {
     let html = std::str::from_utf8(data)
         .map_err(|e| TextExtractorError::DecodingError(e.to_string()))?;
-    
-    // Simple regex-based tag stripping
-    let re = regex::Regex::new(r"<[^>]+>").unwrap();
-    let text = re.replace_all(html, " ");
+
+    // Use pre-compiled regex for tag stripping
+    let text = RE_HTML_TAGS.replace_all(html, " ");
     
     // Decode HTML entities
     let text = text
@@ -133,23 +145,21 @@ fn extract_json(data: &[u8]) -> Result<String, TextExtractorError> {
 
 /// Clean and normalize extracted text
 fn clean_text(text: &str) -> String {
-    // Replace multiple whitespace with single space
-    let re_whitespace = regex::Regex::new(r"\s+").unwrap();
-    let cleaned = re_whitespace.replace_all(text, " ");
-    
+    // Replace multiple whitespace with single space (using pre-compiled regex)
+    let cleaned = RE_WHITESPACE.replace_all(text, " ");
+
     // Remove control characters except newlines and tabs
     let cleaned: String = cleaned
         .chars()
         .filter(|c| !c.is_control() || *c == '\n' || *c == '\t')
         .collect();
-    
+
     // Normalize line endings
     let cleaned = cleaned.replace("\r\n", "\n").replace('\r', "\n");
-    
-    // Remove excessive newlines (more than 2 in a row)
-    let re_newlines = regex::Regex::new(r"\n{3,}").unwrap();
-    let cleaned = re_newlines.replace_all(&cleaned, "\n\n");
-    
+
+    // Remove excessive newlines (using pre-compiled regex)
+    let cleaned = RE_NEWLINES.replace_all(&cleaned, "\n\n");
+
     cleaned.trim().to_string()
 }
 

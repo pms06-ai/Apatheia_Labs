@@ -3,18 +3,22 @@
   "version": "0.1.0",
   "description": "FCIP Engine Runner Sidecar for Phronesis",
   "main": "engine-runner.js",
+  "type": "commonjs",
   "scripts": {
-    "build": "esbuild engine-runner.ts --bundle --platform=node --target=node18 --outfile=engine-runner.js",
-    "start": "node engine-runner.js"
+    "build": "esbuild engine-runner.ts --bundle --platform=node --target=node18 --outfile=engine-runner.js --external:better-sqlite3",
+    "start": "node engine-runner.js",
+    "dev": "npx ts-node engine-runner.ts"
   },
   "dependencies": {
-    "sqlite3": "^5.1.7",
-    "better-sqlite3": "^11.0.0"
+    "@anthropic-ai/sdk": "^0.71.2",
+    "better-sqlite3": "^11.0.0",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.9",
     "@types/node": "^20.0.0",
     "esbuild": "^0.20.0",
+    "ts-node": "^10.9.2",
     "typescript": "^5.0.0"
   }
 }
-

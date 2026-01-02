@@ -66,6 +66,11 @@ export function PremiumFindingCard({ finding, onSelect }: PremiumFindingCardProp
                                 <Badge variant={finding.severity as any} className="uppercase tracking-wider font-mono text-[10px] px-2">
                                     {finding.severity}
                                 </Badge>
+                                {finding.confidence && (
+                                    <Badge variant="outline" className="text-[10px] px-2 bg-charcoal-900/50 border-charcoal-600">
+                                        {Math.round(finding.confidence * 100)}% conf
+                                    </Badge>
+                                )}
                             </div>
                         </div>
 

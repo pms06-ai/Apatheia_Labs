@@ -124,14 +124,16 @@ export function DocumentUploader() {
     try {
       if (isDesktopMode && item.path) {
         // Desktop mode: upload from path
+        console.log('[Uploader] Starting desktop upload:', { caseId: activeCase.id, path: item.path, docType: item.docType })
         await uploadFromPath(activeCase.id, item.path, item.docType as any)
-        
+
         setQueue((prev) =>
           prev.map((f, i) =>
             i === index ? { ...f, status: 'completed', progress: 100 } : f
           )
         )
       } else if (item.file) {
+        console.log('[Uploader] Starting WEB upload (Fallback):', { file: item.file.name })
         // Web mode: upload file blob
         const result = await uploadMutation.mutateAsync({
           file: item.file,
@@ -164,7 +166,7 @@ export function DocumentUploader() {
             : f
         )
       )
-      toast.error(`Failed to upload ${item.filename}`)
+      toast.error(`Failed to upload ${item.filename}: ${(error as Error).message}`)
       console.error('Upload error:', error)
     }
   }
@@ -181,6 +183,18 @@ export function DocumentUploader() {
 
   return (
     <div className="space-y-4">
+      {!isDesktopMode && (
+        <div className="rounded-md bg-red-900/50 p-4 border border-red-500/50">
+          <div className="flex">
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-200">Web Mode Detected</h3>
+              <div className="mt-2 text-sm text-red-300">
+                <p>File uploads are currently disabled in the web browser. Please launch the Desktop App (Tauri) to upload documents.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Upload Zone */}
       {isDesktopMode ? (
         // Desktop mode: Native file picker button
@@ -201,8 +215,8 @@ export function DocumentUploader() {
         <div
           {...getRootProps()}
           className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition ${isDragActive
-              ? 'border-bronze-500 bg-bronze-500/10'
-              : 'border-charcoal-600 hover:border-charcoal-500 hover:bg-charcoal-800/50'
+            ? 'border-bronze-500 bg-bronze-500/10'
+            : 'border-charcoal-600 hover:border-charcoal-500 hover:bg-charcoal-800/50'
             }`}
         >
           <input {...getInputProps()} />
@@ -258,10 +272,10 @@ export function DocumentUploader() {
                   <div className="mt-2 h-1 overflow-hidden rounded-full bg-charcoal-700">
                     <div
                       className={`h-full transition-all ${item.status === 'completed'
-                          ? 'bg-status-success'
-                          : item.status === 'error'
-                            ? 'bg-status-critical'
-                            : 'bg-bronze-500'
+                        ? 'bg-status-success'
+                        : item.status === 'error'
+                          ? 'bg-status-critical'
+                          : 'bg-bronze-500'
                         }`}
                       style={{ width: `${item.progress}%` }}
                     />

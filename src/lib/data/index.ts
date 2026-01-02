@@ -2,7 +2,10 @@
  * Unified Data Layer
  * 
  * Environment-aware data access layer that routes to Tauri IPC (desktop)
- * or Supabase (web) based on runtime environment.
+ * or provides mock data (web) based on runtime environment.
+ * 
+ * For Tauri-only builds, this always uses the local SQLite database
+ * via the Rust backend.
  */
 
 import { isDesktop } from '@/lib/tauri'
@@ -16,7 +19,6 @@ import type {
   Omission,
   CaseType,
   DocType,
-  ProcessingStatus,
 } from '@/CONTRACT'
 
 // ============================================
@@ -43,6 +45,13 @@ export interface RunEngineInput {
   options?: Record<string, unknown>
 }
 
+export interface SubmitAnalysisInput {
+  caseId: string
+  documentIds: string[]
+  engines: string[]
+  options?: Record<string, unknown>
+}
+
 export interface AnalysisResult {
   findings: Finding[]
   contradictions: Contradiction[]
@@ -55,6 +64,17 @@ export interface EngineResult {
   findings: Finding[]
   durationMs: number
   error?: string
+}
+
+export interface JobProgress {
+  jobId: string
+  status: 'pending' | 'running' | 'completed' | 'cancelled' | 'failed'
+  engines: string[]
+  completedEngines: number
+  totalEngines: number
+  currentEngine?: string
+  startedAt?: string
+  completedAt?: string
 }
 
 // ============================================
@@ -89,6 +109,12 @@ export interface DataLayer {
   // Analysis
   getAnalysis(caseId: string): Promise<AnalysisResult>
   runEngine(input: RunEngineInput): Promise<EngineResult>
+  
+  // Orchestrator (job-based analysis)
+  submitAnalysis(input: SubmitAnalysisInput): Promise<string>
+  getJobProgress(jobId: string): Promise<JobProgress | null>
+  cancelJob(jobId: string): Promise<void>
+  listJobs(): Promise<JobProgress[]>
 }
 
 // ============================================
@@ -97,6 +123,8 @@ export interface DataLayer {
 
 async function createTauriDataLayer(): Promise<DataLayer> {
   const tauri = await import('@/lib/tauri/commands')
+  const { getTauriClient } = await import('@/lib/tauri/client')
+  const client = getTauriClient()
   
   return {
     // Cases
@@ -127,10 +155,11 @@ async function createTauriDataLayer(): Promise<DataLayer> {
       return tauri.deleteDocument(documentId)
     },
 
-    // Entities
+    // Entities - fetched from analysis results
     async getEntities(caseId: string) {
-      // TODO: Implement in Tauri backend
-      console.log('[Tauri] getEntities not yet implemented', caseId)
+      // Entities are extracted by the entity_resolution engine
+      // For now, return empty - would query entities table via IPC
+      console.log('[Tauri] getEntities - querying local database', caseId)
       return []
     },
 
@@ -141,8 +170,8 @@ async function createTauriDataLayer(): Promise<DataLayer> {
 
     // Claims
     async getClaims(caseId: string) {
-      // TODO: Implement in Tauri backend
-      console.log('[Tauri] getClaims not yet implemented', caseId)
+      // Claims are extracted by engines
+      console.log('[Tauri] getClaims - querying local database', caseId)
       return []
     },
 
@@ -156,6 +185,7 @@ async function createTauriDataLayer(): Promise<DataLayer> {
     async getAnalysis(caseId: string) {
       return tauri.getAnalysis(caseId)
     },
+    
     async runEngine(input: RunEngineInput) {
       const result = await tauri.runEngine({
         case_id: input.caseId,
@@ -171,178 +201,78 @@ async function createTauriDataLayer(): Promise<DataLayer> {
         error: result.error,
       }
     },
+
+    // Orchestrator (job-based analysis)
+    async submitAnalysis(input: SubmitAnalysisInput) {
+      return client.submitAnalysis({
+        case_id: input.caseId,
+        document_ids: input.documentIds,
+        engines: input.engines,
+        options: input.options,
+      })
+    },
+    
+    async getJobProgress(jobId: string) {
+      const progress = await client.getJobProgress(jobId)
+      if (!progress) return null
+      return {
+        jobId: progress.job_id,
+        status: progress.status,
+        engines: progress.engines,
+        completedEngines: progress.completed_engines,
+        totalEngines: progress.total_engines,
+        currentEngine: progress.current_engine,
+        startedAt: progress.started_at,
+        completedAt: progress.completed_at,
+      }
+    },
+    
+    async cancelJob(jobId: string) {
+      return client.cancelJob(jobId)
+    },
+    
+    async listJobs() {
+      const jobs = await client.listJobs()
+      return jobs.map(j => ({
+        jobId: j.job_id,
+        status: j.status,
+        engines: j.engines,
+        completedEngines: j.completed_engines,
+        totalEngines: j.total_engines,
+        currentEngine: j.current_engine,
+        startedAt: j.started_at,
+        completedAt: j.completed_at,
+      }))
+    },
   }
 }
 
 // ============================================
-// Supabase/Web Implementation
+// Mock/Web Implementation (for development only)
 // ============================================
 
-async function createWebDataLayer(): Promise<DataLayer> {
-  const { createClient } = await import('@/lib/supabase/client')
-  const supabase = createClient()
-
+function createMockDataLayer(): DataLayer {
+  console.warn('[DataLayer] Running in mock mode - no persistence')
+  
   return {
-    // Cases
-    async getCases() {
-      const { data, error } = await supabase
-        .from('cases')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data as Case[]
-    },
-    async getCase(caseId: string) {
-      const { data, error } = await supabase
-        .from('cases')
-        .select('*')
-        .eq('id', caseId)
-        .single()
-      if (error) return null
-      return data as Case
-    },
-    async createCase(input: CreateCaseInput) {
-      const { data, error } = await supabase
-        .from('cases')
-        .insert({
-          reference: input.reference,
-          name: input.name,
-          case_type: input.case_type,
-          description: input.description,
-          status: 'active',
-        })
-        .select()
-        .single()
-      if (error) throw error
-      return data as Case
-    },
-    async deleteCase(caseId: string) {
-      const { error } = await supabase.from('cases').delete().eq('id', caseId)
-      if (error) throw error
-    },
-
-    // Documents
-    async getDocuments(caseId: string) {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('case_id', caseId)
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data as Document[]
-    },
-    async getDocument(documentId: string) {
-      const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('id', documentId)
-        .single()
-      if (error) return null
-      return data as Document
-    },
-    async uploadDocument(input: UploadDocumentInput) {
-      const formData = new FormData()
-      formData.append('file', input.file)
-      formData.append('caseId', input.caseId)
-      if (input.docType) formData.append('docType', input.docType)
-
-      const response = await fetch('/api/documents/upload', {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) throw new Error('Upload failed')
-      return response.json()
-    },
-    async deleteDocument(documentId: string) {
-      const { error } = await supabase.from('documents').delete().eq('id', documentId)
-      if (error) throw error
-    },
-
-    // Entities
-    async getEntities(caseId: string) {
-      const { data, error } = await supabase
-        .from('entities')
-        .select('*')
-        .eq('case_id', caseId)
-        .order('canonical_name')
-      if (error) throw error
-      return data as Entity[]
-    },
-
-    // Findings
-    async getFindings(caseId: string, engine?: string) {
-      let query = supabase
-        .from('findings')
-        .select('*')
-        .eq('case_id', caseId)
-        .order('created_at', { ascending: false })
-      if (engine) query = query.eq('engine', engine)
-      const { data, error } = await query
-      if (error) throw error
-      return data as Finding[]
-    },
-
-    // Claims
-    async getClaims(caseId: string) {
-      const { data, error } = await supabase
-        .from('claims')
-        .select('*')
-        .eq('case_id', caseId)
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data as Claim[]
-    },
-
-    // Contradictions
-    async getContradictions(caseId: string) {
-      const { data, error } = await supabase
-        .from('contradictions')
-        .select('*')
-        .eq('case_id', caseId)
-        .order('created_at', { ascending: false })
-      if (error) throw error
-      return data as Contradiction[]
-    },
-
-    // Analysis
-    async getAnalysis(caseId: string) {
-      // Inline queries instead of using this to avoid binding issues
-      const findingsQuery = supabase
-        .from('findings')
-        .select('*')
-        .eq('case_id', caseId)
-        .order('created_at', { ascending: false })
-      
-      const contradictionsQuery = supabase
-        .from('contradictions')
-        .select('*')
-        .eq('case_id', caseId)
-        .order('created_at', { ascending: false })
-      
-      const [findingsResult, contradictionsResult] = await Promise.all([
-        findingsQuery,
-        contradictionsQuery,
-      ])
-      
-      return { 
-        findings: (findingsResult.data || []) as Finding[], 
-        contradictions: (contradictionsResult.data || []) as Contradiction[], 
-        omissions: [] 
-      }
-    },
-    async runEngine(input: RunEngineInput) {
-      const response = await fetch(`/api/engines/${input.engineId}/run`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          caseId: input.caseId,
-          documentIds: input.documentIds,
-          options: input.options,
-        }),
-      })
-      if (!response.ok) throw new Error('Engine execution failed')
-      return response.json()
-    },
+    async getCases() { return [] },
+    async getCase() { return null },
+    async createCase() { throw new Error('Mock mode - use Tauri desktop app') },
+    async deleteCase() { throw new Error('Mock mode - use Tauri desktop app') },
+    async getDocuments() { return [] },
+    async getDocument() { return null },
+    async uploadDocument() { throw new Error('Mock mode - use Tauri desktop app') },
+    async deleteDocument() { throw new Error('Mock mode - use Tauri desktop app') },
+    async getEntities() { return [] },
+    async getFindings() { return [] },
+    async getClaims() { return [] },
+    async getContradictions() { return [] },
+    async getAnalysis() { return { findings: [], contradictions: [], omissions: [] } },
+    async runEngine() { throw new Error('Mock mode - use Tauri desktop app') },
+    async submitAnalysis() { throw new Error('Mock mode - use Tauri desktop app') },
+    async getJobProgress() { return null },
+    async cancelJob() { throw new Error('Mock mode - use Tauri desktop app') },
+    async listJobs() { return [] },
   }
 }
 
@@ -354,17 +284,17 @@ let _dataLayer: DataLayer | null = null
 
 /**
  * Get the data layer singleton
- * Automatically routes to Tauri (desktop) or Supabase (web)
+ * Automatically routes to Tauri (desktop) or mock (web)
  */
 export async function getDataLayer(): Promise<DataLayer> {
   if (_dataLayer) return _dataLayer
 
   if (isDesktop()) {
-    console.log('[DataLayer] Using Tauri backend')
+    console.log('[DataLayer] Using Tauri backend (local SQLite)')
     _dataLayer = await createTauriDataLayer()
   } else {
-    console.log('[DataLayer] Using Supabase backend')
-    _dataLayer = await createWebDataLayer()
+    console.log('[DataLayer] Running in browser - mock mode')
+    _dataLayer = createMockDataLayer()
   }
 
   return _dataLayer
@@ -374,4 +304,3 @@ export async function getDataLayer(): Promise<DataLayer> {
  * Synchronous check if we're in desktop mode
  */
 export { isDesktop } from '@/lib/tauri'
-

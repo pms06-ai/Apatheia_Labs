@@ -112,56 +112,38 @@ pub async fn get_analysis(
 }
 
 /// Run an analysis engine
-/// Note: For MVP, this creates a placeholder finding.
-/// Full implementation would call the TypeScript engines via sidecar.
+/// Uses the same sidecar execution path as the orchestrator
 #[tauri::command]
 pub async fn run_engine(
     state: State<'_, AppState>,
+    orchestrator: State<'_, Arc<tokio::sync::RwLock<crate::orchestrator::EngineOrchestrator>>>,
     input: RunEngineInput,
 ) -> Result<EngineResult, String> {
     let start = std::time::Instant::now();
-    let db = state.db.lock().await;
-    
-    // For MVP: Create a placeholder finding
-    // In full implementation, this would:
-    // 1. Call TypeScript engine via sidecar process
-    // 2. Or implement engine logic in Rust
-    
-    let id = Uuid::new_v4().to_string();
-    let now = chrono::Utc::now().to_rfc3339();
-    
-    let finding_title = format!("{} analysis pending", input.engine_id);
-    let finding_description = format!(
-        "Analysis queued for {} documents using {} engine",
-        input.document_ids.len(),
-        input.engine_id
-    );
-    
-    match sqlx::query(
-        "INSERT INTO findings (id, case_id, engine, title, description, severity, document_ids, entity_ids, regulatory_targets, evidence, metadata, created_at) 
-         VALUES (?, ?, ?, ?, ?, 'info', ?, '[]', '[]', '{}', '{}', ?)"
-    )
-    .bind(&id)
-    .bind(&input.case_id)
-    .bind(&input.engine_id)
-    .bind(&finding_title)
-    .bind(&finding_description)
-    .bind(serde_json::to_string(&input.document_ids).unwrap_or_default())
-    .bind(&now)
-    .execute(db.pool())
-    .await
-    {
+
+    // Parse engine ID
+    let engine_id = crate::orchestrator::EngineId::from_str(&input.engine_id)
+        .ok_or_else(|| format!("Unknown engine ID: {}", input.engine_id))?;
+
+    // Run engine via orchestrator (uses same sidecar logic)
+    // Note: The sidecar saves findings directly to the database, so we need to fetch them back
+    match orchestrator.read().await.run_single_engine(engine_id, &input.case_id, &input.document_ids).await {
         Ok(_) => {
-            let finding = sqlx::query_as::<_, Finding>("SELECT * FROM findings WHERE id = ?")
-                .bind(&id)
-                .fetch_one(db.pool())
-                .await
-                .ok();
-            
+            // Fetch the findings that were just saved by the sidecar
+            let db = state.db.lock().await;
+            let saved_findings = sqlx::query_as::<_, Finding>(
+                "SELECT * FROM findings WHERE case_id = ? AND engine = ? ORDER BY created_at DESC"
+            )
+            .bind(&input.case_id)
+            .bind(&input.engine_id)
+            .fetch_all(db.pool())
+            .await
+            .unwrap_or_default();
+
             Ok(EngineResult {
                 success: true,
                 engine_id: input.engine_id,
-                findings: finding.into_iter().collect(),
+                findings: saved_findings,
                 duration_ms: start.elapsed().as_millis() as u64,
                 error: None,
             })
@@ -171,7 +153,7 @@ pub async fn run_engine(
             engine_id: input.engine_id,
             findings: vec![],
             duration_ms: start.elapsed().as_millis() as u64,
-            error: Some(e.to_string()),
+            error: Some(e),
         }),
     }
 }

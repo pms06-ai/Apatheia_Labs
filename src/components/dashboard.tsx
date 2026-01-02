@@ -36,8 +36,9 @@ export function Dashboard() {
       value: documents?.length.toString() || '0',
       icon: FileText,
       change: 'Indexed',
-      color: 'text-charcoal-100',
-      bg: 'bg-charcoal-700/50'
+      color: 'text-bronze-400',
+      bg: 'bg-gradient-to-br from-charcoal-800 to-charcoal-900',
+      border: 'border-charcoal-700'
     },
     {
       name: 'Entities',
@@ -45,7 +46,8 @@ export function Dashboard() {
       icon: Users,
       change: 'Identified',
       color: 'text-bronze-500',
-      bg: 'bg-bronze-500/10'
+      bg: 'bg-gradient-to-br from-bronze-900/10 to-bronze-900/5',
+      border: 'border-bronze-900/20'
     },
     {
       name: 'Critical Issues',
@@ -53,7 +55,8 @@ export function Dashboard() {
       icon: AlertTriangle,
       change: 'High Priority',
       color: 'text-status-critical',
-      bg: 'bg-status-critical-bg/20'
+      bg: 'bg-gradient-to-br from-status-critical-bg/10 to-transparent',
+      border: 'border-status-critical/20'
     },
     {
       name: 'Total Findings',
@@ -61,7 +64,8 @@ export function Dashboard() {
       icon: Activity,
       change: 'All Severity',
       color: 'text-charcoal-200',
-      bg: 'bg-charcoal-700/50'
+      bg: 'bg-gradient-to-br from-charcoal-800 to-charcoal-900',
+      border: 'border-charcoal-700'
     },
   ], [documents?.length, statsData])
 
@@ -86,22 +90,22 @@ export function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-4 gap-4">
         {stats.map((stat) => (
-          <Card key={stat.name} className="relative overflow-hidden border-charcoal-700 bg-charcoal-800/40 p-5 transition-all hover:bg-charcoal-800/60 hover:border-charcoal-600">
-            <div className="absolute top-0 right-0 p-4 opacity-10">
-              <stat.icon className="h-16 w-16" />
+          <Card key={stat.name} className={`relative overflow-hidden border ${stat.border} ${stat.bg} p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-elevated group`}>
+            <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-10 transition-opacity duration-500">
+              <stat.icon className="h-24 w-24 -mr-4 -mt-4 rotate-12" />
             </div>
 
-            <div className="relative">
-              <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${stat.bg} mb-3`}>
+            <div className="relative z-10">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-lg bg-black/20 backdrop-blur-sm mb-3 border border-white/5`}>
                 <stat.icon className={`h-5 w-5 ${stat.color}`} />
               </div>
-              <div className={`font-display text-3xl ${stat.color} mb-1`}>
+              <div className={`font-display text-3xl text-white mb-1 tracking-tight`}>
                 {stat.value}
               </div>
               <div className="flex items-center gap-2">
-                <div className="text-xs font-medium text-charcoal-400 uppercase tracking-wider">{stat.name}</div>
-                <div className="h-px flex-1 bg-charcoal-700/50" />
-                <div className="text-[10px] text-charcoal-500">{stat.change}</div>
+                <div className="text-[10px] font-bold text-charcoal-400 uppercase tracking-widest">{stat.name}</div>
+                <div className="h-px flex-1 bg-gradient-to-r from-charcoal-700/50 to-transparent" />
+                <div className="text-[10px] text-charcoal-500 font-mono">{stat.change}</div>
               </div>
             </div>
           </Card>

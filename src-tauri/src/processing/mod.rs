@@ -65,7 +65,7 @@ pub async fn process_document(
         Ok(text) => text,
         Err(e) => {
             error!("Text extraction failed for {}: {}", document_id, e);
-            update_status(state, document_id, "error", Some(&e.to_string())).await?;
+            update_status(state, document_id, "failed", Some(&e.to_string())).await?;
             let _ = app_handle.emit("document:processing_error", serde_json::json!({
                 "document_id": document_id,
                 "error": e.to_string()
@@ -83,27 +83,48 @@ pub async fn process_document(
     // Chunk text for semantic search
     let chunks = chunk_text(&extracted_text, 512, 50);
     let chunk_count = chunks.len();
-    
+
     let _ = app_handle.emit("document:processing_progress", serde_json::json!({
         "document_id": document_id,
         "progress": 80,
         "stage": "saving"
     }));
-    
+
     // Update document with extracted text
+    // Note: page_count should be actual page count, not chunk count. For now, set to null.
     let db = state.db.lock().await;
     let now = chrono::Utc::now().to_rfc3339();
-    
+
     sqlx::query(
-        "UPDATE documents SET status = 'completed', extracted_text = ?, page_count = ?, updated_at = ? WHERE id = ?"
+        "UPDATE documents SET status = 'completed', extracted_text = ?, page_count = NULL, updated_at = ? WHERE id = ?"
     )
     .bind(&extracted_text)
-    .bind(chunk_count as i64)
     .bind(&now)
     .bind(document_id)
     .execute(db.pool())
     .await
     .map_err(|e| format!("Failed to update document: {}", e))?;
+
+    // Persist chunks to database
+    if !chunks.is_empty() {
+        for chunk in chunks {
+            let chunk_id = format!("{}-{}", document_id, chunk.id);
+            sqlx::query(
+                "INSERT INTO document_chunks (id, document_id, chunk_index, content, page_number, metadata, created_at)
+                 VALUES (?, ?, ?, ?, NULL, '{}', ?)"
+            )
+            .bind(&chunk_id)
+            .bind(document_id)
+            .bind(chunk.id as i64)
+            .bind(&chunk.text)
+            .bind(&now)
+            .execute(db.pool())
+            .await
+            .map_err(|e| format!("Failed to save chunk {}: {}", chunk.id, e))?;
+        }
+
+        info!("Saved {} chunks for document {}", chunk_count, document_id);
+    }
     
     // Fetch updated document
     let updated_doc = sqlx::query_as::<_, Document>("SELECT * FROM documents WHERE id = ?")

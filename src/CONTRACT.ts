@@ -205,6 +205,7 @@ export interface Finding {
   description: string | null
   finding_type: string | null
   severity: Severity | null
+  confidence: number | null
   document_ids: string[]
   entity_ids: string[]
   regulatory_targets: string[]

@@ -7,7 +7,7 @@
     "frontendDist": "../out",
     "devUrl": "http://localhost:3000",
     "beforeDevCommand": "npm run dev",
-    "beforeBuildCommand": "npm run build"
+    "beforeBuildCommand": "npm run build && npm run build:sidecar"
   },
   "app": {
     "windows": [
@@ -23,7 +23,7 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://api.anthropic.com https://*.supabase.co ipc: tauri:"
     }
   },
   "bundle": {
@@ -41,6 +41,11 @@
     "longDescription": "Phronesis FCIP - A local-first forensic case intelligence platform for institutional accountability analysis.",
     "copyright": "© 2024 Apatheia Labs",
     "publisher": "Apatheia Labs",
+    "resources": [
+      "sidecars/engine-runner.js",
+      "sidecars/package.json"
+    ],
+    "externalBin": [],
     "windows": {
       "webviewInstallMode": {
         "type": "downloadBootstrapper"

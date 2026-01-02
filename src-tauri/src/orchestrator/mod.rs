@@ -7,6 +7,7 @@ pub mod job;
 pub mod runner;
 
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{mpsc, Mutex, RwLock};
 use serde::{Deserialize, Serialize};
@@ -15,21 +16,27 @@ use tauri::{AppHandle, Emitter};
 use log::{info, error, warn};
 
 pub use job::{EngineJob, JobStatus, JobProgress};
-pub use runner::EngineRunner;
+pub use runner::{EngineRunner, EngineResult};
 
 /// Engine identifiers matching the FCIP v6.0 specification
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum EngineId {
-    Contradiction,
-    Omission,
-    Temporal,
+    // Existing engines
     EntityResolution,
+    TemporalParser,
+    Argumentation,
+    BiasDetection,
+    Contradiction,
+    AccountabilityAudit,
+    ProfessionalTracker,
+    // V6.0 engines
+    Omission,
+    ExpertWitness,
     Documentary,
     Narrative,
     Coordination,
     // Future engines
-    ExpertWitness,
     Network,
     Memory,
     Linguistic,
@@ -39,14 +46,18 @@ pub enum EngineId {
 impl std::fmt::Display for EngineId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Contradiction => write!(f, "contradiction"),
-            Self::Omission => write!(f, "omission"),
-            Self::Temporal => write!(f, "temporal"),
             Self::EntityResolution => write!(f, "entity_resolution"),
+            Self::TemporalParser => write!(f, "temporal_parser"),
+            Self::Argumentation => write!(f, "argumentation"),
+            Self::BiasDetection => write!(f, "bias_detection"),
+            Self::Contradiction => write!(f, "contradiction"),
+            Self::AccountabilityAudit => write!(f, "accountability_audit"),
+            Self::ProfessionalTracker => write!(f, "professional_tracker"),
+            Self::Omission => write!(f, "omission"),
+            Self::ExpertWitness => write!(f, "expert_witness"),
             Self::Documentary => write!(f, "documentary"),
             Self::Narrative => write!(f, "narrative"),
             Self::Coordination => write!(f, "coordination"),
-            Self::ExpertWitness => write!(f, "expert_witness"),
             Self::Network => write!(f, "network"),
             Self::Memory => write!(f, "memory"),
             Self::Linguistic => write!(f, "linguistic"),
@@ -58,18 +69,25 @@ impl std::fmt::Display for EngineId {
 impl EngineId {
     pub fn from_str(s: &str) -> Option<Self> {
         match s {
-            "contradiction" => Some(Self::Contradiction),
-            "omission" => Some(Self::Omission),
-            "temporal" => Some(Self::Temporal),
+            // Canonical names
             "entity_resolution" => Some(Self::EntityResolution),
+            "temporal_parser" => Some(Self::TemporalParser),
+            "argumentation" => Some(Self::Argumentation),
+            "bias_detection" => Some(Self::BiasDetection),
+            "contradiction" => Some(Self::Contradiction),
+            "accountability_audit" => Some(Self::AccountabilityAudit),
+            "professional_tracker" => Some(Self::ProfessionalTracker),
+            "omission" => Some(Self::Omission),
+            "expert_witness" => Some(Self::ExpertWitness),
             "documentary" => Some(Self::Documentary),
             "narrative" => Some(Self::Narrative),
             "coordination" => Some(Self::Coordination),
-            "expert_witness" => Some(Self::ExpertWitness),
             "network" => Some(Self::Network),
             "memory" => Some(Self::Memory),
             "linguistic" => Some(Self::Linguistic),
             "bias_cascade" => Some(Self::BiasCascade),
+            // Aliases (for backward compatibility)
+            "temporal" => Some(Self::TemporalParser), // legacy alias
             _ => None,
         }
     }
@@ -77,10 +95,15 @@ impl EngineId {
     /// Get the list of active/implemented engines
     pub fn active_engines() -> Vec<Self> {
         vec![
-            Self::Contradiction,
-            Self::Omission,
-            Self::Temporal,
             Self::EntityResolution,
+            Self::TemporalParser,
+            Self::Argumentation,
+            Self::BiasDetection,
+            Self::Contradiction,
+            Self::AccountabilityAudit,
+            Self::ProfessionalTracker,
+            Self::Omission,
+            Self::ExpertWitness,
             Self::Documentary,
             Self::Narrative,
             Self::Coordination,
@@ -102,6 +125,7 @@ pub struct EngineOrchestrator {
     /// Active jobs being processed
     active_jobs: Arc<RwLock<HashMap<String, Arc<Mutex<EngineJob>>>>>,
     /// Job queue sender
+    #[allow(dead_code)]
     job_sender: mpsc::Sender<EngineJob>,
     /// Engine runner for TypeScript sidecar execution
     runner: Arc<EngineRunner>,
@@ -125,6 +149,18 @@ impl EngineOrchestrator {
     /// Set the app handle for event emission
     pub fn with_app_handle(mut self, handle: AppHandle) -> Self {
         self.app_handle = Some(handle);
+        self
+    }
+    
+    /// Set the sidecar path for the engine runner
+    pub fn with_sidecar_path(mut self, path: PathBuf) -> Self {
+        self.runner = Arc::new(EngineRunner::new().with_sidecar_path(path));
+        self
+    }
+    
+    /// Enable mock mode (no real AI calls)
+    pub fn with_mock_mode(mut self, mock: bool) -> Self {
+        self.runner = Arc::new(EngineRunner::new().with_mock_mode(mock));
         self
     }
     
@@ -217,11 +253,23 @@ impl EngineOrchestrator {
             (job.case_id.clone(), job.document_ids.clone(), job.engines.clone())
         };
         
+        // Track mock mode usage for warning
+        let mut mock_mode_detected = false;
+
         // Run each engine
         let mut completed = 0;
         let total = engines.len();
-        
+
         for engine_id in engines {
+            // Check if job was cancelled
+            {
+                let job = job_arc.lock().await;
+                if job.status == JobStatus::Cancelled {
+                    info!("Job {} was cancelled, stopping", job_id);
+                    return;
+                }
+            }
+            
             // Emit progress
             if let Some(ref handle) = app_handle {
                 let _ = handle.emit("engine:progress", serde_json::json!({
@@ -233,7 +281,7 @@ impl EngineOrchestrator {
                 }));
             }
             
-            info!("Running engine {} for job {}", engine_id, job_id);
+            info!("Running engine {} for job {} ({}/{})", engine_id, job_id, completed + 1, total);
             
             // Run the engine via sidecar
             let result = runner.run_engine(
@@ -246,21 +294,49 @@ impl EngineOrchestrator {
             {
                 let mut job = job_arc.lock().await;
                 match result {
-                    Ok(findings) => {
-                        job.results.insert(engine_id, Ok(findings.clone()));
-                        
+                    Ok(engine_result) => {
+                        let finding_count = engine_result.findings.len();
+
+                        // Track if mock mode was used
+                        if engine_result.used_mock_mode && !mock_mode_detected {
+                            mock_mode_detected = true;
+                            // Emit mock mode warning event
+                            if let Some(ref handle) = app_handle {
+                                let _ = handle.emit("engine:mock_mode", serde_json::json!({
+                                    "job_id": job_id,
+                                    "message": "AI analysis unavailable - showing placeholder data. Check sidecar configuration.",
+                                }));
+                            }
+                            warn!("Mock mode active - findings are placeholder data, not real AI analysis");
+                        }
+
+                        job.results.insert(engine_id, Ok(engine_result.findings));
+
+                        info!("Engine {} completed with {} findings (mock: {})",
+                              engine_id, finding_count, engine_result.used_mock_mode);
+
                         // Emit finding event
                         if let Some(ref handle) = app_handle {
                             let _ = handle.emit("engine:finding", serde_json::json!({
                                 "job_id": job_id,
                                 "engine_id": engine_id.to_string(),
-                                "finding_count": findings.len(),
+                                "finding_count": finding_count,
+                                "mock_mode": engine_result.used_mock_mode,
                             }));
                         }
                     }
                     Err(e) => {
                         warn!("Engine {} failed: {}", engine_id, e);
-                        job.results.insert(engine_id, Err(e));
+                        job.results.insert(engine_id, Err(e.clone()));
+
+                        // Emit error event
+                        if let Some(ref handle) = app_handle {
+                            let _ = handle.emit("engine:error", serde_json::json!({
+                                "job_id": job_id,
+                                "engine_id": engine_id.to_string(),
+                                "error": e,
+                            }));
+                        }
                     }
                 }
             }
@@ -280,10 +356,11 @@ impl EngineOrchestrator {
             let _ = handle.emit("engine:complete", serde_json::json!({
                 "job_id": job_id,
                 "status": "completed",
+                "engines_completed": completed,
             }));
         }
         
-        info!("Job {} completed", job_id);
+        info!("Job {} completed ({} engines)", job_id, completed);
     }
     
     /// Get job progress
@@ -299,10 +376,10 @@ impl EngineOrchestrator {
     
     /// Cancel a running job
     pub async fn cancel_job(&self, job_id: &str) -> Result<(), String> {
-        let mut jobs = self.active_jobs.write().await;
+        let jobs = self.active_jobs.write().await;
         if let Some(job_arc) = jobs.get(job_id) {
             let mut job = job_arc.lock().await;
-            if job.status == JobStatus::Running {
+            if job.status == JobStatus::Running || job.status == JobStatus::Pending {
                 job.status = JobStatus::Cancelled;
                 self.emit_event("engine:cancelled", &serde_json::json!({
                     "job_id": job_id,
@@ -326,14 +403,35 @@ impl EngineOrchestrator {
         }
         result
     }
+
+    /// Run a single engine (not part of a job)
+    /// Delegates to the engine runner
+    pub async fn run_single_engine(
+        &self,
+        engine_id: EngineId,
+        case_id: &str,
+        document_ids: &[String],
+    ) -> Result<Vec<job::EngineFinding>, String> {
+        let result = self.runner.run_engine(engine_id, case_id, document_ids).await?;
+
+        // Emit mock mode warning if applicable
+        if result.used_mock_mode {
+            if let Some(ref handle) = self.app_handle {
+                let _ = handle.emit("engine:mock_mode", serde_json::json!({
+                    "message": "AI analysis unavailable - showing placeholder data. Check sidecar configuration.",
+                }));
+            }
+        }
+
+        Ok(result.findings)
+    }
     
     /// Clean up completed jobs older than given duration
+    #[allow(dead_code)]
     pub async fn cleanup_old_jobs(&self, max_age: chrono::Duration) {
         let jobs = self.active_jobs.write().await;
         let now = chrono::Utc::now();
         
-        // Note: We can't retain while holding the write lock, so just log
-        // In production, this would be properly implemented with task spawning
         for (job_id, job_arc) in jobs.iter() {
             if let Ok(job) = job_arc.try_lock() {
                 if let Some(completed_at) = job.completed_at {
@@ -358,4 +456,3 @@ impl Default for EngineOrchestrator {
         Self::new()
     }
 }
-

@@ -27,6 +27,16 @@ describe('Validation Library', () => {
     expect(() => engineIdSchema.parse('invalid')).toThrow()
   })
 
+  // it('should validate cron route dynamic export', async () => {
+  //   // Test that cron routes have dynamic exports to prevent static caching
+  //   const cronRoute = await import('@/app/api/cron/process-queue/route')
+
+  //   // Should have dynamic export set to 'force-dynamic'
+  //   expect(cronRoute.dynamic).toBe('force-dynamic')
+  //   expect(cronRoute.maxDuration).toBeDefined()
+  //   expect(typeof cronRoute.maxDuration).toBe('number')
+  // })
+
   it('should validate run engine schema', async () => {
     const { runEngineSchema } = await import('@/lib/validation')
 

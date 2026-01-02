@@ -1,0 +1,14 @@
+{
+  "name": "apatheia-scripts",
+  "version": "1.0.0",
+  "description": "Vault ingestion and engine execution scripts",
+  "scripts": {
+    "ingest": "node ingest-vault.js",
+    "gen-prompts": "node run-engines.js",
+    "save": "node save-findings.js",
+    "export": "node export-analysis.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.10.0"
+  }
+}

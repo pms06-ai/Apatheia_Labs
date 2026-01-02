@@ -1,7 +1,38 @@
 {
   "permissions": {
     "allow": [
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Bash(cargo check:*)",
+      "Bash(cargo build:*)",
+      "Bash(npm install:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(node run-omission-test.js:*)",
+      "Bash(node -e:*)",
+      "Bash(claude --print:*)",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(node run-omission-parallel.js:*)",
+      "Bash(node test-batch.js:*)",
+      "Bash(node:*)",
+      "Bash(tasklist:*)",
+      "Bash(npm run tauri:*)",
+      "Bash(taskkill:*)",
+      "Bash(head:*)",
+      "Bash(where:*)",
+      "Bash(pip install:*)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\pstep\\\\OneDrive\\\\Documents\\\\Obsidian Vault\\\\10 - Case Materials\\\\*.pdf\")",
+      "Bash(powershell:*)",
+      "Bash(python scripts/process_ocr_v2.py:*)",
+      "Bash(pdfinfo:*)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\pstep\\\\OneDrive\\\\Documents\\\\Obsidian Vault\\\\10 - Case Materials\\\\*.md\")",
+      "Bash(rustc:*)",
+      "Bash(cargo --version:*)",
+      "Bash(dir /s /b \"C:\\\\Users\\\\pstep\\\\OneDrive\\\\Documents\\\\Obsidian Vault\\\\10 - Case Materials\\\\PE23C50095\\\\*.md\")",
+      "Bash(dir:*)",
+      "mcp__MCP_DOCKER__obsidian_get_file_contents",
+      "mcp__MCP_DOCKER__obsidian_list_files_in_dir",
+      "Bash(ls:*)",
+      "Bash(git add:*)"
     ]
   }
 }

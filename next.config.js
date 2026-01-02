@@ -4,7 +4,7 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: false,
   },
-  // Enable static export for Tauri desktop builds
+  // Static export for Tauri desktop app
   output: 'export',
 
   // Enable React strict mode for better development experience

@@ -91,15 +91,52 @@ pub async fn get_document(
     }
 }
 
+/// Maximum file size: 100MB
+const MAX_FILE_SIZE: usize = 100 * 1024 * 1024;
+
 /// Upload and store a new document
 #[tauri::command]
 pub async fn upload_document(
+    app_handle: AppHandle,
     state: State<'_, AppState>,
     input: UploadDocumentInput,
 ) -> Result<DocumentResult, String> {
+    // Input validation
+    if input.case_id.is_empty() {
+        return Ok(DocumentResult {
+            success: false,
+            data: None,
+            error: Some("Invalid case_id".into()),
+        });
+    }
+
+    if input.data.is_empty() {
+        return Ok(DocumentResult {
+            success: false,
+            data: None,
+            error: Some("Empty file".into()),
+        });
+    }
+
+    if input.data.len() > MAX_FILE_SIZE {
+        return Ok(DocumentResult {
+            success: false,
+            data: None,
+            error: Some(format!("File too large: maximum size is {}MB", MAX_FILE_SIZE / 1024 / 1024)),
+        });
+    }
+
+    if input.filename.is_empty() || input.filename.len() > 255 {
+        return Ok(DocumentResult {
+            success: false,
+            data: None,
+            error: Some("Invalid filename".into()),
+        });
+    }
+
     let db = state.db.lock().await;
     let storage = state.storage.lock().await;
-    
+
     // Store the file
     let (hash, storage_path) = match storage.store_file(&input.case_id, &input.filename, &input.data) {
         Ok(result) => result,
@@ -135,6 +172,9 @@ pub async fn upload_document(
     .await
     {
         Ok(_) => {
+            // Auto-process the document (matches upload_from_path behavior)
+            let _ = processing::process_document(&app_handle, &state, &id).await;
+
             match sqlx::query_as::<_, Document>("SELECT * FROM documents WHERE id = ?")
                 .bind(&id)
                 .fetch_one(db.pool())
@@ -338,6 +378,7 @@ pub async fn upload_from_path(
     file_path: String,
     doc_type: Option<String>,
 ) -> Result<DocumentResult, String> {
+    println!("DEBUG: upload_from_path called for case_id: {}, file_path: {}", case_id, file_path);
     let path = PathBuf::from(&file_path);
     
     // Read file
@@ -351,7 +392,32 @@ pub async fn upload_from_path(
             });
         }
     };
-    
+
+    // Basic validation to mirror upload_document
+    if case_id.is_empty() || case_id.len() > 36 {
+        return Ok(DocumentResult {
+            success: false,
+            data: None,
+            error: Some("Invalid case_id: must be non-empty and max 36 characters".into()),
+        });
+    }
+
+    if data.is_empty() {
+        return Ok(DocumentResult {
+            success: false,
+            data: None,
+            error: Some("Empty file: file must contain data".into()),
+        });
+    }
+
+    if data.len() > MAX_FILE_SIZE {
+        return Ok(DocumentResult {
+            success: false,
+            data: None,
+            error: Some(format!("File too large: maximum size is {}MB", MAX_FILE_SIZE / 1024 / 1024)),
+        });
+    }
+
     let filename = path
         .file_name()
         .map(|n| n.to_string_lossy().to_string())

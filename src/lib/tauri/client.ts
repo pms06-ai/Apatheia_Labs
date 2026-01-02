@@ -50,7 +50,7 @@ interface TauriAPI {
  */
 async function getTauriInvoke(): Promise<TauriAPI['invoke'] | null> {
   if (!isDesktop()) return null
-  
+
   try {
     const { invoke } = await import('@tauri-apps/api/core')
     return invoke
@@ -104,6 +104,29 @@ interface EngineResult {
   error?: string
 }
 
+interface JobProgress {
+  job_id: string
+  status: 'pending' | 'running' | 'completed' | 'cancelled' | 'failed'
+  engines: string[]
+  completed_engines: number
+  total_engines: number
+  current_engine?: string
+  started_at?: string
+  completed_at?: string
+}
+
+interface SubmitAnalysisResult {
+  success: boolean
+  job_id?: string
+  error?: string
+}
+
+interface ListJobsResult {
+  success: boolean
+  jobs: JobProgress[]
+  error?: string
+}
+
 // ============================================
 // Tauri Client Class
 // ============================================
@@ -123,11 +146,11 @@ export class TauriClient {
 
   private async call<T>(cmd: string, args?: TauriInvokeOptions): Promise<T> {
     await this.init()
-    
+
     if (!this.invoke) {
       throw new Error('Tauri API not available - running in browser mode')
     }
-    
+
     return this.invoke<T>(cmd, args)
   }
 
@@ -142,7 +165,7 @@ export class TauriClient {
   }
 
   async getCase(caseId: string): Promise<Case | null> {
-    const result = await this.call<ApiResult<Case>>('get_case', { caseId })
+    const result = await this.call<ApiResult<Case>>('get_case', { case_id: caseId })
     return result.data ?? null
   }
 
@@ -160,7 +183,7 @@ export class TauriClient {
   }
 
   async deleteCase(caseId: string): Promise<void> {
-    const result = await this.call<ApiResult<null>>('delete_case', { caseId })
+    const result = await this.call<ApiResult<null>>('delete_case', { case_id: caseId })
     if (!result.success) throw new Error(result.error || 'Failed to delete case')
   }
 
@@ -169,13 +192,13 @@ export class TauriClient {
   // ==========================================
 
   async getDocuments(caseId: string): Promise<Document[]> {
-    const result = await this.call<DocumentsListResult>('get_documents', { caseId })
+    const result = await this.call<DocumentsListResult>('get_documents', { case_id: caseId })
     if (!result.success) throw new Error(result.error || 'Failed to get documents')
     return result.data
   }
 
   async getDocument(documentId: string): Promise<Document | null> {
-    const result = await this.call<ApiResult<Document>>('get_document', { documentId })
+    const result = await this.call<ApiResult<Document>>('get_document', { document_id: documentId })
     return result.data ?? null
   }
 
@@ -199,9 +222,9 @@ export class TauriClient {
     extractedText?: string
   ): Promise<Document> {
     const result = await this.call<ApiResult<Document>>('update_document_status', {
-      documentId,
+      document_id: documentId,
       status,
-      extractedText,
+      extracted_text: extractedText,
     })
     if (!result.success || !result.data) {
       throw new Error(result.error || 'Failed to update document status')
@@ -210,7 +233,7 @@ export class TauriClient {
   }
 
   async deleteDocument(documentId: string): Promise<void> {
-    const result = await this.call<ApiResult<null>>('delete_document', { documentId })
+    const result = await this.call<ApiResult<null>>('delete_document', { document_id: documentId })
     if (!result.success) throw new Error(result.error || 'Failed to delete document')
   }
 
@@ -219,7 +242,7 @@ export class TauriClient {
   // ==========================================
 
   async getFindings(caseId: string): Promise<Finding[]> {
-    const result = await this.call<FindingsResult>('get_findings', { caseId })
+    const result = await this.call<FindingsResult>('get_findings', { case_id: caseId })
     if (!result.success) throw new Error(result.error || 'Failed to get findings')
     return result.data
   }
@@ -229,7 +252,7 @@ export class TauriClient {
     contradictions: Contradiction[]
     omissions: Omission[]
   }> {
-    const result = await this.call<AnalysisResult>('get_analysis', { caseId })
+    const result = await this.call<AnalysisResult>('get_analysis', { case_id: caseId })
     if (!result.success) throw new Error(result.error || 'Failed to get analysis')
     return {
       findings: result.findings,
@@ -255,17 +278,81 @@ export class TauriClient {
   }
 
   // ==========================================
+  // Orchestrator Operations (Job-based Analysis)
+  // ==========================================
+
+  async submitAnalysis(request: {
+    case_id: string
+    document_ids: string[]
+    engines: string[]
+    options?: Record<string, unknown>
+  }): Promise<string> {
+    const result = await this.call<SubmitAnalysisResult>('submit_analysis', { request })
+    if (!result.success || !result.job_id) {
+      throw new Error(result.error || 'Failed to submit analysis')
+    }
+    return result.job_id
+  }
+
+  async getJobProgress(jobId: string): Promise<JobProgress | null> {
+    const result = await this.call<{
+      success: boolean
+      progress?: JobProgress
+      error?: string
+    }>('get_job_progress', { jobId })
+    return result.progress || null
+  }
+
+  async cancelJob(jobId: string): Promise<void> {
+    const result = await this.call<SubmitAnalysisResult>('cancel_job', { jobId })
+    if (!result.success) throw new Error(result.error || 'Failed to cancel job')
+  }
+
+  async listJobs(): Promise<JobProgress[]> {
+    const result = await this.call<ListJobsResult>('list_jobs')
+    if (!result.success) throw new Error(result.error || 'Failed to list jobs')
+    return result.jobs
+  }
+
+  // ==========================================
   // File Picker Operations
   // ==========================================
 
   async pickDocuments(): Promise<{ path: string; filename: string }[]> {
-    const result = await this.call<{
-      success: boolean
-      files: { path: string; filename: string }[]
-      error?: string
-    }>('pick_documents')
-    if (!result.success) throw new Error(result.error || 'Failed to pick documents')
-    return result.files
+    if (!isDesktop()) {
+      throw new Error('File picker only available in desktop mode')
+    }
+
+    try {
+      const { open } = await import('@tauri-apps/plugin-dialog')
+
+      const selected = await open({
+        multiple: true,
+        filters: [
+          {
+            name: 'Documents',
+            extensions: ['pdf', 'txt', 'md', 'json', 'csv', 'html', 'docx']
+          },
+          {
+            name: 'All Files',
+            extensions: ['*']
+          }
+        ]
+      })
+
+      if (!selected) return []
+
+      const paths = Array.isArray(selected) ? selected : [selected]
+
+      return paths.map(path => {
+        // Extract filename from path (handles Windows backslashes and Unix slashes)
+        const filename = path.split(/[/\\]/).pop() || 'unknown'
+        return { path, filename }
+      })
+    } catch (e) {
+      console.error('Failed to pick documents:', e)
+      throw new Error('Failed to open file picker')
+    }
   }
 
   async uploadFromPath(
@@ -273,15 +360,25 @@ export class TauriClient {
     filePath: string,
     docType?: string
   ): Promise<Document> {
-    const result = await this.call<ApiResult<Document>>('upload_from_path', {
-      caseId,
-      filePath,
-      docType,
-    })
-    if (!result.success || !result.data) {
-      throw new Error(result.error || 'Failed to upload document')
+    console.log('[TauriClient] uploadFromPath called:', { caseId, filePath, docType })
+    console.log('[TauriClient] isDesktop?', isDesktop())
+
+    try {
+      const result = await this.call<ApiResult<Document>>('upload_from_path', {
+        case_id: caseId,
+        file_path: filePath,
+        doc_type: docType,
+      })
+      console.log('[TauriClient] upload_from_path result:', result)
+
+      if (!result.success || !result.data) {
+        throw new Error(result.error || 'Failed to upload document')
+      }
+      return result.data
+    } catch (err) {
+      console.error('[TauriClient] uploadFromPath error:', err)
+      throw err
     }
-    return result.data
   }
 }
 

@@ -5,29 +5,21 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   FileText,
-  Users,
   AlertTriangle,
-  Scale,
-  Clock,
-  Network,
   Settings,
-  FolderOpen,
+  Home,
   ChevronDown,
-  Plus
+  Plus,
+  Search
 } from 'lucide-react'
 import { useCaseStore } from '@/hooks/use-case-store'
 import { createClient } from '@/lib/supabase/client'
 import type { Case } from '@/CONTRACT'
 
 const navigation = [
-  { name: 'Dashboard', href: '/', icon: FolderOpen },
+  { name: 'Dashboard', href: '/', icon: Home },
   { name: 'Documents', href: '/documents', icon: FileText },
-  { name: 'Entities', href: '/entities', icon: Users },
-  { name: 'Timeline', href: '/timeline', icon: Clock },
-  { name: 'Contradictions', href: '/analysis?tab=contradictions', icon: AlertTriangle },
-  { name: 'Claims', href: '/analysis?tab=claims', icon: Scale },
-  { name: 'Network', href: '/network', icon: Network },
-  // { name: 'Regulators', href: '/regulators', icon: Building2 }, // Hidden for now
+  { name: 'Analysis', href: '/analysis', icon: Search },
 ]
 
 const engines = [
@@ -78,7 +70,26 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex w-64 flex-col border-r border-charcoal-600/30 bg-bg-secondary h-screen sticky top-0">
+    <aside className="flex w-64 flex-col border-r border-charcoal-600/30 bg-bg-secondary h-screen sticky top-0 relative overflow-hidden">
+      {/* Background Detail */}
+      <div className="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-transparent via-bronze-500/20 to-transparent opacity-50" />
+
+      {/* Logo/Brand Header */}
+      <Link
+        href="/"
+        className="flex items-center gap-3 p-4 border-b border-charcoal-600/30 hover:bg-charcoal-800/50 transition-colors"
+      >
+        <img
+          src="/logo.svg"
+          alt="Apatheia Labs"
+          className="h-10 w-10"
+        />
+        <div>
+          <div className="font-display text-lg text-charcoal-100 tracking-wide">APATHEIA</div>
+          <div className="text-[10px] text-charcoal-500 uppercase tracking-[0.2em]">Labs</div>
+        </div>
+      </Link>
+
       {/* Case Selector */}
       <div className="border-b border-charcoal-600/30 p-4">
         <div className="text-xs uppercase tracking-wider text-charcoal-500 mb-2">
@@ -156,6 +167,9 @@ export function Sidebar() {
             >
               <item.icon className="h-4 w-4" />
               {item.name}
+              {isActive && (
+                <div className="absolute left-0 h-4 w-0.5 bg-bronze-500 rounded-r shadow-[0_0_10px_rgba(184,134,11,0.5)]" />
+              )}
             </Link>
           )
         })}

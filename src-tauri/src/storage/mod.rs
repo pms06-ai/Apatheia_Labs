@@ -36,38 +36,98 @@ impl Storage {
         path
     }
 
+    /// Check if a file with the same hash already exists in the case
+    pub fn find_existing_file(&self, case_id: &str, hash: &str) -> Option<PathBuf> {
+        let case_dir = self.documents_dir().join(case_id);
+        if !case_dir.exists() {
+            return None;
+        }
+
+        // Look for files with hash in their name
+        if let Ok(entries) = std::fs::read_dir(&case_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
+                    if filename.contains(&hash[..8]) && filename.contains("-") {
+                        return Some(path);
+                    }
+                }
+            }
+        }
+        None
+    }
+
     /// Store a file and return its hash and storage path
+    /// Uses collision-proof paths based on hash and document ID
+    /// Automatically deduplicates files with identical content
     pub fn store_file(&self, case_id: &str, filename: &str, data: &[u8]) -> StorageResult<(String, PathBuf)> {
         // Calculate SHA256 hash
         let hash = Self::calculate_hash(data);
-        
+
         // Create case directory
         let case_dir = self.documents_dir().join(case_id);
         std::fs::create_dir_all(&case_dir)?;
-        
-        // Store file
-        let file_path = case_dir.join(filename);
+
+        // Check if file with same hash already exists (deduplication)
+        if let Some(existing_path) = self.find_existing_file(case_id, &hash) {
+            log::info!("File already exists with same content, reusing: {} (original: {}, hash: {})",
+                      existing_path.display(), filename, hash);
+            return Ok((hash, existing_path));
+        }
+
+        // Create collision-proof filename: original_filename-hash.ext
+        // Extract extension from filename
+        let extension = std::path::Path::new(filename)
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .unwrap_or("");
+
+        let base_name = std::path::Path::new(filename)
+            .file_stem()
+            .and_then(|stem| stem.to_str())
+            .unwrap_or("file");
+
+        let collision_proof_filename = if extension.is_empty() {
+            format!("{}-{}", base_name, &hash[..8]) // Use first 8 chars of hash
+        } else {
+            format!("{}-{}.{}", base_name, &hash[..8], extension)
+        };
+
+        // Store file with collision-proof name
+        let file_path = case_dir.join(&collision_proof_filename);
         std::fs::write(&file_path, data)?;
-        
-        log::info!("Stored file: {} ({})", file_path.display(), hash);
-        
+
+        log::info!("Stored file: {} (original: {}, hash: {})", file_path.display(), filename, hash);
+
         Ok((hash, file_path))
+    }
+
+    /// Validate that a path is within the storage base directory (prevent path traversal)
+    fn validate_path(&self, path: &std::path::Path) -> StorageResult<PathBuf> {
+        let canonical = path.canonicalize()
+            .map_err(|_| StorageError::NotFound(path.to_string_lossy().to_string()))?;
+        let base = self.base_path.canonicalize()
+            .map_err(|_| StorageError::NotFound("Base path invalid".into()))?;
+
+        if !canonical.starts_with(&base) {
+            log::warn!("Path traversal attempt blocked: {} is outside {}",
+                      canonical.display(), base.display());
+            return Err(StorageError::NotFound("Path outside storage".into()));
+        }
+        Ok(canonical)
     }
 
     /// Read a file from storage
     pub fn read_file(&self, storage_path: &std::path::Path) -> StorageResult<Vec<u8>> {
-        if !storage_path.exists() {
-            return Err(StorageError::NotFound(storage_path.to_string_lossy().to_string()));
-        }
-        Ok(std::fs::read(storage_path)?)
+        let validated_path = self.validate_path(storage_path)?;
+        Ok(std::fs::read(validated_path)?)
     }
 
     /// Delete a file from storage
     pub fn delete_file(&self, storage_path: &str) -> StorageResult<()> {
         let path = PathBuf::from(storage_path);
-        if path.exists() {
-            std::fs::remove_file(path)?;
-        }
+        let validated_path = self.validate_path(&path)?;
+        std::fs::remove_file(validated_path)?;
         Ok(())
     }
 

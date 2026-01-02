@@ -102,6 +102,7 @@ CREATE TABLE IF NOT EXISTS findings (
     description TEXT,
     finding_type TEXT,
     severity TEXT CHECK(severity IN ('critical', 'high', 'medium', 'low', 'info')),
+    confidence REAL, -- Added in v0.1.0: Confidence score (0.0-1.0) for finding reliability
     document_ids TEXT DEFAULT '[]',
     entity_ids TEXT DEFAULT '[]',
     regulatory_targets TEXT DEFAULT '[]',
@@ -247,6 +248,7 @@ pub struct Finding {
     pub description: Option<String>,
     pub finding_type: Option<String>,
     pub severity: Option<String>,
+    pub confidence: Option<f64>,
     pub document_ids: String, // JSON array
     pub entity_ids: String,   // JSON array
     pub regulatory_targets: String, // JSON array

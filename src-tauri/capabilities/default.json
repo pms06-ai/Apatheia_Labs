@@ -8,14 +8,17 @@
   "permissions": [
     "core:default",
     "shell:allow-open",
+    "shell:default",
     "dialog:default",
     "fs:default",
+    "log:default",
     {
       "identifier": "fs:allow-read",
       "allow": [
         { "path": "$APPDATA/**" },
         { "path": "$DOCUMENT/**" },
-        { "path": "$DOWNLOAD/**" }
+        { "path": "$DOWNLOAD/**" },
+        { "path": "$RESOURCE/**" }
       ]
     },
     {

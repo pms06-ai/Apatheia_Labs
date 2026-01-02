@@ -1,0 +1,5 @@
+google-generativeai
+pdf2image
+pillow
+tqdm
+python-dotenv

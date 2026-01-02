@@ -38,6 +38,35 @@ impl AppState {
     }
 }
 
+/// Find the sidecar path, checking multiple locations
+fn find_sidecar_path(app: &tauri::App) -> Option<PathBuf> {
+    // Try resource directory first (bundled app)
+    if let Ok(resource_dir) = app.path().resource_dir() {
+        let bundled = resource_dir.join("sidecars").join("engine-runner.js");
+        if bundled.exists() {
+            log::info!("Found bundled sidecar: {}", bundled.display());
+            return Some(bundled);
+        }
+    }
+    
+    // Try development paths
+    let dev_paths = vec![
+        PathBuf::from("sidecars/engine-runner.js"),
+        PathBuf::from("src-tauri/sidecars/engine-runner.js"),
+        PathBuf::from("../src-tauri/sidecars/engine-runner.js"),
+    ];
+    
+    for path in dev_paths {
+        if path.exists() {
+            log::info!("Found development sidecar: {}", path.display());
+            return Some(path);
+        }
+    }
+    
+    log::warn!("Sidecar not found, engines will run in mock mode");
+    None
+}
+
 /// Initialize Tauri application with all plugins and commands
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -55,11 +84,22 @@ pub fn run() {
             
             log::info!("App data directory: {}", app_data_dir.display());
             
-            // Initialize orchestrator with app handle
-            let orchestrator = EngineOrchestrator::new()
+            // Find sidecar path
+            let sidecar_path = find_sidecar_path(app);
+            
+            // Initialize orchestrator with app handle and sidecar path
+            let mut orchestrator = EngineOrchestrator::new()
                 .with_app_handle(app.handle().clone());
+            
+            if let Some(path) = sidecar_path {
+                orchestrator = orchestrator.with_sidecar_path(path);
+                log::info!("Engine orchestrator initialized with sidecar");
+            } else {
+                orchestrator = orchestrator.with_mock_mode(true);
+                log::info!("Engine orchestrator initialized in MOCK mode");
+            }
+            
             app.manage(Arc::new(RwLock::new(orchestrator)));
-            log::info!("Engine orchestrator initialized");
             
             // Initialize state asynchronously
             let app_handle = app.handle().clone();
@@ -102,6 +142,12 @@ pub fn run() {
             commands::get_job_progress,
             commands::cancel_job,
             commands::list_jobs,
+            // Settings commands
+            commands::get_settings,
+            commands::update_settings,
+            commands::check_api_key,
+            commands::validate_api_key,
+            commands::check_claude_code_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

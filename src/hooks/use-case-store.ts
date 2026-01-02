@@ -101,11 +101,11 @@ export const useCaseStore = create<CaseState>()(
   )
 )
 
-// Selectors
+// Selectors - prefixed with "CaseStore" to avoid collision with React Query hooks
 export const useActiveCase = () => useCaseStore((state) => state.activeCase)
-export const useDocuments = () => useCaseStore((state) => state.documents)
-export const useEntities = () => useCaseStore((state) => state.entities)
-export const useFindings = () => useCaseStore((state) => state.findings)
+export const useCaseStoreDocuments = () => useCaseStore((state) => state.documents)
+export const useCaseStoreEntities = () => useCaseStore((state) => state.entities)
+export const useCaseStoreFindings = () => useCaseStore((state) => state.findings)
 
 // Filtered selectors
 export const useCriticalFindings = () =>

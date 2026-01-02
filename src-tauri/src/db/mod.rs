@@ -40,6 +40,20 @@ impl Database {
             .connect(&db_url)
             .await?;
 
+        // Enable WAL mode and busy timeout for better concurrency
+        sqlx::query("PRAGMA journal_mode = WAL;")
+            .execute(&pool)
+            .await?;
+        sqlx::query("PRAGMA busy_timeout = 5000;")  // 5 second timeout
+            .execute(&pool)
+            .await?;
+        sqlx::query("PRAGMA synchronous = NORMAL;")
+            .execute(&pool)
+            .await?;
+        sqlx::query("PRAGMA cache_size = -64000;")  // 64MB cache
+            .execute(&pool)
+            .await?;
+
         let db = Self { pool };
         db.run_migrations().await?;
         

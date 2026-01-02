@@ -2931,6 +2931,7 @@ dependencies = [
  "chrono",
  "hex",
  "log",
+ "once_cell",
  "pdf-extract",
  "regex",
  "serde",
