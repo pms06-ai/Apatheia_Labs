@@ -14,7 +14,6 @@ use log::{info, error};
 use std::path::Path;
 use tauri::{AppHandle, Emitter};
 use std::process::Command;
-use std::io::Write;
 use tempfile::NamedTempFile;
 
 /// Run Python OCR script for high-quality extraction

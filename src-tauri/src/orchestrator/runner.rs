@@ -27,7 +27,8 @@ struct EngineRequest {
 #[derive(Debug, Deserialize)]
 struct EngineResponse {
     success: bool,
-    engine_id: String,
+    #[serde(rename = "engine_id")]
+    _engine_id: String,
     findings: Option<Vec<EngineFinding>>,
     error: Option<String>,
     #[allow(dead_code)]
@@ -179,13 +180,13 @@ impl EngineRunner {
         // Run sidecar with a safety timeout to avoid hangs
         let result = timeout(Duration::from_secs(180), async {
             // Send request to stdin
-            if let Some(stdin) = child.stdin.as_mut() {
+            // Send request to stdin
+            if let Some(mut stdin) = child.stdin.take() {
                 stdin.write_all(request_json.as_bytes()).await
                     .map_err(|e| format!("Failed to write to sidecar stdin: {}", e))?;
                 stdin.write_all(b"\n").await
                     .map_err(|e| format!("Failed to write newline: {}", e))?;
-                // Close stdin to signal end of input
-                drop(stdin);
+                // Close stdin to signal end of input - this happens automatically when stdin is dropped at end of scope
             }
             
             // Read stderr for logging (sidecar logs to stderr)
