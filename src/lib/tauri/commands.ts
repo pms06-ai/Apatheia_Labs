@@ -98,9 +98,9 @@ export async function uploadDocument(
   if (!isDesktop()) {
     throw new Error('Document upload only available in desktop mode')
   }
-  
+
   const data = await fileToBytes(file)
-  
+
   return getTauriClient().uploadDocument({
     case_id: caseId,
     filename: file.name,
@@ -121,7 +121,7 @@ export async function updateDocumentStatus(
   if (!isDesktop()) {
     throw new Error('Document update only available in desktop mode')
   }
-  
+
   return getTauriClient().updateDocumentStatus(documentId, status, extractedText)
 }
 
@@ -131,6 +131,16 @@ export async function updateDocumentStatus(
 export async function deleteDocument(documentId: string): Promise<void> {
   if (isDesktop()) {
     return getTauriClient().deleteDocument(documentId)
+  }
+  throw new Error('Web mode not implemented')
+}
+
+/**
+ * Process a document
+ */
+export async function processDocument(documentId: string): Promise<Document> {
+  if (isDesktop()) {
+    return getTauriClient().processDocument(documentId)
   }
   throw new Error('Web mode not implemented')
 }
@@ -168,7 +178,7 @@ export async function runEngine(input: {
   if (!isDesktop()) {
     throw new Error('Engine execution only available in desktop mode')
   }
-  
+
   return getTauriClient().runEngine(input)
 }
 
@@ -179,7 +189,7 @@ export async function saveFinding(finding: Finding): Promise<void> {
   if (!isDesktop()) {
     throw new Error('Saving findings only available in desktop mode')
   }
-  
+
   return getTauriClient().saveFinding(finding)
 }
 
@@ -190,7 +200,7 @@ export async function pickDocuments(): Promise<{ path: string; filename: string 
   if (!isDesktop()) {
     throw new Error('File picker only available in desktop mode')
   }
-  
+
   return getTauriClient().pickDocuments()
 }
 
@@ -205,6 +215,6 @@ export async function uploadFromPath(
   if (!isDesktop()) {
     throw new Error('Upload from path only available in desktop mode')
   }
-  
+
   return getTauriClient().uploadFromPath(caseId, filePath, docType)
 }

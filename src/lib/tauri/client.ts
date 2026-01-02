@@ -237,6 +237,14 @@ export class TauriClient {
     if (!result.success) throw new Error(result.error || 'Failed to delete document')
   }
 
+  async processDocument(documentId: string): Promise<Document> {
+    const result = await this.call<ApiResult<Document>>('process_document', { document_id: documentId })
+    if (!result.success || !result.data) {
+      throw new Error(result.error || 'Failed to process document')
+    }
+    return result.data
+  }
+
   // ==========================================
   // Analysis Operations
   // ==========================================

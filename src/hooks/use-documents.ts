@@ -109,23 +109,14 @@ export function useProcessDocument() {
   return useMutation({
     mutationFn: async (documentId: string) => {
       // In desktop mode, processing happens automatically after upload
+      // But if we want to manually re-trigger it:
       if (isDesktop()) {
-        console.log('[Desktop] Document processing initiated:', documentId)
-        return { success: true, documentId }
+        const { processDocument } = await import('@/lib/tauri/commands')
+        return processDocument(documentId)
       }
 
-      // Web mode: call API
-      const response = await fetch('/api/documents/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ documentId }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Processing failed')
-      }
-
-      return response.json()
+      // Web mode - deprecated API
+      throw new Error('Web mode API is deprecated. Use Desktop app.')
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documents'] })
