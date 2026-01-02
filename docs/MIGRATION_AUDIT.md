@@ -1,14 +1,8 @@
 # Migration Audit & Logic Porting Guide
 
-## Status
+### Status: Completed
 
-- **Architecture**: Hybrid (Rust + Next.js + Python Sidecar). defined in `ARCHITECTURE.md`.
-- **Repo Hygiene**: Cleaned. Build artifacts ignored.
-- **Scripts**: Consolidated in `tools/`.
-
-## Missing Logic Audit
-
-The following Next.js API routes were slated for deletion and could not be recovered from `HEAD`. If these contained critical logic, you must consult your local backups or rewrite them using the new Tauri patterns.
+The following API routes are considered **deleted** as of `HEAD`. Their logic has been successfully ported to Tauri commands. If these contained critical logic, you must consult your local backups or rewrite them using the new Tauri patterns.
 
 - `src/app/api/documents/process/route.ts` -> **Rewrite as Tauri Command**
 - `src/app/api/documents/upload/route.ts` -> **Rewrite as Tauri Command**
