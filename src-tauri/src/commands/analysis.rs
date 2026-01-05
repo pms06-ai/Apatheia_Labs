@@ -2,11 +2,13 @@
 
 use crate::db::schema::{Finding, Contradiction, Omission, SAMAnalysis, ClaimOrigin, ClaimPropagation, AuthorityMarker, SAMOutcome};
 use crate::orchestrator::{AnalysisRequest, EngineOrchestrator, JobProgress};
+use crate::sam::{SAMExecutor, SAMConfig, SAMPhase};
 use crate::AppState;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tauri::State;
 use tokio::sync::RwLock;
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -407,25 +409,28 @@ pub async fn run_sam_analysis(
     .await
     {
         Ok(_) => {
+            // Create cancellation token
+            let cancel_token = CancellationToken::new();
+
+            // Store the token for later cancellation
+            {
+                let mut tokens = state.sam_tokens.lock().await;
+                tokens.insert(analysis_id.clone(), cancel_token.clone());
+            }
+
             // Get pool for the spawned task
             let pool = db.pool().clone();
             let analysis_id_clone = analysis_id.clone();
+            let analysis_id_cleanup = analysis_id.clone();
             let case_id = input.case_id.clone();
             let document_ids = input.document_ids.clone();
             let focus_claims = input.focus_claims.clone();
             let stop_after_phase = input.stop_after_phase.clone();
+            let sam_tokens = state.sam_tokens.clone();
 
             // Spawn the S.A.M. analysis task
             tokio::spawn(async move {
-                use crate::sam::{SAMExecutor, SAMConfig, SAMPhase};
-
-                let stop_phase = stop_after_phase.and_then(|s| match s.as_str() {
-                    "anchor" => Some(SAMPhase::Anchor),
-                    "inherit" => Some(SAMPhase::Inherit),
-                    "compound" => Some(SAMPhase::Compound),
-                    "arrive" => Some(SAMPhase::Arrive),
-                    _ => None,
-                });
+                let stop_phase = stop_after_phase.and_then(|s| SAMPhase::from_str(&s));
 
                 let config = SAMConfig {
                     analysis_id: analysis_id_clone.clone(),
@@ -436,13 +441,17 @@ pub async fn run_sam_analysis(
                     timeout_seconds: 300,
                 };
 
-                let executor = SAMExecutor::new(pool, config);
+                let executor = SAMExecutor::new(pool, config, cancel_token);
 
                 if let Err(e) = executor.execute().await {
                     log::error!("S.A.M. analysis {} failed: {}", analysis_id_clone, e);
                 } else {
                     log::info!("S.A.M. analysis {} completed successfully", analysis_id_clone);
                 }
+
+                // Clean up the token after completion
+                let mut tokens = sam_tokens.lock().await;
+                tokens.remove(&analysis_id_cleanup);
             });
 
             Ok(SAMAnalysisStartResult {
@@ -603,6 +612,16 @@ pub async fn cancel_sam_analysis(
     state: State<'_, AppState>,
     analysis_id: String,
 ) -> Result<SAMActionResult, String> {
+    // First, cancel the token to stop the running task
+    {
+        let tokens = state.sam_tokens.lock().await;
+        if let Some(token) = tokens.get(&analysis_id) {
+            token.cancel();
+            log::info!("Cancellation signal sent for analysis {}", analysis_id);
+        }
+    }
+
+    // Update the database status
     let db = state.db.lock().await;
     let now = chrono::Utc::now().to_rfc3339();
 
@@ -615,6 +634,12 @@ pub async fn cancel_sam_analysis(
     .await
     {
         Ok(result) => {
+            // Clean up the token
+            {
+                let mut tokens = state.sam_tokens.lock().await;
+                tokens.remove(&analysis_id);
+            }
+
             if result.rows_affected() > 0 {
                 Ok(SAMActionResult {
                     success: true,
@@ -663,35 +688,90 @@ pub async fn resume_sam_analysis(
     };
 
     // Determine which phase to resume from
-    let resume_status = if analysis.arrive_started_at.is_some() && analysis.arrive_completed_at.is_none() {
-        "arrive_running"
+    let resume_phase = if analysis.arrive_started_at.is_some() && analysis.arrive_completed_at.is_none() {
+        SAMPhase::Arrive
     } else if analysis.compound_started_at.is_some() && analysis.compound_completed_at.is_none() {
-        "compound_running"
+        SAMPhase::Compound
     } else if analysis.inherit_started_at.is_some() && analysis.inherit_completed_at.is_none() {
-        "inherit_running"
+        SAMPhase::Inherit
     } else if analysis.anchor_started_at.is_some() && analysis.anchor_completed_at.is_none() {
-        "anchor_running"
+        SAMPhase::Anchor
     } else if analysis.anchor_completed_at.is_some() && analysis.inherit_started_at.is_none() {
-        "inherit_running"
+        SAMPhase::Inherit
     } else if analysis.inherit_completed_at.is_some() && analysis.compound_started_at.is_none() {
-        "compound_running"
+        SAMPhase::Compound
     } else if analysis.compound_completed_at.is_some() && analysis.arrive_started_at.is_none() {
-        "arrive_running"
+        SAMPhase::Arrive
     } else {
-        "anchor_running" // Start from beginning
+        SAMPhase::Anchor // Start from beginning
     };
 
+    // Parse metadata to get document_ids and other config
+    let metadata: serde_json::Value = serde_json::from_str(&analysis.metadata)
+        .unwrap_or(serde_json::json!({}));
+
+    let document_ids: Vec<String> = metadata.get("document_ids")
+        .and_then(|v| serde_json::from_value(v.clone()).ok())
+        .unwrap_or_default();
+
+    let focus_claims: Option<Vec<String>> = metadata.get("focus_claims")
+        .and_then(|v| serde_json::from_value(v.clone()).ok());
+
+    let stop_after_phase: Option<SAMPhase> = metadata.get("stop_after_phase")
+        .and_then(|v| v.as_str())
+        .and_then(SAMPhase::from_str);
+
+    // Update status
     match sqlx::query(
         "UPDATE sam_analyses SET status = ?, error_message = NULL, error_phase = NULL, updated_at = ? WHERE id = ?"
     )
-    .bind(resume_status)
+    .bind(resume_phase.status_running())
     .bind(&now)
     .bind(&analysis_id)
     .execute(db.pool())
     .await
     {
         Ok(_) => {
-            // TODO: Spawn the actual resume task
+            // Create cancellation token
+            let cancel_token = CancellationToken::new();
+
+            // Store the token
+            {
+                let mut tokens = state.sam_tokens.lock().await;
+                tokens.insert(analysis_id.clone(), cancel_token.clone());
+            }
+
+            // Get pool for the spawned task
+            let pool = db.pool().clone();
+            let analysis_id_clone = analysis_id.clone();
+            let analysis_id_cleanup = analysis_id.clone();
+            let case_id = analysis.case_id.clone();
+            let sam_tokens = state.sam_tokens.clone();
+
+            // Spawn the resume task
+            tokio::spawn(async move {
+                let config = SAMConfig {
+                    analysis_id: analysis_id_clone.clone(),
+                    case_id,
+                    document_ids,
+                    focus_claims,
+                    stop_after_phase,
+                    timeout_seconds: 300,
+                };
+
+                let executor = SAMExecutor::new(pool, config, cancel_token);
+
+                if let Err(e) = executor.execute_from_phase(resume_phase).await {
+                    log::error!("S.A.M. analysis {} resume failed: {}", analysis_id_clone, e);
+                } else {
+                    log::info!("S.A.M. analysis {} resumed and completed successfully", analysis_id_clone);
+                }
+
+                // Clean up the token after completion
+                let mut tokens = sam_tokens.lock().await;
+                tokens.remove(&analysis_id_cleanup);
+            });
+
             Ok(SAMActionResult {
                 success: true,
                 error: None,

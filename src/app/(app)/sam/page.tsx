@@ -22,6 +22,8 @@ import {
   useRunSAMAnalysis,
   useSAMProgress,
   useSAMResults,
+  useCancelSAMAnalysis,
+  useResumeSAMAnalysis,
 } from '@/hooks/use-sam-analysis'
 import { cn } from '@/lib/utils'
 import toast from 'react-hot-toast'
@@ -39,6 +41,8 @@ export default function SAMPage() {
 
   // Hooks
   const runMutation = useRunSAMAnalysis()
+  const cancelMutation = useCancelSAMAnalysis()
+  const resumeMutation = useResumeSAMAnalysis()
   const { data: progress, isLoading: isLoadingProgress } = useSAMProgress(analysisId)
   const { data: results, isLoading: isLoadingResults } = useSAMResults(
     progress?.status === 'completed' ? analysisId : null
@@ -73,6 +77,26 @@ export default function SAMPage() {
       toast.success('S.A.M. analysis started')
     } catch (error) {
       toast.error('Failed to start analysis')
+    }
+  }
+
+  const handleCancel = async () => {
+    if (!analysisId) return
+    try {
+      await cancelMutation.mutateAsync(analysisId)
+      toast.success('Analysis cancelled')
+    } catch (error) {
+      toast.error('Failed to cancel analysis')
+    }
+  }
+
+  const handleResume = async () => {
+    if (!analysisId) return
+    try {
+      await resumeMutation.mutateAsync(analysisId)
+      toast.success('Analysis resumed')
+    } catch (error) {
+      toast.error('Failed to resume analysis')
     }
   }
 
@@ -138,6 +162,48 @@ export default function SAMPage() {
                 {isComplete && <CheckCircle2 className="h-3 w-3 mr-1" />}
                 {progress.status?.replace('_', ' ').toUpperCase()}
               </Badge>
+            )}
+
+            {/* Cancel Button - Show when running */}
+            {isRunning && (
+              <button
+                onClick={handleCancel}
+                disabled={cancelMutation.isPending}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
+                  cancelMutation.isPending
+                    ? 'bg-charcoal-700 text-charcoal-400 cursor-not-allowed'
+                    : 'bg-status-critical/20 text-status-critical hover:bg-status-critical/30 border border-status-critical/30'
+                )}
+              >
+                {cancelMutation.isPending ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
+                {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
+              </button>
+            )}
+
+            {/* Resume Button - Show when cancelled or failed */}
+            {(isCancelled || isFailed) && (
+              <button
+                onClick={handleResume}
+                disabled={resumeMutation.isPending}
+                className={cn(
+                  'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
+                  resumeMutation.isPending
+                    ? 'bg-charcoal-700 text-charcoal-400 cursor-not-allowed'
+                    : 'bg-bronze-600/20 text-bronze-400 hover:bg-bronze-600/30 border border-bronze-600/30'
+                )}
+              >
+                {resumeMutation.isPending ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <RotateCcw className="h-4 w-4" />
+                )}
+                {resumeMutation.isPending ? 'Resuming...' : 'Resume'}
+              </button>
             )}
 
             {/* Run Button */}

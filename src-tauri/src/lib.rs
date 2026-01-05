@@ -14,27 +14,32 @@ use tauri::Manager;
 use db::Database;
 use orchestrator::EngineOrchestrator;
 use storage::Storage;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
+use tokio_util::sync::CancellationToken;
 
 /// Application state shared across commands
 pub struct AppState {
     pub db: Arc<Mutex<Database>>,
     pub storage: Arc<Mutex<Storage>>,
+    /// Cancellation tokens for running S.A.M. analyses
+    pub sam_tokens: Arc<Mutex<HashMap<String, CancellationToken>>>,
 }
 
 impl AppState {
     pub async fn new(app_data_dir: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         let db_path = app_data_dir.join("phronesis.db");
         let storage_path = app_data_dir.join("storage");
-        
+
         let db = Database::new(db_path).await?;
         let storage = Storage::new(storage_path);
-        
+
         Ok(Self {
             db: Arc::new(Mutex::new(db)),
             storage: Arc::new(Mutex::new(storage)),
+            sam_tokens: Arc::new(Mutex::new(HashMap::new())),
         })
     }
 }

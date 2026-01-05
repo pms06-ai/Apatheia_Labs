@@ -10,6 +10,7 @@ use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use tokio::time::{timeout, Duration};
+use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 /// S.A.M. analysis phases
@@ -29,6 +30,16 @@ impl SAMPhase {
             SAMPhase::Inherit => "inherit",
             SAMPhase::Compound => "compound",
             SAMPhase::Arrive => "arrive",
+        }
+    }
+
+    pub fn from_str(s: &str) -> Option<SAMPhase> {
+        match s {
+            "anchor" => Some(SAMPhase::Anchor),
+            "inherit" => Some(SAMPhase::Inherit),
+            "compound" => Some(SAMPhase::Compound),
+            "arrive" => Some(SAMPhase::Arrive),
+            _ => None,
         }
     }
 
@@ -56,6 +67,16 @@ impl SAMPhase {
             SAMPhase::Inherit => Some(SAMPhase::Compound),
             SAMPhase::Compound => Some(SAMPhase::Arrive),
             SAMPhase::Arrive => None,
+        }
+    }
+
+    /// Determine which phase to resume from based on analysis status
+    pub fn from_status(status: &str) -> SAMPhase {
+        match status {
+            "arrive_running" | "arrive_complete" => SAMPhase::Arrive,
+            "compound_running" | "compound_complete" => SAMPhase::Compound,
+            "inherit_running" | "inherit_complete" => SAMPhase::Inherit,
+            _ => SAMPhase::Anchor,
         }
     }
 }
@@ -206,15 +227,62 @@ struct CausationChainData {
 pub struct SAMExecutor {
     pool: SqlitePool,
     config: SAMConfig,
+    cancel_token: CancellationToken,
 }
 
 impl SAMExecutor {
-    pub fn new(pool: SqlitePool, config: SAMConfig) -> Self {
-        Self { pool, config }
+    pub fn new(pool: SqlitePool, config: SAMConfig, cancel_token: CancellationToken) -> Self {
+        Self { pool, config, cancel_token }
     }
 
     /// Execute all S.A.M. phases
     pub async fn execute(&self) -> Result<(), String> {
+        // Validate documents have extracted text before starting
+        self.validate_documents().await?;
+        self.execute_from_phase(SAMPhase::Anchor).await
+    }
+
+    /// Validate that all documents have extracted text
+    async fn validate_documents(&self) -> Result<(), String> {
+        if self.config.document_ids.is_empty() {
+            return Err("No documents selected for analysis".to_string());
+        }
+
+        for doc_id in &self.config.document_ids {
+            let row: Option<(String, Option<String>)> = sqlx::query_as(
+                "SELECT filename, extracted_text FROM documents WHERE id = ?"
+            )
+            .bind(doc_id)
+            .fetch_optional(&self.pool)
+            .await
+            .map_err(|e| format!("Failed to fetch document {}: {}", doc_id, e))?;
+
+            match row {
+                None => {
+                    return Err(format!("Document {} not found", doc_id));
+                }
+                Some((filename, text_opt)) => {
+                    let has_text = text_opt
+                        .as_ref()
+                        .map(|t| !t.trim().is_empty())
+                        .unwrap_or(false);
+
+                    if !has_text {
+                        return Err(format!(
+                            "Document '{}' ({}) has no extracted text. Please process the document first.",
+                            filename, doc_id
+                        ));
+                    }
+                }
+            }
+        }
+
+        info!("Validated {} documents for analysis {}", self.config.document_ids.len(), self.config.analysis_id);
+        Ok(())
+    }
+
+    /// Execute phases starting from a specific phase (used for resume)
+    pub async fn execute_from_phase(&self, start_phase: SAMPhase) -> Result<(), String> {
         let phases = [
             SAMPhase::Anchor,
             SAMPhase::Inherit,
@@ -223,6 +291,18 @@ impl SAMExecutor {
         ];
 
         for phase in phases {
+            // Skip phases before start_phase (for resume)
+            if phase < start_phase {
+                continue;
+            }
+
+            // Check cancellation
+            if self.cancel_token.is_cancelled() {
+                info!("Analysis {} cancelled before {:?} phase", self.config.analysis_id, phase);
+                self.update_status("cancelled").await?;
+                return Ok(());
+            }
+
             // Check stop condition
             if let Some(stop_after) = &self.config.stop_after_phase {
                 if phase > *stop_after {
