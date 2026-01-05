@@ -1,10 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Key, Shield, Palette, Check, AlertCircle, Loader2, Eye, EyeOff, Terminal, Zap } from 'lucide-react'
+import { Key, Shield, Palette, Check, AlertCircle, Loader2, Eye, EyeOff, Terminal, Zap, Code2, FolderOpen } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { isDesktop } from '@/lib/tauri'
+
+interface PythonConfig {
+  python_path?: string
+  venv_path?: string
+  ocr_script_path?: string
+}
 
 interface AppSettings {
   anthropic_api_key?: string
@@ -12,11 +18,21 @@ interface AppSettings {
   mock_mode: boolean
   default_model: string
   theme: string
+  python: PythonConfig
 }
 
 interface ClaudeCodeStatus {
   installed: boolean
   version?: string
+  error?: string
+}
+
+interface PythonStatus {
+  available: boolean
+  version?: string
+  path: string
+  venv_active: boolean
+  ocr_script_found: boolean
   error?: string
 }
 
@@ -31,6 +47,11 @@ export default function SettingsPage() {
   const [apiKeyConfigured, setApiKeyConfigured] = useState(false)
   const [claudeCodeStatus, setClaudeCodeStatus] = useState<ClaudeCodeStatus | null>(null)
   const [checkingClaudeCode, setCheckingClaudeCode] = useState(false)
+  const [pythonStatus, setPythonStatus] = useState<PythonStatus | null>(null)
+  const [checkingPython, setCheckingPython] = useState(false)
+  const [pythonPath, setPythonPath] = useState('')
+  const [venvPath, setVenvPath] = useState('')
+  const [ocrScriptPath, setOcrScriptPath] = useState('')
 
   // Load settings on mount
   useEffect(() => {
@@ -46,20 +67,26 @@ export default function SettingsPage() {
     try {
       const { invoke } = await import('@tauri-apps/api/core')
       
-      const [settingsResult, hasKey, ccStatus] = await Promise.all([
+      const [settingsResult, hasKey, ccStatus, pyStatus] = await Promise.all([
         invoke<{ success: boolean; settings?: AppSettings; error?: string }>('get_settings'),
         invoke<boolean>('check_api_key'),
         invoke<ClaudeCodeStatus>('check_claude_code_status'),
+        invoke<PythonStatus>('check_python_status'),
       ])
-      
+
       if (settingsResult.success && settingsResult.settings) {
         setSettings(settingsResult.settings)
         setApiKeyConfigured(hasKey)
+        // Initialize Python path inputs from settings
+        setPythonPath(settingsResult.settings.python?.python_path || '')
+        setVenvPath(settingsResult.settings.python?.venv_path || '')
+        setOcrScriptPath(settingsResult.settings.python?.ocr_script_path || '')
       } else {
         setError(settingsResult.error || 'Failed to load settings')
       }
-      
+
       setClaudeCodeStatus(ccStatus)
+      setPythonStatus(pyStatus)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load settings')
     } finally {
@@ -73,6 +100,9 @@ export default function SettingsPage() {
     mock_mode: boolean
     default_model: string
     theme: string
+    python_path: string
+    venv_path: string
+    ocr_script_path: string
   }>) {
     if (!isDesktop()) return
 
@@ -89,6 +119,9 @@ export default function SettingsPage() {
         mockMode: updates.mock_mode,
         defaultModel: updates.default_model,
         theme: updates.theme,
+        pythonPath: updates.python_path,
+        venvPath: updates.venv_path,
+        ocrScriptPath: updates.ocr_script_path,
       })
       
       if (result.success && result.settings) {
@@ -133,13 +166,13 @@ export default function SettingsPage() {
 
   async function recheckClaudeCode() {
     if (!isDesktop()) return
-    
+
     setCheckingClaudeCode(true)
     try {
       const { invoke } = await import('@tauri-apps/api/core')
       const status = await invoke<ClaudeCodeStatus>('check_claude_code_status')
       setClaudeCodeStatus(status)
-      
+
       if (status.installed) {
         setSuccess(`Claude Code detected: ${status.version}`)
         setTimeout(() => setSuccess(null), 3000)
@@ -149,6 +182,36 @@ export default function SettingsPage() {
     } finally {
       setCheckingClaudeCode(false)
     }
+  }
+
+  async function checkPythonStatus() {
+    if (!isDesktop()) return
+
+    setCheckingPython(true)
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const status = await invoke<PythonStatus>('check_python_status')
+      setPythonStatus(status)
+
+      if (status.available) {
+        setSuccess(`Python ${status.version} detected${status.venv_active ? ' (venv active)' : ''}`)
+        setTimeout(() => setSuccess(null), 3000)
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to check Python status')
+    } finally {
+      setCheckingPython(false)
+    }
+  }
+
+  async function savePythonSettings() {
+    await saveSettings({
+      python_path: pythonPath || undefined,
+      venv_path: venvPath || undefined,
+      ocr_script_path: ocrScriptPath || undefined,
+    })
+    // Recheck status after saving
+    await checkPythonStatus()
   }
 
   if (!isDesktop()) {
@@ -454,6 +517,141 @@ export default function SettingsPage() {
                 {theme.disabled && <span className="block text-xs text-charcoal-600 mt-1">Coming soon</span>}
               </button>
             ))}
+          </div>
+        </Card>
+
+        {/* Python Environment */}
+        <Card className="p-6 bg-charcoal-800/50 border-charcoal-700">
+          <div className="flex items-start gap-4 mb-6">
+            <div className="p-3 rounded-lg bg-bronze-500/10">
+              <Code2 className="h-6 w-6 text-bronze-500" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center justify-between">
+                <h2 className="font-display text-xl text-charcoal-100">Python Environment</h2>
+                <button
+                  onClick={checkPythonStatus}
+                  disabled={checkingPython}
+                  className="px-3 py-1.5 rounded-lg text-sm bg-charcoal-700 text-charcoal-200 hover:bg-charcoal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {checkingPython ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Checking...
+                    </span>
+                  ) : (
+                    'Check Status'
+                  )}
+                </button>
+              </div>
+              <p className="text-sm text-charcoal-400 mt-1">
+                Configure Python for OCR processing.
+              </p>
+            </div>
+          </div>
+
+          {/* Python Status Indicator */}
+          <div className="p-4 rounded-lg bg-charcoal-900/50 border border-charcoal-700 mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-charcoal-300">Environment Status</span>
+            </div>
+            {pythonStatus ? (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${pythonStatus.available ? 'bg-status-success' : 'bg-status-critical'}`} />
+                  <span className={`text-sm ${pythonStatus.available ? 'text-status-success' : 'text-status-critical'}`}>
+                    {pythonStatus.available ? `Python ${pythonStatus.version}` : 'Python not available'}
+                  </span>
+                </div>
+                {pythonStatus.available && (
+                  <>
+                    <div className="flex items-center gap-2 text-xs text-charcoal-400">
+                      <span className="font-mono">{pythonStatus.path}</span>
+                    </div>
+                    <div className="flex gap-4 text-xs">
+                      <span className={pythonStatus.venv_active ? 'text-status-success' : 'text-charcoal-500'}>
+                        {pythonStatus.venv_active ? '✓ Venv active' : '○ No venv'}
+                      </span>
+                      <span className={pythonStatus.ocr_script_found ? 'text-status-success' : 'text-charcoal-500'}>
+                        {pythonStatus.ocr_script_found ? '✓ OCR script found' : '○ OCR script not found'}
+                      </span>
+                    </div>
+                  </>
+                )}
+                {pythonStatus.error && (
+                  <p className="text-xs text-status-critical mt-1">{pythonStatus.error}</p>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-sm text-charcoal-500">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Loading status...
+              </div>
+            )}
+          </div>
+
+          {/* Python Path Inputs */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-charcoal-300 mb-2">
+                Python Path
+                <span className="text-charcoal-500 font-normal ml-2">(optional)</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={pythonPath}
+                  onChange={(e) => setPythonPath(e.target.value)}
+                  placeholder="python or /usr/bin/python3"
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-charcoal-900 border border-charcoal-700 text-charcoal-100 placeholder:text-charcoal-600 focus:outline-none focus:border-bronze-500/50 focus:ring-1 focus:ring-bronze-500/20 font-mono text-sm"
+                />
+              </div>
+              <p className="text-xs text-charcoal-500 mt-1">Leave empty to use system Python</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-charcoal-300 mb-2">
+                Virtual Environment Path
+                <span className="text-charcoal-500 font-normal ml-2">(optional)</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={venvPath}
+                  onChange={(e) => setVenvPath(e.target.value)}
+                  placeholder="C:\path\to\venv or /path/to/venv"
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-charcoal-900 border border-charcoal-700 text-charcoal-100 placeholder:text-charcoal-600 focus:outline-none focus:border-bronze-500/50 focus:ring-1 focus:ring-bronze-500/20 font-mono text-sm"
+                />
+              </div>
+              <p className="text-xs text-charcoal-500 mt-1">If set, will use Python from this venv</p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-charcoal-300 mb-2">
+                OCR Script Path
+                <span className="text-charcoal-500 font-normal ml-2">(optional)</span>
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={ocrScriptPath}
+                  onChange={(e) => setOcrScriptPath(e.target.value)}
+                  placeholder="tools/ocr/process_ocr_v2.py"
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-charcoal-900 border border-charcoal-700 text-charcoal-100 placeholder:text-charcoal-600 focus:outline-none focus:border-bronze-500/50 focus:ring-1 focus:ring-bronze-500/20 font-mono text-sm"
+                />
+              </div>
+              <p className="text-xs text-charcoal-500 mt-1">Custom OCR script location</p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                onClick={savePythonSettings}
+                disabled={saving}
+                className="px-4 py-2.5 rounded-lg bg-bronze-600 text-white font-medium hover:bg-bronze-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Python Settings'}
+              </button>
+            </div>
           </div>
         </Card>
 
