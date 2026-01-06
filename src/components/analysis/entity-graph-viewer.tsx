@@ -192,6 +192,15 @@ export function EntityGraphViewer({
                             <stop offset="100%" stopColor="#4B5563" stopOpacity="0.1" />
                         </linearGradient>
 
+                        {/* Glow filter for high confidence edges */}
+                        <filter id="entityEdgeGlowHigh" x="-50%" y="-50%" width="200%" height="200%">
+                            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
+                            <feMerge>
+                                <feMergeNode in="coloredBlur" />
+                                <feMergeNode in="SourceGraphic" />
+                            </feMerge>
+                        </filter>
+
                         {/* Glow filter for nodes */}
                         <filter id="entityGlow" x="-50%" y="-50%" width="200%" height="200%">
                             <feGaussianBlur stdDeviation="3" result="coloredBlur" />
@@ -229,14 +238,22 @@ export function EntityGraphViewer({
 
                         const confidence = edge.attributes.confidence
                         const edgeStyle = getEdgeColor(confidence)
+                        const isHighConfidence = confidence >= 0.8
+                        const isLowConfidence = confidence < 0.5
 
-                        // Calculate edge width based on confidence
-                        const strokeWidth = confidence >= 0.8 ? 2.5 :
-                            confidence >= 0.5 ? 1.8 : 1.2
+                        // Calculate edge width based on confidence - more differentiation
+                        // High confidence (>0.8): thick and prominent
+                        // Medium confidence (0.5-0.8): moderate
+                        // Low confidence (<0.5): thin and subtle
+                        const strokeWidth = isHighConfidence ? 3 :
+                            isLowConfidence ? 1 : 1.8
 
                         // Get gradient based on confidence
-                        const gradientId = confidence >= 0.8 ? 'url(#entityLinkGradientHigh)' :
-                            confidence >= 0.5 ? 'url(#entityLinkGradientMedium)' : 'url(#entityLinkGradientLow)'
+                        const gradientId = isHighConfidence ? 'url(#entityLinkGradientHigh)' :
+                            isLowConfidence ? 'url(#entityLinkGradientLow)' : 'url(#entityLinkGradientMedium)'
+
+                        // Apply glow filter only to high confidence edges for brightness
+                        const edgeFilter = isHighConfidence ? 'url(#entityEdgeGlowHigh)' : undefined
 
                         // Format confidence as percentage
                         const confidencePercent = `${Math.round(confidence * 100)}%`
@@ -247,10 +264,13 @@ export function EntityGraphViewer({
 
                         return (
                             <g key={`edge-${edge.key}-${i}`}>
-                                {/* Edge line */}
+                                {/* Edge line with confidence-based styling */}
                                 <motion.line
                                     initial={{ pathLength: 0, opacity: 0 }}
-                                    animate={{ pathLength: 1, opacity: edgeStyle.opacity }}
+                                    animate={{
+                                        pathLength: 1,
+                                        opacity: isHighConfidence ? 0.85 : isLowConfidence ? 0.25 : edgeStyle.opacity
+                                    }}
                                     transition={{ duration: 1.2, delay: i * 0.03, ease: "easeInOut" }}
                                     x1={sourceNode.x}
                                     y1={sourceNode.y}
@@ -259,6 +279,7 @@ export function EntityGraphViewer({
                                     stroke={gradientId}
                                     strokeWidth={strokeWidth}
                                     strokeLinecap="round"
+                                    filter={edgeFilter}
                                 />
 
                                 {/* Confidence label on edge */}
@@ -447,7 +468,23 @@ export function EntityGraphViewer({
             </div>
 
             {/* Legend - Floating Bottom */}
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 flex-wrap px-4">
+            <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-2 px-4">
+                {/* Edge Confidence Legend */}
+                <div className="flex items-center gap-3 text-[10px] text-charcoal-400 font-mono tracking-wider uppercase">
+                    <span className="text-charcoal-500">Linkage Confidence:</span>
+                    <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-charcoal-700/50 backdrop-blur-sm">
+                        <div className="w-6 h-[3px] rounded-full bg-bronze-500 shadow-[0_0_6px_rgba(212,160,23,0.6)]"></div>
+                        <span>High (&gt;80%)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-charcoal-700/50 backdrop-blur-sm">
+                        <div className="w-6 h-[2px] rounded-full bg-status-high opacity-60"></div>
+                        <span>Medium</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 bg-black/40 px-2.5 py-1 rounded-full border border-charcoal-700/50 backdrop-blur-sm">
+                        <div className="w-6 h-[1px] rounded-full bg-charcoal-500 opacity-40"></div>
+                        <span>Low (&lt;50%)</span>
+                    </div>
+                </div>
                 {/* Entity Type Legend */}
                 <div className="flex items-center gap-4 text-[10px] text-charcoal-400 font-mono tracking-wider uppercase">
                     <div className="flex items-center gap-1.5 bg-black/40 px-3 py-1 rounded-full border border-charcoal-700/50 backdrop-blur-sm">
