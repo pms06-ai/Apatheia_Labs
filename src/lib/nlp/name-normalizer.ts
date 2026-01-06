@@ -2,7 +2,8 @@
  * NAME NORMALIZER
  *
  * Utility for normalizing entity names for consistent matching.
- * Handles title removal, punctuation cleanup, and case normalization.
+ * Handles title removal, punctuation cleanup, case normalization,
+ * and organization abbreviation expansion.
  */
 
 /**
@@ -83,6 +84,71 @@ export const TITLES: string[] = [
 ]
 
 /**
+ * Name suffixes to remove (Jr., Sr., III, etc.)
+ */
+export const NAME_SUFFIXES: string[] = [
+  'jr',
+  'junior',
+  'sr',
+  'senior',
+  'i',
+  'ii',
+  'iii',
+  'iv',
+  'v',
+  'vi',
+  'ret',
+  'retired',
+]
+
+/**
+ * Common organization abbreviations and their full forms
+ */
+export const ORGANIZATION_ALIASES: Record<string, string[]> = {
+  'federal bureau of investigation': ['fbi'],
+  'central intelligence agency': ['cia'],
+  'national security agency': ['nsa'],
+  'internal revenue service': ['irs'],
+  'department of justice': ['doj'],
+  'department of defense': ['dod'],
+  'environmental protection agency': ['epa'],
+  'federal aviation administration': ['faa'],
+  'food and drug administration': ['fda'],
+  'securities and exchange commission': ['sec'],
+  'national health service': ['nhs'],
+  'health and care professions council': ['hcpc'],
+  'general medical council': ['gmc'],
+  'children and family court advisory and support service': ['cafcass'],
+  'local authority': ['la'],
+  'social services': ['ss'],
+  'limited': ['ltd'],
+  'incorporated': ['inc'],
+  'corporation': ['corp'],
+  'company': ['co'],
+  'limited liability company': ['llc'],
+  'public limited company': ['plc'],
+  'united kingdom': ['uk'],
+  'united states': ['us', 'usa'],
+  'united nations': ['un'],
+}
+
+/**
+ * Organization suffixes to remove for normalization
+ */
+const ORG_SUFFIXES = [
+  'ltd',
+  'limited',
+  'inc',
+  'incorporated',
+  'corp',
+  'corporation',
+  'llc',
+  'plc',
+  'co',
+  'company',
+]
+
+/**
  * Pattern to match titles at the beginning of a name
  * Handles optional periods and whitespace
  */
@@ -97,6 +163,14 @@ const TITLE_PATTERN = new RegExp(
  */
 const SUFFIX_PATTERN = new RegExp(
   `\\s*,?\\s*(${TITLES.join('|')})\\.?$`,
+  'gi'
+)
+
+/**
+ * Pattern to match name suffixes (Jr., Sr., III, etc.)
+ */
+const NAME_SUFFIX_PATTERN = new RegExp(
+  `\\s*,?\\s*(${NAME_SUFFIXES.join('|')})\\.?$`,
   'gi'
 )
 
@@ -180,6 +254,9 @@ export function removeTitles(name: string): string {
 
   // Remove trailing suffixes (PhD, Esq., etc.)
   result = result.replace(SUFFIX_PATTERN, '')
+
+  // Remove name suffixes (Jr., Sr., III, etc.)
+  result = result.replace(NAME_SUFFIX_PATTERN, '')
 
   return result
 }
@@ -367,6 +444,152 @@ export function namesCouldMatch(name1: string, name2: string): boolean {
 
   // Check if one is a substring of the other (e.g., "Smith" in "John Smith")
   if (norm1.length >= 3 && norm2.length >= 3) {
+    if (norm1.includes(norm2) || norm2.includes(norm1)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+/**
+ * Normalize an organization name for consistent matching
+ *
+ * Expands abbreviations to full form and removes common suffixes
+ *
+ * @param name - Organization name to normalize
+ * @param options - Normalization options (optional)
+ * @returns Normalized organization name
+ *
+ * @example
+ * normalizeOrganization('FBI')
+ * // Returns: 'federal bureau of investigation'
+ *
+ * @example
+ * normalizeOrganization('Acme Corp.')
+ * // Returns: 'acme'
+ */
+export function normalizeOrganization(
+  name: string,
+  options: NormalizationOptions = DEFAULT_OPTIONS
+): string {
+  if (!name || typeof name !== 'string') {
+    return ''
+  }
+
+  const opts = { ...DEFAULT_OPTIONS, ...options }
+  let normalized = name.trim()
+
+  // Convert to lowercase first for alias matching
+  if (opts.lowercase) {
+    normalized = normalized.toLowerCase()
+  }
+
+  // Remove punctuation
+  if (opts.removePunctuation) {
+    normalized = normalized.replace(/[.,'"!?;:()[\]{}]/g, '')
+    normalized = normalized.replace(/-/g, ' ')
+  }
+
+  // Normalize whitespace
+  if (opts.trimWhitespace) {
+    normalized = normalized.replace(/\s+/g, ' ').trim()
+  }
+
+  // Expand known abbreviations to full form
+  for (const [fullName, abbreviations] of Object.entries(ORGANIZATION_ALIASES)) {
+    for (const abbr of abbreviations) {
+      if (normalized === abbr) {
+        normalized = fullName
+        break
+      }
+    }
+  }
+
+  // Remove common organization suffixes
+  const suffixPattern = new RegExp(`\\s+(${ORG_SUFFIXES.join('|')})\\.?$`, 'i')
+  normalized = normalized.replace(suffixPattern, '').trim()
+
+  return normalized.replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * Get all known aliases for an organization
+ *
+ * Returns both the abbreviation and full form if known
+ *
+ * @param name - Organization name
+ * @returns Array of known aliases
+ *
+ * @example
+ * getOrganizationAliases('FBI')
+ * // Returns: ['federal bureau of investigation', 'fbi']
+ *
+ * @example
+ * getOrganizationAliases('Federal Bureau of Investigation')
+ * // Returns: ['federal bureau of investigation', 'fbi']
+ */
+export function getOrganizationAliases(name: string): string[] {
+  if (!name || typeof name !== 'string') {
+    return []
+  }
+
+  const normalized = normalizeOrganization(name)
+  const aliases = new Set<string>([normalized])
+
+  // Check if this is a known full name or abbreviation
+  for (const [fullName, abbreviations] of Object.entries(ORGANIZATION_ALIASES)) {
+    // If normalized matches the full name, add all abbreviations
+    if (normalized === fullName) {
+      abbreviations.forEach(abbr => aliases.add(abbr))
+    }
+
+    // If normalized matches an abbreviation, add full name and all abbreviations
+    if (abbreviations.includes(normalized)) {
+      aliases.add(fullName)
+      abbreviations.forEach(abbr => aliases.add(abbr))
+    }
+  }
+
+  return Array.from(aliases)
+}
+
+/**
+ * Check if two organization names could refer to the same entity
+ *
+ * @param org1 - First organization name
+ * @param org2 - Second organization name
+ * @returns Boolean indicating potential match
+ *
+ * @example
+ * organizationsCouldMatch('FBI', 'Federal Bureau of Investigation')
+ * // Returns: true
+ */
+export function organizationsCouldMatch(org1: string, org2: string): boolean {
+  if (!org1 || !org2) {
+    return false
+  }
+
+  const norm1 = normalizeOrganization(org1)
+  const norm2 = normalizeOrganization(org2)
+
+  // Exact match after normalization
+  if (norm1 === norm2) {
+    return true
+  }
+
+  // Check aliases
+  const aliases1 = getOrganizationAliases(org1)
+  const aliases2 = getOrganizationAliases(org2)
+
+  for (const a1 of aliases1) {
+    if (aliases2.includes(a1)) {
+      return true
+    }
+  }
+
+  // Check substring match for longer names
+  if (norm1.length >= 4 && norm2.length >= 4) {
     if (norm1.includes(norm2) || norm2.includes(norm1)) {
       return true
     }

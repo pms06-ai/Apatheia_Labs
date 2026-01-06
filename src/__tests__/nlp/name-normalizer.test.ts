@@ -16,8 +16,13 @@ import {
   detectRoleReference,
   generateNameVariants,
   namesCouldMatch,
+  normalizeOrganization,
+  getOrganizationAliases,
+  organizationsCouldMatch,
   DEFAULT_OPTIONS,
   TITLES,
+  NAME_SUFFIXES,
+  ORGANIZATION_ALIASES,
 } from '@/lib/nlp/name-normalizer'
 
 describe('Name Normalizer', () => {
@@ -286,6 +291,137 @@ describe('Name Normalizer', () => {
       expect(TITLES).toContain('professor')
       expect(TITLES).toContain('judge')
       expect(TITLES).toContain('sw')
+    })
+
+    it('should include name suffixes', () => {
+      expect(NAME_SUFFIXES).toContain('jr')
+      expect(NAME_SUFFIXES).toContain('sr')
+      expect(NAME_SUFFIXES).toContain('iii')
+      expect(NAME_SUFFIXES).toContain('iv')
+    })
+
+    it('should include organization aliases', () => {
+      expect(ORGANIZATION_ALIASES['federal bureau of investigation']).toContain('fbi')
+      expect(ORGANIZATION_ALIASES['national health service']).toContain('nhs')
+      expect(ORGANIZATION_ALIASES['health and care professions council']).toContain('hcpc')
+    })
+  })
+
+  describe('Name Suffixes', () => {
+    it('should remove Jr. suffix', () => {
+      expect(normalizeName('John Smith Jr.')).toBe('john smith')
+      expect(normalizeName('John Smith, Jr.')).toBe('john smith')
+      expect(normalizeName('Robert Brown Junior')).toBe('robert brown')
+    })
+
+    it('should remove Sr. suffix', () => {
+      expect(normalizeName('James Wilson Sr.')).toBe('james wilson')
+      expect(normalizeName('James Wilson, Sr.')).toBe('james wilson')
+      expect(normalizeName('James Wilson Senior')).toBe('james wilson')
+    })
+
+    it('should remove roman numeral suffixes', () => {
+      expect(normalizeName('William Gates III')).toBe('william gates')
+      expect(normalizeName('Henry Ford II')).toBe('henry ford')
+      expect(normalizeName('Charles Windsor IV')).toBe('charles windsor')
+    })
+  })
+
+  describe('normalizeOrganization', () => {
+    it('should expand common abbreviations', () => {
+      expect(normalizeOrganization('FBI')).toBe('federal bureau of investigation')
+      expect(normalizeOrganization('CIA')).toBe('central intelligence agency')
+      expect(normalizeOrganization('NHS')).toBe('national health service')
+      expect(normalizeOrganization('HCPC')).toBe('health and care professions council')
+    })
+
+    it('should normalize to lowercase', () => {
+      expect(normalizeOrganization('ACME Corporation')).toBe('acme')
+      expect(normalizeOrganization('Test Company Ltd')).toBe('test')
+    })
+
+    it('should remove organization suffixes', () => {
+      expect(normalizeOrganization('Acme Corp.')).toBe('acme')
+      expect(normalizeOrganization('Widgets Inc')).toBe('widgets')
+      expect(normalizeOrganization('Foo Ltd')).toBe('foo')
+      expect(normalizeOrganization('Bar LLC')).toBe('bar')
+    })
+
+    it('should handle empty and invalid input', () => {
+      expect(normalizeOrganization('')).toBe('')
+      expect(normalizeOrganization(null as unknown as string)).toBe('')
+      expect(normalizeOrganization(undefined as unknown as string)).toBe('')
+    })
+
+    it('should remove punctuation', () => {
+      expect(normalizeOrganization('Acme, Inc.')).toBe('acme')
+      expect(normalizeOrganization("Smith's Company")).toBe('smiths')
+    })
+  })
+
+  describe('getOrganizationAliases', () => {
+    it('should return aliases for known abbreviations', () => {
+      const aliases = getOrganizationAliases('FBI')
+      expect(aliases).toContain('federal bureau of investigation')
+      expect(aliases).toContain('fbi')
+    })
+
+    it('should return aliases for full organization names', () => {
+      const aliases = getOrganizationAliases('Federal Bureau of Investigation')
+      expect(aliases).toContain('federal bureau of investigation')
+      expect(aliases).toContain('fbi')
+    })
+
+    it('should handle UK organizations', () => {
+      const nhsAliases = getOrganizationAliases('NHS')
+      expect(nhsAliases).toContain('national health service')
+      expect(nhsAliases).toContain('nhs')
+
+      const hcpcAliases = getOrganizationAliases('HCPC')
+      expect(hcpcAliases).toContain('health and care professions council')
+      expect(hcpcAliases).toContain('hcpc')
+    })
+
+    it('should return normalized name for unknown organizations', () => {
+      const aliases = getOrganizationAliases('Unknown Corp')
+      expect(aliases).toContain('unknown')
+    })
+
+    it('should handle empty input', () => {
+      expect(getOrganizationAliases('')).toEqual([])
+      expect(getOrganizationAliases(null as unknown as string)).toEqual([])
+    })
+  })
+
+  describe('organizationsCouldMatch', () => {
+    it('should match abbreviation to full name', () => {
+      expect(organizationsCouldMatch('FBI', 'Federal Bureau of Investigation')).toBe(true)
+      expect(organizationsCouldMatch('NHS', 'National Health Service')).toBe(true)
+      expect(organizationsCouldMatch('HCPC', 'Health and Care Professions Council')).toBe(true)
+    })
+
+    it('should match case-insensitive', () => {
+      expect(organizationsCouldMatch('fbi', 'FBI')).toBe(true)
+      expect(organizationsCouldMatch('Acme Corp', 'ACME CORPORATION')).toBe(true)
+    })
+
+    it('should match with and without suffixes', () => {
+      expect(organizationsCouldMatch('Acme Inc', 'Acme Corporation')).toBe(true)
+      expect(organizationsCouldMatch('Test Ltd', 'Test Limited')).toBe(true)
+    })
+
+    it('should not match completely different organizations', () => {
+      expect(organizationsCouldMatch('FBI', 'CIA')).toBe(false)
+      expect(organizationsCouldMatch('Acme Corp', 'Widgets Inc')).toBe(false)
+    })
+
+    it('should handle empty input', () => {
+      expect(organizationsCouldMatch('', 'FBI')).toBe(false)
+      expect(organizationsCouldMatch('FBI', '')).toBe(false)
+    })
+
+    it('should match CAFCASS variations', () => {
+      expect(organizationsCouldMatch('CAFCASS', 'Children and Family Court Advisory and Support Service')).toBe(true)
     })
   })
 })
