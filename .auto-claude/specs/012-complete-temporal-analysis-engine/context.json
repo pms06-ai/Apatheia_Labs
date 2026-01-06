@@ -1,0 +1,51 @@
+{
+  "task_description": "Build a temporal analysis engine that detects date manipulation, backdating, and impossible timelines in institutional documents through multi-layer validation (AI extraction + chrono-node verification + date-fns normalization)",
+  "files_to_modify": {
+    "typescript": [
+      "src/lib/engines/temporal.ts",
+      "package.json",
+      "src/lib/engines/index.ts"
+    ]
+  },
+  "files_to_reference": [
+    "src/lib/ai-client.ts",
+    "src/lib/engines/entity-resolution.ts",
+    "src/lib/engines/omission.ts",
+    "src/lib/engines/narrative.ts"
+  ],
+  "patterns": {
+    "ai_extraction": "Use generateJSON() from ai-client.ts for structured extraction with multi-provider fallback",
+    "engine_structure": "Follow entity-resolution.ts pattern: export interfaces, main analysis function, engine object",
+    "inconsistency_detection": "Follow omission.ts pattern: detect issues, calculate severity, return structured findings",
+    "multi_document": "Follow narrative.ts pattern: process document arrays, cross-reference, maintain provenance"
+  },
+  "existing_implementations": {
+    "description": "Basic temporal.ts exists with TemporalEvent and TemporalAnalysisResult interfaces, uses AI for date extraction but lacks validation layers",
+    "relevant_files": [
+      "src/lib/engines/temporal.ts",
+      "src/lib/ai-client.ts",
+      "src/lib/engines/index.ts"
+    ],
+    "needs_enhancement": true,
+    "current_approach": "Single-layer AI extraction without validation - needs chrono-node and date-fns validation added"
+  },
+  "technology_stack": {
+    "language": "TypeScript",
+    "framework": "Next.js",
+    "date_libraries": {
+      "installed": [
+        "date-fns@4.1.0"
+      ],
+      "to_install": [
+        "chrono-node@^2.7.0"
+      ]
+    },
+    "ai_sdks": {
+      "installed": [
+        "@anthropic-ai/sdk@0.71.2",
+        "groq-sdk@0.8.0",
+        "@google/generative-ai@0.21.0"
+      ]
+    }
+  }
+}

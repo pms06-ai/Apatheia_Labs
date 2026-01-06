@@ -1,0 +1,10 @@
+{
+  "discovered_files": {
+    "src/lib/engines/temporal.ts": {
+      "description": "Cross-document contradiction detection implemented as Layer 7 in temporal analysis. Uses event signature matching (category + key terms) with similarity scoring (0.6+ threshold) to identify same events described with different dates across documents. Also detects impossible cross-document sequences via reference pattern matching.",
+      "category": "implementation",
+      "discovered_at": "2026-01-06T14:01:46.697987+00:00"
+    }
+  },
+  "last_updated": "2026-01-06T14:01:46.697987+00:00"
+}

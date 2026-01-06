@@ -1,0 +1,25 @@
+{
+  "active": true,
+  "spec": "012-complete-temporal-analysis-engine",
+  "state": "building",
+  "subtasks": {
+    "completed": 16,
+    "total": 17,
+    "in_progress": 1,
+    "failed": 0
+  },
+  "phase": {
+    "current": "QA Verification & Final Checks",
+    "id": null,
+    "total": 3
+  },
+  "workers": {
+    "active": 0,
+    "max": 1
+  },
+  "session": {
+    "number": 11,
+    "started_at": "2026-01-06T07:57:08.902463"
+  },
+  "last_update": "2026-01-06T08:25:08.329203"
+}
