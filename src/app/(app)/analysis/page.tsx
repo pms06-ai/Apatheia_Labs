@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Play, FileText, AlertTriangle, Clock, Share2, Filter, Download, ArrowUpRight, Layers } from 'lucide-react'
+import { Play, FileText, AlertTriangle, Clock, Share2, Filter, Layers } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { FindingsList } from '@/components/analysis/findings-list'
 import { TimelineView } from '@/components/analysis/timeline-view'
 import { NetworkGraph } from '@/components/analysis/network-graph'
+import { ExportButton } from '@/components/analysis/ExportButton'
 import { useDocuments, useFindings, useRunEngine } from '@/hooks/use-api'
 import { ENGINE_REGISTRY } from '@/lib/engines/metadata'
 import { useCaseStore } from '@/hooks/use-case-store'
@@ -74,93 +75,6 @@ export default function AnalysisPage() {
       }
       return a.name.localeCompare(b.name)
     })
-
-  // Report generation
-  const generateReportContent = (caseData: any, findings: any[], docs: any[]) => {
-    const reportLines = [
-      `# Forensic Case Intelligence Platform - Analysis Report`,
-      ``,
-      `## Case Information`,
-      `- **Case ID**: ${caseData.id}`,
-      `- **Title**: ${caseData.title || 'Untitled Case'}`,
-      `- **Created**: ${new Date(caseData.created_at).toLocaleDateString()}`,
-      `- **Report Generated**: ${new Date().toLocaleString()}`,
-      ``,
-      `## Document Corpus`,
-      `Total documents: ${docs.length}`,
-      ``,
-      ...docs.map(doc => `- ${doc.filename} (${doc.file_type})`),
-      ``,
-      `## Findings Summary`,
-      `Total findings: ${findings.length}`,
-      ``
-    ]
-
-    // Group findings by engine
-    const findingsByEngine = findings.reduce((acc, finding) => {
-      if (!acc[finding.engine]) acc[finding.engine] = []
-      acc[finding.engine].push(finding)
-      return acc
-    }, {} as Record<string, any[]>)
-
-    // Add findings by engine
-    Object.entries(findingsByEngine).forEach(([engineId, engineFindings]) => {
-      const engine = ENGINE_REGISTRY[engineId as keyof typeof ENGINE_REGISTRY]
-      reportLines.push(`### ${engine?.name || engineId} (${(engineFindings as any[]).length} findings)`)
-      reportLines.push('')
-
-      ;(engineFindings as any[]).forEach((finding: any) => {
-        reportLines.push(`#### ${finding.title}`)
-        reportLines.push(`**Severity**: ${finding.severity} | **Confidence**: ${finding.confidence}`)
-        if (finding.description) {
-          reportLines.push(finding.description)
-        }
-        reportLines.push('')
-      })
-    })
-
-    return reportLines.join('\n')
-  }
-
-  // Export functions (basic implementation - full file export needs Tauri v2 API setup)
-  const handleExportReport = async () => {
-    if (!isDesktop() || !activeCase || !findings) return
-
-    try {
-      // Generate report content
-      const reportContent = generateReportContent(activeCase, findings, documents || [])
-      console.log('Generated report content:', reportContent)
-
-      // TODO: Implement full file export with Tauri v2 APIs
-      // For now, just show that the report generation works
-      toast.success('Report generated successfully (file export needs Tauri v2 API setup)')
-    } catch (error) {
-      console.error('Export failed:', error)
-      toast.error('Failed to generate report')
-    }
-  }
-
-  const handleExportData = async () => {
-    if (!isDesktop() || !findings) return
-
-    try {
-      // Generate data export
-      const dataContent = {
-        case: activeCase,
-        findings,
-        documents: documents || [],
-        exportDate: new Date().toISOString()
-      }
-      console.log('Generated data export:', dataContent)
-
-      // TODO: Implement full file export with Tauri v2 APIs
-      // For now, just show that the data generation works
-      toast.success('Data export generated successfully (file export needs Tauri v2 API setup)')
-    } catch (error) {
-      console.error('Export failed:', error)
-      toast.error('Failed to generate data export')
-    }
-  }
 
   // Listen to Tauri events for real-time progress
   useEffect(() => {
@@ -628,7 +542,13 @@ export default function AnalysisPage() {
                 </Badge>
               </div>
 
-              <TabsList className="bg-charcoal-800 p-1 border border-charcoal-700">
+              <div className="flex items-center gap-4">
+                <ExportButton
+                  caseId={caseId}
+                  disabled={!caseId || !findings || findings.length === 0}
+                />
+
+                <TabsList className="bg-charcoal-800 p-1 border border-charcoal-700">
                 <TabsTrigger value="list" className="gap-2 data-[state=active]:bg-charcoal-700 data-[state=active]:text-charcoal-100">
                   <FileText className="h-3.5 w-3.5" />
                   List
@@ -642,6 +562,7 @@ export default function AnalysisPage() {
                   Network
                 </TabsTrigger>
               </TabsList>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto bg-charcoal-900/20">
@@ -794,27 +715,17 @@ export default function AnalysisPage() {
       <div className="w-64 shrink-0 flex flex-col gap-4">
         <h3 className="font-display text-lg text-charcoal-100">Actions & Reports</h3>
 
-        <Card className="p-4 bg-charcoal-800/50 border-charcoal-700 space-y-3">
-          <button
-            onClick={handleExportReport}
-            className="w-full flex items-center justify-between p-3 rounded-lg bg-bg-tertiary border border-charcoal-700 hover:border-bronze-500/50 transition-all group"
-          >
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-bronze-500" />
-              <span className="text-sm text-charcoal-200 group-hover:text-white">Full Report</span>
-            </div>
-            <ArrowUpRight className="h-3 w-3 text-charcoal-500" />
-          </button>
-          <button
-            onClick={handleExportData}
-            className="w-full flex items-center justify-between p-3 rounded-lg bg-bg-tertiary border border-charcoal-700 hover:border-bronze-500/50 transition-all group"
-          >
-            <div className="flex items-center gap-2">
-              <Download className="h-4 w-4 text-bronze-500" />
-              <span className="text-sm text-charcoal-200 group-hover:text-white">Export Data</span>
-            </div>
-            <ArrowUpRight className="h-3 w-3 text-charcoal-500" />
-          </button>
+        <Card className="p-4 bg-charcoal-800/50 border-charcoal-700">
+          <div className="mb-3">
+            <p className="text-xs text-charcoal-400 mb-3">
+              Export analysis findings with legal citations and audit trails.
+            </p>
+            <ExportButton
+              caseId={caseId}
+              disabled={!caseId || !findings || findings.length === 0}
+              className="w-full"
+            />
+          </div>
         </Card>
 
         <Card className="p-4 bg-gradient-to-br from-charcoal-800 to-charcoal-900 border-charcoal-700">
