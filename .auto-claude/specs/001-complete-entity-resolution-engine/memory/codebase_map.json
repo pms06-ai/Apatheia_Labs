@@ -1,0 +1,30 @@
+{
+  "discovered_files": {
+    "src/lib/nlp/name-normalizer.ts": {
+      "description": "Name normalizer utility for entity resolution. Exports: normalizeName, normalizeOrganization, getOrganizationAliases, organizationsCouldMatch, namesCouldMatch, generateNameVariants, extractFirstName, extractLastName, extractInitials, detectRoleReference, removeTitles, removePunctuation, removeMiddleNames. Includes constants: TITLES, NAME_SUFFIXES, ORGANIZATION_ALIASES, DEFAULT_OPTIONS.",
+      "category": "utility",
+      "discovered_at": "2026-01-06T02:41:56.758315+00:00"
+    },
+    "src/lib/nlp/entity-extractor.ts": {
+      "description": "Entity extractor using Compromise NLP library. Provides functions: extractEntities(), extractEntitiesFromDocuments(). Extracts people, organizations, professionals, courts with position tracking and confidence scoring. Uses name-normalizer for entity grouping. Exports entityExtractor object and types: ExtractedEntity, EntityMention, TextPosition, ExtractionResult, ExtractionOptions.",
+      "category": "nlp",
+      "discovered_at": "2026-01-06T02:42:51.720244+00:00"
+    },
+    "src/lib/nlp/fuzzy-matcher.ts": {
+      "description": "Fuzzy matcher module for entity resolution - uses fastest-levenshtein for Levenshtein distance, integrates with name-normalizer.ts for variant generation. Key exports: fuzzyMatch(), matchPersonNames(), matchOrganizationNames(), batchMatch(), findMatches(), generateLinkageProposals(). Confidence thresholds: high=0.8, medium=0.5, low=0.3.",
+      "category": "nlp",
+      "discovered_at": "2026-01-06T02:47:04.782486+00:00"
+    },
+    "supabase/migrations/20260105_add_entity_linkages.sql": {
+      "description": "Entity linkages migration includes 7 performance indexes: idx_entity_linkages_status, idx_entity_linkages_confidence (DESC), idx_entity_linkages_entity_a, idx_entity_linkages_entity_b, idx_entity_linkages_status_confidence (composite), idx_entity_linkages_algorithm, idx_entity_linkages_created (DESC). Follows schema.sql naming convention (idx_tablename_column).",
+      "category": "database",
+      "discovered_at": "2026-01-06T02:50:48.276197+00:00"
+    },
+    "src/lib/engines/entity-resolution.ts": {
+      "description": "Entity resolution engine now includes graph data structure (Graphology). Key exports: buildGraph(), EntityGraphData interface. Result.graph contains: nodes (EntityGraphNode[] with key, attributes), edges (EntityGraphEdge[] with key, source, target, attributes), and metadata (nodeCount, edgeCount, directed: false, createdAt). Graph is undirected, no self-loops allowed. Uses createEmptyGraph() for empty documents.",
+      "category": "architecture",
+      "discovered_at": "2026-01-06T03:05:07.962366+00:00"
+    }
+  },
+  "last_updated": "2026-01-06T03:05:07.962366+00:00"
+}

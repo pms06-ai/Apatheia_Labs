@@ -1,0 +1,53 @@
+{
+  "project_root": "C:\\Users\\pstep\\OneDrive\\Desktop\\apatheia-scaffold",
+  "project_type": "monorepo",
+  "services": {
+    "scripts": {
+      "name": "scripts",
+      "path": "C:\\Users\\pstep\\OneDrive\\Desktop\\apatheia-scaffold\\scripts",
+      "language": "Python",
+      "framework": null,
+      "type": "unknown",
+      "package_manager": "pip",
+      "dependencies": [
+        "better-sqlite3"
+      ],
+      "dev_dependencies": [],
+      "services": {
+        "databases": [
+          {
+            "type": "sqlite",
+            "client": "better-sqlite3"
+          }
+        ]
+      }
+    },
+    "src-tauri": {
+      "name": "src-tauri",
+      "path": "C:\\Users\\pstep\\OneDrive\\Desktop\\apatheia-scaffold\\src-tauri",
+      "language": "Rust",
+      "framework": null,
+      "type": "unknown",
+      "package_manager": "cargo",
+      "key_directories": {
+        "src": {
+          "path": "src",
+          "purpose": "Source code"
+        }
+      },
+      "entry_point": "src/main.rs"
+    }
+  },
+  "infrastructure": {
+    "ci": "GitHub Actions",
+    "ci_workflows": [
+      "security-audit.yml"
+    ],
+    "deployment": "Vercel"
+  },
+  "conventions": {
+    "js_linting": "ESLint",
+    "formatting": "Prettier",
+    "typescript": true
+  }
+}

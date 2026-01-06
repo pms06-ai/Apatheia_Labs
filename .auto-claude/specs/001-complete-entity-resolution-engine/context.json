@@ -1,0 +1,51 @@
+{
+  "task_description": "Complete Entity Resolution Engine - Implement rule-based NLP entity extraction, fuzzy matching, and interactive graph visualization with user feedback loop",
+  "scoped_services": ["frontend", "database"],
+  "files_to_modify": {
+    "frontend": [
+      "src/lib/engines/entity-resolution.ts",
+      "src/lib/engines/index.ts",
+      "src/components/analysis/network-graph.tsx",
+      "package.json"
+    ],
+    "database": [
+      "supabase/schema.sql"
+    ]
+  },
+  "files_to_create": {
+    "frontend": [
+      "src/lib/nlp/entity-extractor.ts",
+      "src/lib/nlp/fuzzy-matcher.ts",
+      "src/lib/nlp/name-normalizer.ts",
+      "src/components/analysis/entity-graph-viewer.tsx",
+      "src/components/analysis/entity-linkage-panel.tsx",
+      "src/hooks/use-entity-resolution.ts"
+    ],
+    "database": [
+      "supabase/migrations/add_entity_linkages_table.sql"
+    ]
+  },
+  "files_to_reference": [
+    "src/lib/engines/contradiction.ts",
+    "src/lib/engines/coordination.ts",
+    "src/components/analysis/network-graph.tsx",
+    "src/lib/data/index.ts",
+    "supabase/schema.sql"
+  ],
+  "patterns": {
+    "engine_pattern": "All engines export an interface, result type, and engine object with analysis methods. Engines are registered in index.ts and use either mock data or AI generation based on environment.",
+    "component_pattern": "Components use shadcn/ui patterns with Tailwind CSS. Analysis components in src/components/analysis/ follow Card-based layouts with dark theme styling.",
+    "data_fetching_pattern": "React Query hooks in src/hooks/ abstract data fetching. Data layer at src/lib/data/index.ts routes to Tauri or Supabase based on environment.",
+    "testing_pattern": "Jest + Testing Library for unit and integration tests. Test files colocated with source or in __tests__/.",
+    "database_pattern": "Supabase PostgreSQL schema with UUID primary keys, TIMESTAMPTZ timestamps, JSONB metadata. Foreign key cascades on DELETE. Migrations in supabase/migrations/."
+  },
+  "existing_implementations": {
+    "description": "Basic entity resolution engine exists using AI-based extraction. Database schema already includes entities and entity_mentions tables. Network graph visualization exists using custom SVG implementation.",
+    "relevant_files": [
+      "src/lib/engines/entity-resolution.ts",
+      "src/components/analysis/network-graph.tsx",
+      "supabase/schema.sql (lines 81-121 for entities and entity_mentions)"
+    ]
+  },
+  "created_at": "2026-01-05T20:30:00.000Z"
+}

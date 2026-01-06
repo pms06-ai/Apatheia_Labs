@@ -9,6 +9,7 @@ import { expertWitnessEngine, type ExpertAnalysisResult } from './expert-witness
 import { contradictionEngine, type ContradictionAnalysisResult } from './contradiction'
 import { narrativeEngine, type NarrativeAnalysisResult } from './narrative'
 import { coordinationEngine, type CoordinationAnalysisResult } from './coordination'
+import { entityResolutionEngine, type EntityResolutionResult } from './entity-resolution'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { type EngineId } from './metadata'
 
@@ -28,6 +29,7 @@ export type EngineResult =
   | ContradictionAnalysisResult
   | NarrativeAnalysisResult
   | CoordinationAnalysisResult
+  | EntityResolutionResult
 
 export interface EngineRunParams {
   engineId: EngineId
@@ -89,6 +91,12 @@ export async function runEngine(params: EngineRunParams): Promise<EngineRunResul
         break
       }
 
+      case 'entity_resolution': {
+        const results = await entityResolutionEngine.resolveEntities(await fetchDocs(caseId, documentIds), caseId)
+        result = results
+        break
+      }
+
       default:
         throw new Error(`Unknown engine: ${engineId}`)
     }
@@ -121,5 +129,7 @@ export async function runEngines(
 // Re-export engine executors
 export { omissionEngine } from './omission'
 export { expertWitnessEngine, ExpertWitnessEngine } from './expert-witness'
+export { entityResolutionEngine } from './entity-resolution'
 export type { OmissionAnalysisResult, OmissionFinding } from './omission'
 export type { ExpertAnalysisResult, ExpertViolation } from './expert-witness'
+export type { EntityResolutionResult, ResolvedEntity, EntityLinkageProposal, EntityGraphData } from './entity-resolution'
