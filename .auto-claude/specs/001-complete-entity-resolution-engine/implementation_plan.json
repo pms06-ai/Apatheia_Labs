@@ -290,7 +290,9 @@
             "command": "npm test -- --testPathPattern=engines/index.test",
             "expected": "runEngine('entity_resolution') executes successfully"
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Engine registry updated to include entity_resolution engine. Import, EngineResult union type, switch case, and re-exports all added. Committed as 76c3d19.",
+          "updated_at": "2026-01-06T03:07:47.517420+00:00"
         }
       ]
     },
@@ -321,7 +323,9 @@
             "command": "npm test -- --testPathPattern=use-entity-resolution",
             "expected": "Hook fetches entities, linkages, and provides mutation for feedback"
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Created React Query hook for entity resolution data fetching at src/hooks/use-entity-resolution.ts with comprehensive test suite at src/__tests__/hooks/use-entity-resolution.test.ts.\n\nHooks implemented:\n- useEntityResolution: Fetches full entity resolution results (entities, linkages, graph)\n- useResolvedEntities: Basic entities from data layer\n- useEntityLinkages: Entity linkages from resolution\n- usePendingLinkages: Filtered pending linkages for review\n- useEntityGraph: Graph data for visualization\n- useUpdateLinkageStatus: Mutation for confirm/reject with optimistic updates\n- useConfirmLinkage/useRejectLinkage: Convenience wrappers\n- useRunEntityResolution: Manual trigger mutation\n\nTest coverage includes:\n- All query hooks with proper query key patterns\n- All mutation hooks with status updates\n- Integration test for complete feedback loop workflow\n\nCommitted as 7697847.",
+          "updated_at": "2026-01-06T03:12:40.696928+00:00"
         },
         {
           "id": "subtask-6-2",
@@ -343,7 +347,9 @@
               "Confirm/Reject buttons work"
             ]
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Created EntityLinkagePanel component at src/components/analysis/entity-linkage-panel.tsx with:\n\nFeatures implemented:\n- Panel renders with proper loading, error, and empty states\n- Shows pending linkages using usePendingLinkages hook\n- Confirm/Reject buttons work via useConfirmLinkage and useRejectLinkage hooks\n- Expandable LinkageCard with match analysis details\n- Visual confidence indicator (high/medium/low) with color-coded badges\n- Entity type icons based on name patterns (court, organization, person)\n- Timeline decorative elements following findings-list.tsx pattern\n\nVerification:\n- \u2705 Panel renders\n- \u2705 Shows pending linkages  \n- \u2705 Confirm/Reject buttons work\n\nCommitted as b74b825.",
+          "updated_at": "2026-01-06T03:15:44.277646+00:00"
         },
         {
           "id": "subtask-6-3",
@@ -366,7 +372,9 @@
               "Database persists changes"
             ]
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Implemented linkage confirmation/rejection logic:\n- Added UpdateEntityLinkageInput and EntityLinkageUpdate types to DataLayer interface\n- Implemented updateEntityLinkage and getEntityLinkageUpdates methods in both Tauri and Mock data layers\n- Uses localStorage for persistence until Rust backend is implemented\n- Updated useUpdateLinkageStatus hook to call the data layer for actual persistence\n- Click confirm \u2192 status updates to 'confirmed' and persists to localStorage\n- Click reject \u2192 status updates to 'rejected' and persists to localStorage\n- Changes survive page refresh due to localStorage persistence",
+          "updated_at": "2026-01-06T14:00:57.129018+00:00"
         }
       ]
     },
@@ -400,7 +408,9 @@
               "Linkage edges show confidence scores"
             ]
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Created EntityGraphViewer component at src/components/analysis/entity-graph-viewer.tsx with:\n- SVG-based graph rendering with circular layout following NetworkGraph patterns\n- Entity nodes colored by type (professional=bronze, person=blue, organization=amber, court=red)\n- Linkage edges with confidence scores displayed as percentages\n- Confidence-based edge styling (thicker/brighter for high confidence)\n- Node click handler for entity selection\n- Visual glow effects for selected and important nodes (professionals, courts)\n- Node size varies by mention count\n- Role badges for professionals\n- Mention count badges for entities appearing multiple times\n- Empty state handling for graphs with no entities\n- Legend showing entity type colors\n- Graph statistics display (entity count, linkage count)\n- Animated entry using framer-motion\n\nVerification checklist:\n\u2705 Graph renders (SVG with nodes and edges)\n\u2705 Entity nodes visible (colored by type with labels)\n\u2705 Linkage edges show confidence scores (percentage labels on edges)\n\nCommitted as 5106b77.",
+          "updated_at": "2026-01-06T14:05:09.522621+00:00"
         },
         {
           "id": "subtask-7-2",
@@ -422,7 +432,9 @@
               "Shows all document mentions"
             ]
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Added entity detail panel with: animated slide-in/out, entity name/type/confidence display, role field, all aliases as tags, document mentions list with icons, total mention count summary. Commit: a6b166d",
+          "updated_at": "2026-01-06T14:08:48.702589+00:00"
         },
         {
           "id": "subtask-7-3",
@@ -444,7 +456,9 @@
               "Color coding matches confidence levels"
             ]
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Implemented confidence-based edge styling with:\n- Stroke width differentiation: 3px (high >80%), 1.8px (medium 50-80%), 1px (low <50%)\n- Opacity variation: 85% (high), 50% (medium), 25% (low)\n- Glow filter for high-confidence edges\n- Three distinct gradients for each confidence level\n- Added edge confidence legend to help users understand visual encoding\n- Color coding: bronze for high confidence, amber for medium, gray for low",
+          "updated_at": "2026-01-06T14:11:28.565565+00:00"
         }
       ]
     },
@@ -480,7 +494,9 @@
               "Verify database persists user feedback"
             ]
           },
-          "status": "pending"
+          "status": "completed",
+          "notes": "Created comprehensive E2E test suite at src/__tests__/e2e/entity-resolution-workflow.test.ts covering:\n1. Document upload & preparation with multiple entity references\n2. Entity resolution engine execution verification\n3. Entity extraction with variations (5+ name variations per entity)\n4. Fuzzy matching linkage proposals with confidence scores\n5. UI linkage confirmation via hooks (useUpdateLinkageStatus, useConfirmLinkage, useRejectLinkage)\n6. Graph updates with confirmed linkages\n7. Database persistence verification (localStorage mock)\n\nAlso includes complete workflow integration test, multi-document tracking, data consistency, and performance verification tests.\n\nCommitted as 9566358.",
+          "updated_at": "2026-01-06T14:15:41.784258+00:00"
         },
         {
           "id": "subtask-8-2",
@@ -686,9 +702,9 @@
     }
   },
   "qa_signoff": null,
-  "last_updated": "2026-01-06T03:05:30.833949+00:00",
+  "last_updated": "2026-01-06T14:15:41.784258+00:00",
   "status": "in_progress",
   "planStatus": "in_progress",
-  "updated_at": "2026-01-06T02:33:48.127Z",
-  "recoveryNote": "Task recovered from stuck state at 2026-01-06T02:33:48.127Z"
+  "updated_at": "2026-01-06T13:57:07.348Z",
+  "recoveryNote": "Task recovered from stuck state at 2026-01-06T13:57:07.348Z"
 }
