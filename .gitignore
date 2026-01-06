@@ -62,3 +62,8 @@ Thumbs.db
 
 # Auto Claude data directory
 .auto-claude/
+.worktrees/
+.auto-claude-status
+.claude_settings.json
+complexity_assessment.json
+project_index.json
