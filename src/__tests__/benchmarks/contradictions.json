@@ -1,0 +1,445 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Benchmark dataset containing documents with verified contradictions for testing the contradiction detection engine. Each document pair or set has known ground truth labels for calculating precision, recall, and F1 scores.",
+  "version": "1.0.0",
+  "documents": [
+    {
+      "id": "contradiction-doc-001",
+      "case_id": "benchmark-case-001",
+      "filename": "witness-statement-time-contradiction.pdf",
+      "file_type": "application/pdf",
+      "file_size": 102400,
+      "storage_path": "/benchmarks/contradiction-doc-001.pdf",
+      "hash_sha256": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+      "acquisition_date": "2024-01-15T10:00:00Z",
+      "doc_type": "witness_statement",
+      "source_entity": "witness-alice-thompson",
+      "status": "completed",
+      "extracted_text": "WITNESS STATEMENT OF ALICE THOMPSON\n\nI, Alice Thompson, state the following:\n\nOn the evening of January 10, 2024, I observed Mr. Smith arrive at the property at approximately 7:30 PM. He was alone and appeared calm. I watched him enter through the front door.\n\nI remained at my window for the next two hours. Mr. Smith did not leave the property during this time. I am certain of these facts.\n\nSigned: Alice Thompson\nDate: January 15, 2024",
+      "page_count": 2,
+      "metadata": {},
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-002",
+      "case_id": "benchmark-case-001",
+      "filename": "witness-statement-time-contradiction-2.pdf",
+      "file_type": "application/pdf",
+      "file_size": 98000,
+      "storage_path": "/benchmarks/contradiction-doc-002.pdf",
+      "hash_sha256": "b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef1234567",
+      "acquisition_date": "2024-01-16T14:00:00Z",
+      "doc_type": "witness_statement",
+      "source_entity": "witness-bob-carter",
+      "status": "completed",
+      "extracted_text": "WITNESS STATEMENT OF BOB CARTER\n\nI, Bob Carter, make the following statement:\n\nOn January 10, 2024, I met with Mr. Smith at The Crown pub at 8:00 PM. We had several drinks together and discussed business matters. Mr. Smith remained at the pub until approximately 10:30 PM when he left alone.\n\nI am prepared to testify to these facts in court.\n\nSigned: Bob Carter\nDate: January 16, 2024",
+      "page_count": 1,
+      "metadata": {},
+      "created_at": "2024-01-16T14:00:00Z",
+      "updated_at": "2024-01-16T14:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-003",
+      "case_id": "benchmark-case-001",
+      "filename": "police-report-location.pdf",
+      "file_type": "application/pdf",
+      "file_size": 256000,
+      "storage_path": "/benchmarks/contradiction-doc-003.pdf",
+      "hash_sha256": "c3d4e5f6789012345678901234567890abcdef1234567890abcdef12345678",
+      "acquisition_date": "2024-01-20T09:00:00Z",
+      "doc_type": "police_bundle",
+      "source_entity": "metropolitan-police",
+      "status": "completed",
+      "extracted_text": "POLICE INVESTIGATION REPORT\n\nCase Reference: MET/2024/00456\nOfficer: PC Sarah Johnson\n\nAt 9:45 PM on January 10, 2024, emergency services responded to a call from 42 Oak Street. Upon arrival at 10:02 PM, officers found Mr. Smith unconscious in the living room of the property.\n\nCCTV footage from the neighboring property confirms Mr. Smith entered the house at 9:30 PM and did not leave before our arrival.\n\nThe investigation is ongoing.",
+      "page_count": 5,
+      "metadata": {},
+      "created_at": "2024-01-20T09:00:00Z",
+      "updated_at": "2024-01-20T09:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-004",
+      "case_id": "benchmark-case-002",
+      "filename": "expert-report-medical-findings.pdf",
+      "file_type": "application/pdf",
+      "file_size": 512000,
+      "storage_path": "/benchmarks/contradiction-doc-004.pdf",
+      "hash_sha256": "d4e5f6789012345678901234567890abcdef1234567890abcdef123456789",
+      "acquisition_date": "2024-02-01T11:00:00Z",
+      "doc_type": "expert_report",
+      "source_entity": "dr-emily-watson",
+      "status": "completed",
+      "extracted_text": "MEDICAL EXPERT REPORT\n\nPrepared by: Dr. Emily Watson, MB ChB, MRCP\nDate: February 1, 2024\n\nFINDINGS:\n\nBased on my examination of the patient records and physical examination on January 25, 2024, I conclude that the injuries observed are consistent with a single fall from standing height.\n\nThe bruising pattern shows no indication of repeated trauma. The injuries are approximately 48-72 hours old at the time of examination.\n\nThere is no medical evidence to support allegations of prolonged abuse.",
+      "page_count": 12,
+      "metadata": {},
+      "created_at": "2024-02-01T11:00:00Z",
+      "updated_at": "2024-02-01T11:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-005",
+      "case_id": "benchmark-case-002",
+      "filename": "hospital-records-admission.pdf",
+      "file_type": "application/pdf",
+      "file_size": 384000,
+      "storage_path": "/benchmarks/contradiction-doc-005.pdf",
+      "hash_sha256": "e5f6789012345678901234567890abcdef1234567890abcdef1234567890",
+      "acquisition_date": "2024-01-23T08:00:00Z",
+      "doc_type": "other",
+      "source_entity": "city-general-hospital",
+      "status": "completed",
+      "extracted_text": "HOSPITAL ADMISSION RECORD\n\nPatient ID: CGH-2024-00892\nAdmission Date: January 22, 2024, 3:45 PM\n\nPRESENTING COMPLAINT:\nPatient presented with multiple bruises in varying stages of healing. Nursing staff noted discoloration patterns consistent with injuries sustained over a period of 2-3 weeks.\n\nINITIAL ASSESSMENT:\nOldest bruises appear to be approximately 3 weeks old. Newer injuries observed on upper arms and torso.\n\nPatient appeared anxious and reluctant to discuss cause of injuries.",
+      "page_count": 8,
+      "metadata": {},
+      "created_at": "2024-01-23T08:00:00Z",
+      "updated_at": "2024-01-23T08:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-006",
+      "case_id": "benchmark-case-003",
+      "filename": "social-worker-assessment-jan.pdf",
+      "file_type": "application/pdf",
+      "file_size": 445000,
+      "storage_path": "/benchmarks/contradiction-doc-006.pdf",
+      "hash_sha256": "f6789012345678901234567890abcdef1234567890abcdef12345678901",
+      "acquisition_date": "2024-01-30T16:00:00Z",
+      "doc_type": "social_work_assessment",
+      "source_entity": "social-worker-james-miller",
+      "status": "completed",
+      "extracted_text": "SOCIAL WORK ASSESSMENT\n\nSocial Worker: James Miller\nDate of Visit: January 28, 2024\nCase Reference: SW/2024/1234\n\nHOME CONDITIONS:\nThe property was found to be in excellent condition. All areas were clean and well-maintained. The children's bedrooms were appropriately furnished with adequate space.\n\nCHILD WELFARE:\nBoth children appeared healthy, well-nourished, and appropriately dressed. They demonstrated positive attachment to their father.\n\nRECOMMENDATION:\nNo concerns identified. Contact arrangements should continue as currently ordered.",
+      "page_count": 15,
+      "metadata": {},
+      "created_at": "2024-01-30T16:00:00Z",
+      "updated_at": "2024-01-30T16:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-007",
+      "case_id": "benchmark-case-003",
+      "filename": "social-worker-assessment-feb.pdf",
+      "file_type": "application/pdf",
+      "file_size": 478000,
+      "storage_path": "/benchmarks/contradiction-doc-007.pdf",
+      "hash_sha256": "07890123456789012345678901234567890abcdef1234567890abcdef12",
+      "acquisition_date": "2024-02-20T14:00:00Z",
+      "doc_type": "social_work_assessment",
+      "source_entity": "social-worker-james-miller",
+      "status": "completed",
+      "extracted_text": "SOCIAL WORK ASSESSMENT - FOLLOW UP\n\nSocial Worker: James Miller\nDate of Visit: February 18, 2024\nCase Reference: SW/2024/1234\n\nHOME CONDITIONS:\nSerious concerns were noted regarding the state of the property. The home was found to be unclean with evidence of poor hygiene standards. Children's bedrooms were cluttered and inadequate.\n\nCHILD WELFARE:\nThe children appeared tired and anxious. Concerns noted about their emotional wellbeing.\n\nRECOMMENDATION:\nImmediate safeguarding review recommended. Contact arrangements should be suspended pending further assessment.",
+      "page_count": 18,
+      "metadata": {},
+      "created_at": "2024-02-20T14:00:00Z",
+      "updated_at": "2024-02-20T14:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-008",
+      "case_id": "benchmark-case-004",
+      "filename": "transcript-hearing-morning.pdf",
+      "file_type": "application/pdf",
+      "file_size": 890000,
+      "storage_path": "/benchmarks/contradiction-doc-008.pdf",
+      "hash_sha256": "18901234567890123456789012345678901234567890abcdef1234567890",
+      "acquisition_date": "2024-03-01T09:00:00Z",
+      "doc_type": "transcript",
+      "source_entity": "family-court",
+      "status": "completed",
+      "extracted_text": "COURT TRANSCRIPT\n\nCase: FC/2024/5678\nDate: March 1, 2024 (Morning Session)\nJudge: Her Honour Judge Patricia Morgan\n\nJUDGE: Mr. Williams, can you confirm your employment status?\n\nMR. WILLIAMS: Yes, Your Honour. I have been continuously employed at Henderson Engineering since 2018. I have not had any gaps in employment.\n\nJUDGE: And your annual salary?\n\nMR. WILLIAMS: Approximately forty-five thousand pounds per year, Your Honour.\n\nJUDGE: Thank you. The court will take this into consideration.",
+      "page_count": 45,
+      "metadata": {},
+      "created_at": "2024-03-01T09:00:00Z",
+      "updated_at": "2024-03-01T09:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-009",
+      "case_id": "benchmark-case-004",
+      "filename": "employer-letter-williams.pdf",
+      "file_type": "application/pdf",
+      "file_size": 65000,
+      "storage_path": "/benchmarks/contradiction-doc-009.pdf",
+      "hash_sha256": "29012345678901234567890123456789012345678901234567890abcdef1",
+      "acquisition_date": "2024-02-25T10:00:00Z",
+      "doc_type": "disclosure",
+      "source_entity": "henderson-engineering",
+      "status": "completed",
+      "extracted_text": "HENDERSON ENGINEERING LTD\n\nHR Department\nDate: February 25, 2024\n\nTO WHOM IT MAY CONCERN:\n\nRe: Employment Verification - David Williams\n\nWe confirm that Mr. David Williams was employed by Henderson Engineering from March 2018 until October 2022, when his employment was terminated due to redundancy.\n\nMr. Williams was subsequently re-employed in a part-time capacity in June 2023, working 20 hours per week at a salary of twenty-two thousand pounds per annum (pro-rata).\n\nYours faithfully,\nSarah Henderson, HR Director",
+      "page_count": 1,
+      "metadata": {},
+      "created_at": "2024-02-25T10:00:00Z",
+      "updated_at": "2024-02-25T10:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-010",
+      "case_id": "benchmark-case-005",
+      "filename": "witness-statement-weather.pdf",
+      "file_type": "application/pdf",
+      "file_size": 78000,
+      "storage_path": "/benchmarks/contradiction-doc-010.pdf",
+      "hash_sha256": "30123456789012345678901234567890123456789012345678901234567",
+      "acquisition_date": "2024-01-18T11:00:00Z",
+      "doc_type": "witness_statement",
+      "source_entity": "witness-carol-davis",
+      "status": "completed",
+      "extracted_text": "WITNESS STATEMENT\n\nI, Carol Davis, state:\n\nOn the afternoon of January 5, 2024, I was walking my dog in Victoria Park. It was a bright, sunny day with clear skies. I clearly saw Mr. Roberts and Ms. Taylor arguing near the bandstand at approximately 2:30 PM.\n\nThe argument was heated and lasted several minutes. I could hear shouting from where I stood, approximately 50 meters away.\n\nSigned: Carol Davis\nDate: January 18, 2024",
+      "page_count": 2,
+      "metadata": {},
+      "created_at": "2024-01-18T11:00:00Z",
+      "updated_at": "2024-01-18T11:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-011",
+      "case_id": "benchmark-case-005",
+      "filename": "meteorological-report.pdf",
+      "file_type": "application/pdf",
+      "file_size": 124000,
+      "storage_path": "/benchmarks/contradiction-doc-011.pdf",
+      "hash_sha256": "41234567890123456789012345678901234567890123456789012345678",
+      "acquisition_date": "2024-01-20T09:00:00Z",
+      "doc_type": "other",
+      "source_entity": "met-office",
+      "status": "completed",
+      "extracted_text": "MET OFFICE WEATHER REPORT\n\nLocation: Victoria Park Area\nDate: January 5, 2024\n\nWEATHER CONDITIONS:\n\n12:00 - 15:00: Heavy rainfall throughout the afternoon. Visibility reduced to approximately 100 meters due to persistent rain and low cloud cover.\n\nPrecipitation: 18mm recorded between 13:00 and 16:00.\n\nSunshine hours: 0.0\n\nNotes: Weather warnings were in effect for the area. Met Office issued advisory for flooding.",
+      "page_count": 3,
+      "metadata": {},
+      "created_at": "2024-01-20T09:00:00Z",
+      "updated_at": "2024-01-20T09:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-012",
+      "case_id": "benchmark-case-006",
+      "filename": "police-interview-suspect.pdf",
+      "file_type": "application/pdf",
+      "file_size": 456000,
+      "storage_path": "/benchmarks/contradiction-doc-012.pdf",
+      "hash_sha256": "52345678901234567890123456789012345678901234567890123456789",
+      "acquisition_date": "2024-02-10T14:00:00Z",
+      "doc_type": "police_bundle",
+      "source_entity": "metropolitan-police",
+      "status": "completed",
+      "extracted_text": "POLICE INTERVIEW TRANSCRIPT\n\nInterview of: Thomas Green\nDate: February 10, 2024\nOfficers Present: DC Brown, DC Taylor\n\nDC BROWN: Mr. Green, can you tell us about your relationship with the victim?\n\nTHOMAS GREEN: I had never met her before that night. She was a complete stranger to me. I was just walking past when I heard someone call for help.\n\nDC BROWN: So you had no prior contact whatsoever?\n\nTHOMAS GREEN: None at all. I had never seen her before in my life.",
+      "page_count": 22,
+      "metadata": {},
+      "created_at": "2024-02-10T14:00:00Z",
+      "updated_at": "2024-02-10T14:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-013",
+      "case_id": "benchmark-case-006",
+      "filename": "phone-records-analysis.pdf",
+      "file_type": "application/pdf",
+      "file_size": 234000,
+      "storage_path": "/benchmarks/contradiction-doc-013.pdf",
+      "hash_sha256": "63456789012345678901234567890123456789012345678901234567890",
+      "acquisition_date": "2024-02-15T10:00:00Z",
+      "doc_type": "disclosure",
+      "source_entity": "digital-forensics-unit",
+      "status": "completed",
+      "extracted_text": "DIGITAL FORENSICS REPORT\n\nAnalysis of Mobile Phone Records\nSubject: Thomas Green\nDate: February 15, 2024\n\nFINDINGS:\n\nAnalysis of call records shows 47 calls and 312 text messages exchanged between Thomas Green's mobile phone and the victim's phone number over a period of 6 months prior to the incident.\n\nThe messaging pattern indicates a close relationship. Several messages reference previous in-person meetings.\n\nLast contact prior to incident: February 8, 2024, 11:32 PM",
+      "page_count": 15,
+      "metadata": {},
+      "created_at": "2024-02-15T10:00:00Z",
+      "updated_at": "2024-02-15T10:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-014",
+      "case_id": "benchmark-case-007",
+      "filename": "expert-child-psychology.pdf",
+      "file_type": "application/pdf",
+      "file_size": 567000,
+      "storage_path": "/benchmarks/contradiction-doc-014.pdf",
+      "hash_sha256": "74567890123456789012345678901234567890123456789012345678901",
+      "acquisition_date": "2024-03-05T09:00:00Z",
+      "doc_type": "expert_report",
+      "source_entity": "dr-helen-burke",
+      "status": "completed",
+      "extracted_text": "EXPERT PSYCHOLOGICAL REPORT\n\nPrepared by: Dr. Helen Burke, DClinPsy\nDate: March 5, 2024\n\nASSESSMENT OF CHILD A\n\nI conducted three assessment sessions with Child A over two weeks. My assessment included validated psychological instruments and clinical observation.\n\nCONCLUSIONS:\n\nChild A demonstrates secure attachment to both parents. There are no indicators of anxiety, trauma, or emotional disturbance.\n\nChild A expressed no preference between parents and spoke positively about time spent with each parent.\n\nI find no psychological evidence to support restricting contact with either parent.",
+      "page_count": 25,
+      "metadata": {},
+      "created_at": "2024-03-05T09:00:00Z",
+      "updated_at": "2024-03-05T09:00:00Z"
+    },
+    {
+      "id": "contradiction-doc-015",
+      "case_id": "benchmark-case-007",
+      "filename": "cafcass-report.pdf",
+      "file_type": "application/pdf",
+      "file_size": 489000,
+      "storage_path": "/benchmarks/contradiction-doc-015.pdf",
+      "hash_sha256": "85678901234567890123456789012345678901234567890123456789012",
+      "acquisition_date": "2024-02-28T16:00:00Z",
+      "doc_type": "social_work_assessment",
+      "source_entity": "cafcass",
+      "status": "completed",
+      "extracted_text": "CAFCASS REPORT\n\nChildren and Family Court Advisory and Support Service\nCase Reference: CAF/2024/7890\nDate: February 28, 2024\n\nOBSERVATIONS:\n\nDuring supervised contact sessions, Child A displayed significant anxiety when the father arrived. Child A physically withdrew and refused to engage.\n\nChild A explicitly stated a preference to live solely with their mother and expressed fear about overnight stays with their father.\n\nRECOMMENDATION:\nContact with father should be limited to supervised day visits only until further assessment.",
+      "page_count": 20,
+      "metadata": {},
+      "created_at": "2024-02-28T16:00:00Z",
+      "updated_at": "2024-02-28T16:00:00Z"
+    }
+  ],
+  "ground_truth": {
+    "description": "Verified contradictions identified in the benchmark documents for validation testing",
+    "contradiction_pairs": [
+      {
+        "id": "contradiction-001",
+        "type": "temporal",
+        "severity": "critical",
+        "document_ids": ["contradiction-doc-001", "contradiction-doc-002", "contradiction-doc-003"],
+        "description": "Mr. Smith's location at 7:30-9:30 PM on January 10, 2024 - three conflicting accounts",
+        "claims": [
+          {
+            "document_id": "contradiction-doc-001",
+            "claim": "Mr. Smith arrived at property at 7:30 PM and did not leave for 2 hours",
+            "source": "Alice Thompson witness statement"
+          },
+          {
+            "document_id": "contradiction-doc-002",
+            "claim": "Mr. Smith was at The Crown pub from 8:00 PM to 10:30 PM",
+            "source": "Bob Carter witness statement"
+          },
+          {
+            "document_id": "contradiction-doc-003",
+            "claim": "CCTV shows Mr. Smith entered house at 9:30 PM",
+            "source": "Police investigation report"
+          }
+        ],
+        "expected_detection": true
+      },
+      {
+        "id": "contradiction-002",
+        "type": "direct",
+        "severity": "high",
+        "document_ids": ["contradiction-doc-004", "contradiction-doc-005"],
+        "description": "Age and pattern of injuries - single fall vs. multiple injuries over weeks",
+        "claims": [
+          {
+            "document_id": "contradiction-doc-004",
+            "claim": "Injuries consistent with single fall, 48-72 hours old, no indication of repeated trauma",
+            "source": "Dr. Emily Watson expert report"
+          },
+          {
+            "document_id": "contradiction-doc-005",
+            "claim": "Multiple bruises in varying stages of healing over 2-3 weeks",
+            "source": "Hospital admission record"
+          }
+        ],
+        "expected_detection": true
+      },
+      {
+        "id": "contradiction-003",
+        "type": "direct",
+        "severity": "critical",
+        "document_ids": ["contradiction-doc-006", "contradiction-doc-007"],
+        "description": "Same social worker, same property, radically different assessments within 3 weeks",
+        "claims": [
+          {
+            "document_id": "contradiction-doc-006",
+            "claim": "Property in excellent condition, children healthy and positive attachment, no concerns",
+            "source": "Social worker James Miller, January 28, 2024"
+          },
+          {
+            "document_id": "contradiction-doc-007",
+            "claim": "Serious concerns about property, unclean, children tired and anxious, safeguarding review needed",
+            "source": "Social worker James Miller, February 18, 2024"
+          }
+        ],
+        "expected_detection": true,
+        "notes": "Same assessor, 3-week interval, no explanation for drastic change"
+      },
+      {
+        "id": "contradiction-004",
+        "type": "quantitative",
+        "severity": "high",
+        "document_ids": ["contradiction-doc-008", "contradiction-doc-009"],
+        "description": "Employment status and salary contradictions",
+        "claims": [
+          {
+            "document_id": "contradiction-doc-008",
+            "claim": "Continuously employed since 2018, salary 45,000 per year",
+            "source": "Mr. Williams court testimony"
+          },
+          {
+            "document_id": "contradiction-doc-009",
+            "claim": "Terminated October 2022, re-employed part-time June 2023, salary 22,000",
+            "source": "Henderson Engineering HR letter"
+          }
+        ],
+        "expected_detection": true
+      },
+      {
+        "id": "contradiction-005",
+        "type": "direct",
+        "severity": "medium",
+        "document_ids": ["contradiction-doc-010", "contradiction-doc-011"],
+        "description": "Weather conditions on January 5, 2024",
+        "claims": [
+          {
+            "document_id": "contradiction-doc-010",
+            "claim": "Bright, sunny day with clear skies",
+            "source": "Carol Davis witness statement"
+          },
+          {
+            "document_id": "contradiction-doc-011",
+            "claim": "Heavy rainfall, 0.0 sunshine hours, visibility 100m",
+            "source": "Met Office weather report"
+          }
+        ],
+        "expected_detection": true
+      },
+      {
+        "id": "contradiction-006",
+        "type": "direct",
+        "severity": "critical",
+        "document_ids": ["contradiction-doc-012", "contradiction-doc-013"],
+        "description": "Prior relationship between Thomas Green and victim",
+        "claims": [
+          {
+            "document_id": "contradiction-doc-012",
+            "claim": "Never met victim before, complete stranger, no prior contact",
+            "source": "Thomas Green police interview"
+          },
+          {
+            "document_id": "contradiction-doc-013",
+            "claim": "47 calls and 312 texts over 6 months, pattern indicates close relationship",
+            "source": "Digital forensics phone records"
+          }
+        ],
+        "expected_detection": true
+      },
+      {
+        "id": "contradiction-007",
+        "type": "direct",
+        "severity": "high",
+        "document_ids": ["contradiction-doc-014", "contradiction-doc-015"],
+        "description": "Child A's emotional state and attachment patterns",
+        "claims": [
+          {
+            "document_id": "contradiction-doc-014",
+            "claim": "Secure attachment to both parents, no anxiety, spoke positively about both",
+            "source": "Dr. Helen Burke expert psychological report"
+          },
+          {
+            "document_id": "contradiction-doc-015",
+            "claim": "Significant anxiety with father, physical withdrawal, expressed fear",
+            "source": "CAFCASS report"
+          }
+        ],
+        "expected_detection": true,
+        "notes": "Reports filed one week apart - concerning discrepancy"
+      }
+    ]
+  },
+  "metadata": {
+    "created_at": "2024-03-15T00:00:00Z",
+    "created_by": "benchmark-suite",
+    "total_documents": 15,
+    "total_contradiction_pairs": 7,
+    "contradiction_types": {
+      "temporal": 1,
+      "direct": 5,
+      "quantitative": 1
+    },
+    "severity_distribution": {
+      "critical": 3,
+      "high": 3,
+      "medium": 1
+    }
+  }
+}

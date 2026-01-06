@@ -1,0 +1,384 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "description": "Benchmark dataset containing edge case documents for testing engine robustness. Includes empty documents, special characters, unicode, very long text, malformed content, and boundary conditions.",
+  "version": "1.0.0",
+  "documents": [
+    {
+      "id": "edge-empty-001",
+      "case_id": "edge-case-001",
+      "filename": "empty-document.pdf",
+      "file_type": "application/pdf",
+      "file_size": 0,
+      "storage_path": "/benchmarks/edge-empty-001.pdf",
+      "hash_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "acquisition_date": "2024-01-01T00:00:00Z",
+      "doc_type": "other",
+      "source_entity": null,
+      "status": "completed",
+      "extracted_text": "",
+      "page_count": 0,
+      "metadata": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "edge-whitespace-002",
+      "case_id": "edge-case-001",
+      "filename": "whitespace-only.pdf",
+      "file_type": "application/pdf",
+      "file_size": 100,
+      "storage_path": "/benchmarks/edge-whitespace-002.pdf",
+      "hash_sha256": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+      "acquisition_date": "2024-01-01T00:00:00Z",
+      "doc_type": "other",
+      "source_entity": null,
+      "status": "completed",
+      "extracted_text": "   \n\n\t\t   \n   \n\n   ",
+      "page_count": 1,
+      "metadata": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "edge-null-003",
+      "case_id": "edge-case-001",
+      "filename": "null-text.pdf",
+      "file_type": "application/pdf",
+      "file_size": null,
+      "storage_path": "/benchmarks/edge-null-003.pdf",
+      "hash_sha256": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1",
+      "acquisition_date": "2024-01-01T00:00:00Z",
+      "doc_type": null,
+      "source_entity": null,
+      "status": "completed",
+      "extracted_text": null,
+      "page_count": null,
+      "metadata": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "edge-unicode-004",
+      "case_id": "edge-case-002",
+      "filename": "unicode-characters.pdf",
+      "file_type": "application/pdf",
+      "file_size": 25000,
+      "storage_path": "/benchmarks/edge-unicode-004.pdf",
+      "hash_sha256": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "acquisition_date": "2024-01-15T10:00:00Z",
+      "doc_type": "witness_statement",
+      "source_entity": "witness-international",
+      "status": "completed",
+      "extracted_text": "WITNESS STATEMENT - INTERNATIONAL DOCUMENT\n\nFrench: Je confirme que j'ai vu M. Dupont a 14h30. C'etait tres clair.\n\nGerman: Ich bestatige, dass Herr Muller um 15:00 Uhr anwesend war.\n\nSpanish: Confirmo que vi al Sr. Garcia a las 16:00. Era muy claro.\n\nChinese: \n\nJapanese: \n\nArabic: \n\nRussian: \n\nGreek: \n\nHebrew: \n\nKorean: \n\nThai: \n\nPolish: Potwierdzam, ze widzialem pana Kowalskiego o godzinie 17:00.\n\nCzech: Potvrzuji, ze jsem videl pana Novaka v 18:00.\n\nHungarian: Megerositem, hogy lattam Kovacs urat 19:00-kor.\n\nMixed: The defendant Mr. O'Brien-Mueller said \"I didn't do it!\" at cafe resume.\n\nSigned: Jean-Pierre O'Connor-Yamamoto\nDate: January 15, 2024",
+      "page_count": 3,
+      "metadata": {},
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "edge-special-chars-005",
+      "case_id": "edge-case-002",
+      "filename": "special-characters.pdf",
+      "file_type": "application/pdf",
+      "file_size": 18000,
+      "storage_path": "/benchmarks/edge-special-chars-005.pdf",
+      "hash_sha256": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+      "acquisition_date": "2024-01-15T10:00:00Z",
+      "doc_type": "other",
+      "source_entity": "test-entity",
+      "status": "completed",
+      "extracted_text": "DOCUMENT WITH SPECIAL CHARACTERS\n\nMathematical symbols: + - * / = < > <= >= != % ^ & | ~ \\ @ # $ \n\nCurrency: $100.00 100.00 EUR 100.00 GBP 100.00 JPY 100\n\nPunctuation: Hello! How are you? I'm fine, thanks... (well, mostly).\n\nQuotes: He said \"Hello\" and she replied 'Hi there'\n\nBrackets: [square] {curly} (round) <angle>\n\nSlashes: forward/slash back\\slash\n\nDashes: hyphen-ated em-dash en-dash\n\nAmpersand: Smith & Jones, AT&T, R&D\n\nPercent: 50% increase, 100% complete\n\nAsterisks: *important* **very important** ***critical***\n\nUnderscores: file_name variable_name\n\nCarets and tildes: 2^10 = 1024, ~approximately\n\nPipes: option1 | option2 | option3\n\nBackticks: `code` ``more code``\n\nHTML entities: &amp; &lt; &gt; &nbsp;\n\nLine breaks:\nNew line here.\n\nTabs:\tTabbed\tcontent\there.",
+      "page_count": 2,
+      "metadata": {},
+      "created_at": "2024-01-15T10:00:00Z",
+      "updated_at": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "edge-long-text-006",
+      "case_id": "edge-case-003",
+      "filename": "very-long-document.pdf",
+      "file_type": "application/pdf",
+      "file_size": 5000000,
+      "storage_path": "/benchmarks/edge-long-text-006.pdf",
+      "hash_sha256": "e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+      "acquisition_date": "2024-02-01T09:00:00Z",
+      "doc_type": "police_bundle",
+      "source_entity": "metropolitan-police",
+      "status": "completed",
+      "extracted_text": "COMPREHENSIVE POLICE INVESTIGATION REPORT\n\nThis document contains an extensive investigation report with multiple sections, appendices, and detailed analysis. The purpose is to test the engines' ability to handle large volumes of text.\n\nSECTION 1: EXECUTIVE SUMMARY\nThis investigation was conducted over a period of six months. The investigation involved interviews with over 50 witnesses, review of thousands of documents, and analysis of digital evidence. The findings are summarized in this comprehensive report.\n\nSECTION 2: BACKGROUND\nThe incident occurred on January 1, 2024. Initial reports were received at 10:00 AM. Officers were dispatched immediately. Upon arrival, the scene was secured and evidence collection began. The primary witness, Mr. John Smith, provided an initial statement. His account was consistent with the physical evidence found at the scene.\n\nSECTION 3: WITNESS STATEMENTS\nWitness 1 (John Smith): \"I was walking down High Street when I observed the incident. The time was approximately 10:00 AM. I immediately called emergency services.\"\n\nWitness 2 (Jane Doe): \"I was in my car stopped at the traffic lights. I saw everything clearly. My account is consistent with Mr. Smith's statement.\"\n\nWitness 3 (Robert Johnson): \"I was inside the nearby shop but came outside when I heard the commotion. I can confirm the timeline provided by other witnesses.\"\n\nWitness 4 (Sarah Williams): \"I work at the cafe across the street. I had a clear view of the incident. Everything happened exactly as the other witnesses described.\"\n\nWitness 5 (Michael Brown): \"I was jogging in the area. I stopped when I saw the incident. My observations match those of the other witnesses.\"\n\nSECTION 4: PHYSICAL EVIDENCE\nEvidence Item 1: Photographs of the scene (100 images)\nEvidence Item 2: CCTV footage (4 hours)\nEvidence Item 3: Forensic samples (25 items)\nEvidence Item 4: Witness contact information\nEvidence Item 5: Vehicle registration data\n\nSECTION 5: DIGITAL EVIDENCE\nPhone records were obtained showing communications between relevant parties. Email correspondence was reviewed. Social media activity was analyzed. GPS data from mobile devices was extracted and analyzed.\n\nSECTION 6: TIMELINE OF EVENTS\n09:00 - Normal morning activity observed\n09:30 - First suspicious activity noted\n10:00 - Incident occurs\n10:02 - Emergency services called\n10:15 - First responders arrive\n10:30 - Scene secured\n11:00 - Evidence collection begins\n12:00 - Initial witness statements taken\n\nSECTION 7: ANALYSIS\nBased on all evidence collected, the timeline of events is consistent across all witness accounts. The physical evidence supports the witness statements. Digital evidence corroborates the timeline.\n\nSECTION 8: CONCLUSIONS\nThe investigation has been thorough and comprehensive. All evidence has been properly collected and analyzed. The findings support a clear understanding of the events that occurred.\n\nAPPENDIX A: FULL WITNESS STATEMENTS (1000+ pages)\nAPPENDIX B: EVIDENCE PHOTOGRAPHS (100 images)\nAPPENDIX C: FORENSIC REPORTS (50 pages)\nAPPENDIX D: DIGITAL EVIDENCE ANALYSIS (200 pages)\nAPPENDIX E: EXPERT OPINIONS (75 pages)\n\n[This section would normally contain thousands of additional lines of detailed content, formatted documentation, evidence descriptions, and procedural records. For benchmark testing purposes, this represents a document that exceeds typical processing limits.]\n\nEND OF REPORT\n\nPrepared by: Detective Inspector Sarah Anderson\nDate: February 1, 2024\nCase Reference: MET/2024/LONGDOC/001",
+      "page_count": 500,
+      "metadata": {
+        "word_count": 150000,
+        "sections": 8,
+        "appendices": 5
+      },
+      "created_at": "2024-02-01T09:00:00Z",
+      "updated_at": "2024-02-01T09:00:00Z"
+    },
+    {
+      "id": "edge-single-word-007",
+      "case_id": "edge-case-003",
+      "filename": "single-word.pdf",
+      "file_type": "application/pdf",
+      "file_size": 500,
+      "storage_path": "/benchmarks/edge-single-word-007.pdf",
+      "hash_sha256": "f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+      "acquisition_date": "2024-01-01T00:00:00Z",
+      "doc_type": "other",
+      "source_entity": null,
+      "status": "completed",
+      "extracted_text": "Confirmed.",
+      "page_count": 1,
+      "metadata": {},
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "edge-numbers-only-008",
+      "case_id": "edge-case-004",
+      "filename": "numbers-document.pdf",
+      "file_type": "application/pdf",
+      "file_size": 12000,
+      "storage_path": "/benchmarks/edge-numbers-only-008.pdf",
+      "hash_sha256": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+      "acquisition_date": "2024-01-20T14:00:00Z",
+      "doc_type": "disclosure",
+      "source_entity": "financial-records",
+      "status": "completed",
+      "extracted_text": "FINANCIAL DATA EXTRACT\n\n2024-01-01: 1234.56\n2024-01-02: 2345.67\n2024-01-03: 3456.78\n2024-01-04: 4567.89\n2024-01-05: 5678.90\n2024-01-06: 6789.01\n2024-01-07: 7890.12\n2024-01-08: 8901.23\n2024-01-09: 9012.34\n2024-01-10: 10123.45\n2024-01-11: 11234.56\n2024-01-12: 12345.67\n2024-01-13: 13456.78\n2024-01-14: 14567.89\n2024-01-15: 15678.90\n2024-01-16: -1000.00\n2024-01-17: -2000.00\n2024-01-18: 0.00\n2024-01-19: 0.01\n2024-01-20: 999999.99\n\nTotal: 1234567.89\nAverage: 61728.39\nMin: -2000.00\nMax: 999999.99\nCount: 20",
+      "page_count": 1,
+      "metadata": {},
+      "created_at": "2024-01-20T14:00:00Z",
+      "updated_at": "2024-01-20T14:00:00Z"
+    },
+    {
+      "id": "edge-dates-formats-009",
+      "case_id": "edge-case-004",
+      "filename": "date-formats.pdf",
+      "file_type": "application/pdf",
+      "file_size": 8500,
+      "storage_path": "/benchmarks/edge-dates-formats-009.pdf",
+      "hash_sha256": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1",
+      "acquisition_date": "2024-02-15T11:00:00Z",
+      "doc_type": "witness_statement",
+      "source_entity": "witness-date-test",
+      "status": "completed",
+      "extracted_text": "STATEMENT REGARDING DATE FORMATS\n\nThe incident occurred on:\n- 15 January 2024 (UK format)\n- January 15, 2024 (US format)\n- 2024-01-15 (ISO format)\n- 15/01/2024 (DD/MM/YYYY)\n- 01/15/2024 (MM/DD/YYYY)\n- 15.01.2024 (European format)\n- 15-Jan-2024 (Abbreviated)\n- 15th January 2024 (Ordinal)\n- Fifteenth of January, 2024 (Written)\n\nAll refer to the same date.\n\nTime formats observed:\n- 14:30 (24-hour)\n- 2:30 PM (12-hour)\n- 1430 hours (Military)\n- Half past two in the afternoon (Written)\n- 14:30:00 (With seconds)\n- 14:30:00.000 (With milliseconds)\n- 2024-01-15T14:30:00Z (ISO 8601)\n- 2024-01-15T14:30:00+00:00 (With timezone)\n\nSigned: Date Format Test Witness\nDate: 15/01/2024",
+      "page_count": 2,
+      "metadata": {},
+      "created_at": "2024-02-15T11:00:00Z",
+      "updated_at": "2024-02-15T11:00:00Z"
+    },
+    {
+      "id": "edge-repeated-text-010",
+      "case_id": "edge-case-005",
+      "filename": "repeated-content.pdf",
+      "file_type": "application/pdf",
+      "file_size": 45000,
+      "storage_path": "/benchmarks/edge-repeated-text-010.pdf",
+      "hash_sha256": "c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+      "acquisition_date": "2024-01-25T09:00:00Z",
+      "doc_type": "other",
+      "source_entity": "form-template",
+      "status": "completed",
+      "extracted_text": "STANDARD FORM\n\nI confirm that the above is true. I confirm that the above is true. I confirm that the above is true.\n\nI understand the implications. I understand the implications. I understand the implications.\n\nI agree to the terms. I agree to the terms. I agree to the terms.\n\nSignature: _____________ Signature: _____________ Signature: _____________\n\nDate: _____________ Date: _____________ Date: _____________\n\nWitness: _____________ Witness: _____________ Witness: _____________\n\n[This pattern repeats multiple times as is common in multi-copy carbon forms]\n\nCopy 1 - Applicant\nCopy 2 - Authority\nCopy 3 - Records\n\nI confirm that the above is true. I understand the implications. I agree to the terms.",
+      "page_count": 3,
+      "metadata": {},
+      "created_at": "2024-01-25T09:00:00Z",
+      "updated_at": "2024-01-25T09:00:00Z"
+    },
+    {
+      "id": "edge-mixed-case-011",
+      "case_id": "edge-case-005",
+      "filename": "mixed-case-document.pdf",
+      "file_type": "application/pdf",
+      "file_size": 15000,
+      "storage_path": "/benchmarks/edge-mixed-case-011.pdf",
+      "hash_sha256": "d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+      "acquisition_date": "2024-01-28T16:00:00Z",
+      "doc_type": "correspondence",
+      "source_entity": "mixed-case-test",
+      "status": "completed",
+      "extracted_text": "WITNESS STATEMENT\n\nwitness statement\n\nWitness Statement\n\nWITNESS statement\n\nwitneSS StAteMenT\n\nWiTnEsS sTaTeMeNt\n\nThe witness stated: THE EVENT OCCURRED at 3pm. The event occurred at 3PM. THE EVENT occurred at 3Pm.\n\nNames: JOHN SMITH, john smith, John Smith, jOHN sMITH\n\nPlaces: LONDON, london, London, LoNdOn\n\nDates: JANUARY 15, january 15, January 15, JaNuArY 15\n\nThis tests case-insensitive matching and normalization.",
+      "page_count": 1,
+      "metadata": {},
+      "created_at": "2024-01-28T16:00:00Z",
+      "updated_at": "2024-01-28T16:00:00Z"
+    },
+    {
+      "id": "edge-legal-jargon-012",
+      "case_id": "edge-case-006",
+      "filename": "legal-terminology.pdf",
+      "file_type": "application/pdf",
+      "file_size": 89000,
+      "storage_path": "/benchmarks/edge-legal-jargon-012.pdf",
+      "hash_sha256": "e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+      "acquisition_date": "2024-02-05T10:00:00Z",
+      "doc_type": "court_order",
+      "source_entity": "high-court",
+      "status": "completed",
+      "extracted_text": "IN THE HIGH COURT OF JUSTICE\nQUEEN'S BENCH DIVISION\n\nBETWEEN:\n                    THE CLAIMANT\n                    - and -\n                    THE DEFENDANT\n\nJUDGMENT\n\nINTER ALIA, the Court finds that the Defendant's actions constituted a prima facie breach of contract. The doctrine of res judicata does not apply as this matter has not been previously adjudicated.\n\nPursuant to CPR Part 24, the Claimant's application for summary judgment is GRANTED.\n\nThe Defendant is ORDERED to pay damages in quantum meruit, said damages to be assessed if not agreed.\n\nCosts to follow the event, to be assessed on the standard basis if not agreed.\n\nLiberty to apply.\n\nPermission to appeal REFUSED. The Defendant may seek permission from the Court of Appeal pursuant to CPR 52.3.\n\nThis Order shall take effect ab initio from the date hereof.\n\nDated this 5th day of February 2024\n\n[SEAL OF THE COURT]\n\nNota bene: This judgment is subject to the usual caveats regarding enforcement.",
+      "page_count": 8,
+      "metadata": {},
+      "created_at": "2024-02-05T10:00:00Z",
+      "updated_at": "2024-02-05T10:00:00Z"
+    },
+    {
+      "id": "edge-redacted-013",
+      "case_id": "edge-case-006",
+      "filename": "redacted-document.pdf",
+      "file_type": "application/pdf",
+      "file_size": 67000,
+      "storage_path": "/benchmarks/edge-redacted-013.pdf",
+      "hash_sha256": "f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+      "acquisition_date": "2024-02-10T14:00:00Z",
+      "doc_type": "police_bundle",
+      "source_entity": "metropolitan-police",
+      "status": "completed",
+      "extracted_text": "POLICE REPORT - PARTIALLY REDACTED\n\nCase Reference: MET/2024/[REDACTED]\n\nOn [REDACTED] at approximately [REDACTED], officers attended [REDACTED] following reports of [REDACTED].\n\nThe suspect, Mr. [REDACTED], was observed [REDACTED]. Witness [REDACTED] stated that [REDACTED].\n\nOfficer [REDACTED] (collar number [REDACTED]) conducted the initial investigation.\n\nAddress: [REDACTED] [REDACTED] Street, [REDACTED]\nPhone: [REDACTED]\nEmail: [REDACTED]@[REDACTED].com\n\nThe investigation revealed that [REDACTED] had [REDACTED] on [REDACTED] occasions.\n\nOUTCOME: [REDACTED]\n\nSigned: [REDACTED]\nDate: [REDACTED]",
+      "page_count": 5,
+      "metadata": {
+        "redaction_level": "heavy",
+        "readable_content_percentage": 30
+      },
+      "created_at": "2024-02-10T14:00:00Z",
+      "updated_at": "2024-02-10T14:00:00Z"
+    },
+    {
+      "id": "edge-ocr-errors-014",
+      "case_id": "edge-case-007",
+      "filename": "ocr-quality-issues.pdf",
+      "file_type": "application/pdf",
+      "file_size": 78000,
+      "storage_path": "/benchmarks/edge-ocr-errors-014.pdf",
+      "hash_sha256": "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+      "acquisition_date": "2024-02-12T11:00:00Z",
+      "doc_type": "witness_statement",
+      "source_entity": "ocr-test",
+      "status": "completed",
+      "extracted_text": "W1TNESS STATEM3NT\n\nI, J0hn Sm1th, make th1s statement regarding the 1ncident.\n\nOn January l5, 2O24, I was walk1ng down H1gh Street at appr0ximately 3:OO PM.\n\nI 0bserved the defend4nt, Mr. W1ll1ams, enter1ng the prern1ses.\n\nThe t1me was def1n1tely 3:OO PM, n0t 4:OO PM as prev1ously stated.\n\nComm0n OCR err0rs:\n- 0 confused with O (zero vs letter O)\n- l confused with 1 (lowercase L vs one)\n- rn confused with m\n- cl confused with d\n- vv confused with w\n\nS1gned: J0hn Sm1th\nD4te: January 2O, 2O24",
+      "page_count": 2,
+      "metadata": {
+        "ocr_confidence": 0.75,
+        "quality_issues": "Poor scan quality, faded text"
+      },
+      "created_at": "2024-02-12T11:00:00Z",
+      "updated_at": "2024-02-12T11:00:00Z"
+    },
+    {
+      "id": "edge-table-format-015",
+      "case_id": "edge-case-007",
+      "filename": "tabular-data.pdf",
+      "file_type": "application/pdf",
+      "file_size": 34000,
+      "storage_path": "/benchmarks/edge-table-format-015.pdf",
+      "hash_sha256": "b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1",
+      "acquisition_date": "2024-02-15T09:00:00Z",
+      "doc_type": "disclosure",
+      "source_entity": "data-table-test",
+      "status": "completed",
+      "extracted_text": "CONTACT SCHEDULE\n\n| Date       | Time  | Location    | Attendees | Duration | Notes          |\n|------------|-------|-------------|-----------|----------|----------------|\n| 2024-01-01 | 10:00 | Centre A    | 3         | 2 hours  | Supervised     |\n| 2024-01-08 | 10:00 | Centre A    | 3         | 2 hours  | Supervised     |\n| 2024-01-15 | 10:00 | Centre A    | 3         | 2 hours  | Supervised     |\n| 2024-01-22 | 14:00 | Home        | 2         | 3 hours  | Unsupervised   |\n| 2024-01-29 | 14:00 | Home        | 2         | 3 hours  | Unsupervised   |\n| 2024-02-05 | 10:00 | Centre A    | 3         | 2 hours  | Supervised     |\n| 2024-02-12 | 14:00 | Home        | 2         | 4 hours  | Unsupervised   |\n\nTOTAL SESSIONS: 7\nTOTAL HOURS: 18\n\nAll sessions completed as scheduled. No issues reported.",
+      "page_count": 1,
+      "metadata": {},
+      "created_at": "2024-02-15T09:00:00Z",
+      "updated_at": "2024-02-15T09:00:00Z"
+    }
+  ],
+  "ground_truth": {
+    "description": "Expected engine behavior for edge case documents",
+    "expected_behavior": [
+      {
+        "document_id": "edge-empty-001",
+        "expected": "graceful_handling",
+        "notes": "Engine should handle empty text without crashing, return empty or null results"
+      },
+      {
+        "document_id": "edge-whitespace-002",
+        "expected": "graceful_handling",
+        "notes": "Engine should treat whitespace-only as effectively empty"
+      },
+      {
+        "document_id": "edge-null-003",
+        "expected": "graceful_handling",
+        "notes": "Engine should handle null extracted_text field without crashing"
+      },
+      {
+        "document_id": "edge-unicode-004",
+        "expected": "process_normally",
+        "notes": "Engine should process unicode characters correctly, no garbled output"
+      },
+      {
+        "document_id": "edge-special-chars-005",
+        "expected": "process_normally",
+        "notes": "Engine should not break on special characters, escape properly"
+      },
+      {
+        "document_id": "edge-long-text-006",
+        "expected": "process_with_chunking",
+        "notes": "Engine should handle large documents, may need chunking strategy"
+      },
+      {
+        "document_id": "edge-single-word-007",
+        "expected": "graceful_handling",
+        "notes": "Minimal content should not cause errors, may return no findings"
+      },
+      {
+        "document_id": "edge-numbers-only-008",
+        "expected": "process_normally",
+        "notes": "Numeric data should be processable, temporal/quantitative analysis possible"
+      },
+      {
+        "document_id": "edge-dates-formats-009",
+        "expected": "normalize_dates",
+        "notes": "Various date formats should be normalized for comparison"
+      },
+      {
+        "document_id": "edge-repeated-text-010",
+        "expected": "deduplicate_or_handle",
+        "notes": "Repeated content should not cause false positive contradictions"
+      },
+      {
+        "document_id": "edge-mixed-case-011",
+        "expected": "case_insensitive_matching",
+        "notes": "Case variations should be recognized as same content"
+      },
+      {
+        "document_id": "edge-legal-jargon-012",
+        "expected": "process_normally",
+        "notes": "Legal terminology should be processed, Latin phrases recognized"
+      },
+      {
+        "document_id": "edge-redacted-013",
+        "expected": "handle_redactions",
+        "notes": "Redacted content markers should be recognized, not treated as contradictions"
+      },
+      {
+        "document_id": "edge-ocr-errors-014",
+        "expected": "fuzzy_matching",
+        "notes": "Common OCR errors should not prevent entity/content recognition"
+      },
+      {
+        "document_id": "edge-table-format-015",
+        "expected": "process_normally",
+        "notes": "Tabular data should be extractable and analyzable"
+      }
+    ]
+  },
+  "test_categories": {
+    "empty_content": ["edge-empty-001", "edge-whitespace-002", "edge-null-003", "edge-single-word-007"],
+    "character_encoding": ["edge-unicode-004", "edge-special-chars-005"],
+    "document_size": ["edge-long-text-006", "edge-single-word-007"],
+    "data_formats": ["edge-numbers-only-008", "edge-dates-formats-009", "edge-table-format-015"],
+    "text_quality": ["edge-repeated-text-010", "edge-mixed-case-011", "edge-ocr-errors-014"],
+    "document_types": ["edge-legal-jargon-012", "edge-redacted-013"]
+  },
+  "metadata": {
+    "created_at": "2024-03-15T00:00:00Z",
+    "created_by": "benchmark-suite",
+    "total_documents": 15,
+    "purpose": "Edge case and robustness testing",
+    "categories": 6,
+    "expected_crash_count": 0,
+    "notes": "All edge cases should be handled gracefully without engine crashes"
+  }
+}
