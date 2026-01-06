@@ -2,7 +2,19 @@
 import { generateJSON } from '@/lib/ai-client'
 import type { Document } from '@/CONTRACT'
 import * as chrono from 'chrono-node'
-import { format, isValid, parseISO } from 'date-fns'
+import {
+    format,
+    isValid,
+    parseISO,
+    addWeeks,
+    addDays,
+    addMonths,
+    addYears,
+    subWeeks,
+    subDays,
+    subMonths,
+    subYears
+} from 'date-fns'
 
 export interface TemporalEvent {
     id: string
@@ -254,6 +266,314 @@ function normalizeWithDateFns<T extends { date: string }>(
 }
 
 /**
+ * Relative date pattern definitions for parsing natural language date references.
+ * Each pattern maps to a resolution function using date-fns.
+ */
+interface RelativeDatePattern {
+    pattern: RegExp
+    resolve: (match: RegExpMatchArray, anchorDate: Date) => Date
+}
+
+const RELATIVE_DATE_PATTERNS: RelativeDatePattern[] = [
+    // "X weeks later" / "X weeks after"
+    {
+        pattern: /(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+weeks?\s+(later|after)/i,
+        resolve: (match, anchor) => addWeeks(anchor, parseNumberWord(match[1]))
+    },
+    // "X weeks before" / "X weeks earlier"
+    {
+        pattern: /(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+weeks?\s+(before|earlier|prior)/i,
+        resolve: (match, anchor) => subWeeks(anchor, parseNumberWord(match[1]))
+    },
+    // "X days later" / "X days after"
+    {
+        pattern: /(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+days?\s+(later|after)/i,
+        resolve: (match, anchor) => addDays(anchor, parseNumberWord(match[1]))
+    },
+    // "X days before" / "X days earlier"
+    {
+        pattern: /(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+days?\s+(before|earlier|prior)/i,
+        resolve: (match, anchor) => subDays(anchor, parseNumberWord(match[1]))
+    },
+    // "X months later" / "X months after"
+    {
+        pattern: /(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+months?\s+(later|after)/i,
+        resolve: (match, anchor) => addMonths(anchor, parseNumberWord(match[1]))
+    },
+    // "X months before" / "X months earlier"
+    {
+        pattern: /(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+months?\s+(before|earlier|prior)/i,
+        resolve: (match, anchor) => subMonths(anchor, parseNumberWord(match[1]))
+    },
+    // "X years later" / "X years after"
+    {
+        pattern: /(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+years?\s+(later|after)/i,
+        resolve: (match, anchor) => addYears(anchor, parseNumberWord(match[1]))
+    },
+    // "X years before" / "X years earlier"
+    {
+        pattern: /(\d+|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)\s+years?\s+(before|earlier|prior)/i,
+        resolve: (match, anchor) => subYears(anchor, parseNumberWord(match[1]))
+    },
+    // "the following week"
+    {
+        pattern: /the\s+following\s+week/i,
+        resolve: (_, anchor) => addWeeks(anchor, 1)
+    },
+    // "the following month"
+    {
+        pattern: /the\s+following\s+month/i,
+        resolve: (_, anchor) => addMonths(anchor, 1)
+    },
+    // "the following day" / "the next day"
+    {
+        pattern: /the\s+(following|next)\s+day/i,
+        resolve: (_, anchor) => addDays(anchor, 1)
+    },
+    // "the previous week"
+    {
+        pattern: /the\s+previous\s+week/i,
+        resolve: (_, anchor) => subWeeks(anchor, 1)
+    },
+    // "the previous month"
+    {
+        pattern: /the\s+previous\s+month/i,
+        resolve: (_, anchor) => subMonths(anchor, 1)
+    },
+    // "the previous day" / "the day before"
+    {
+        pattern: /the\s+(previous|day\s+before)\s*day?/i,
+        resolve: (_, anchor) => subDays(anchor, 1)
+    },
+    // "a week later"
+    {
+        pattern: /a\s+week\s+(later|after)/i,
+        resolve: (_, anchor) => addWeeks(anchor, 1)
+    },
+    // "a month later"
+    {
+        pattern: /a\s+month\s+(later|after)/i,
+        resolve: (_, anchor) => addMonths(anchor, 1)
+    },
+    // "a fortnight later" (14 days)
+    {
+        pattern: /a\s+fortnight\s+(later|after)/i,
+        resolve: (_, anchor) => addDays(anchor, 14)
+    }
+]
+
+/**
+ * Parse number words to numeric values.
+ * Handles both digit strings and written numbers.
+ */
+function parseNumberWord(word: string): number {
+    const numberWords: Record<string, number> = {
+        'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+        'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10,
+        'eleven': 11, 'twelve': 12
+    }
+    const lower = word.toLowerCase()
+    return numberWords[lower] ?? parseInt(word, 10) || 1
+}
+
+/**
+ * Attempt to resolve a relative date using the provided rawText and anchor date.
+ * Returns the resolved Date or null if no pattern matches or resolution fails.
+ *
+ * @param rawText - The raw text containing the relative date reference
+ * @param anchorDate - The anchor date to resolve against
+ * @returns Resolved Date or null if cannot resolve
+ */
+function attemptRelativeDateResolution(rawText: string, anchorDate: Date): Date | null {
+    for (const { pattern, resolve } of RELATIVE_DATE_PATTERNS) {
+        const match = rawText.match(pattern)
+        if (match) {
+            try {
+                const resolved = resolve(match, anchorDate)
+                if (isValid(resolved)) {
+                    return resolved
+                }
+            } catch {
+                // Resolution failed, try next pattern
+            }
+        }
+    }
+    return null
+}
+
+/**
+ * Detect anchor dates from a list of events.
+ * Returns a map of document IDs to their earliest absolute date for anchoring.
+ * Also builds a sorted list of all absolute dates for proximity-based anchor detection.
+ */
+function detectAnchorDates(events: Array<{ date: string; dateType?: string; sourceDocId: string; position?: number }>): {
+    byDocument: Map<string, Date>
+    allAbsolute: Array<{ date: Date; sourceDocId: string; position?: number }>
+} {
+    const byDocument = new Map<string, Date>()
+    const allAbsolute: Array<{ date: Date; sourceDocId: string; position?: number }> = []
+
+    for (const event of events) {
+        if (event.dateType === 'absolute') {
+            const parsedDate = parseISO(event.date) || new Date(event.date)
+            if (isValid(parsedDate)) {
+                allAbsolute.push({
+                    date: parsedDate,
+                    sourceDocId: event.sourceDocId,
+                    position: event.position
+                })
+
+                // Track earliest date per document for fallback anchoring
+                const existing = byDocument.get(event.sourceDocId)
+                if (!existing || parsedDate < existing) {
+                    byDocument.set(event.sourceDocId, parsedDate)
+                }
+            }
+        }
+    }
+
+    // Sort by position for proximity-based anchor detection
+    allAbsolute.sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+
+    return { byDocument, allAbsolute }
+}
+
+/**
+ * Find the best anchor date for a relative date event.
+ * Priority:
+ * 1. Explicitly provided anchorDate
+ * 2. Nearest preceding absolute date in the same document (by position)
+ * 3. Earliest absolute date in the same document
+ *
+ * @param event - The event with relative date to find anchor for
+ * @param anchors - Detected anchor dates from the document set
+ * @returns The anchor Date or null if none found
+ */
+function findAnchorDate(
+    event: { anchorDate?: string; sourceDocId: string; position?: number },
+    anchors: { byDocument: Map<string, Date>; allAbsolute: Array<{ date: Date; sourceDocId: string; position?: number }> }
+): Date | null {
+    // Priority 1: Use explicitly provided anchor date
+    if (event.anchorDate) {
+        const explicit = parseISO(event.anchorDate) || new Date(event.anchorDate)
+        if (isValid(explicit)) {
+            return explicit
+        }
+    }
+
+    // Priority 2: Find nearest preceding absolute date by position in same document
+    if (typeof event.position === 'number') {
+        const sameDocEvents = anchors.allAbsolute.filter(a => a.sourceDocId === event.sourceDocId)
+        const preceding = sameDocEvents
+            .filter(a => a.position !== undefined && a.position < event.position!)
+            .sort((a, b) => (b.position ?? 0) - (a.position ?? 0)) // Reverse sort to get closest
+
+        if (preceding.length > 0) {
+            return preceding[0].date
+        }
+    }
+
+    // Priority 3: Fall back to earliest date in the same document
+    const documentAnchor = anchors.byDocument.get(event.sourceDocId)
+    if (documentAnchor) {
+        return documentAnchor
+    }
+
+    return null
+}
+
+/**
+ * Resolve relative dates in events using detected anchors and date-fns arithmetic.
+ * This function attempts to convert relative date references to absolute dates
+ * when suitable anchor dates are available.
+ *
+ * Events with dateType='relative' will be:
+ * - Converted to dateType='resolved' if successfully resolved
+ * - Flagged with REQUIRES_ANCHOR in description if no anchor found
+ *
+ * @param events - Events after chrono-node validation
+ * @returns Events with relative dates resolved where possible
+ */
+function resolveRelativeDates<T extends {
+    date: string
+    rawText?: string
+    dateType?: string
+    anchorDate?: string
+    sourceDocId: string
+    position?: number
+    description: string
+}>(events: T[]): Array<T & { resolvedFromRelative?: boolean; requiresAnchor?: boolean }> {
+    // First, detect all anchor dates from absolute dates in the event set
+    const anchors = detectAnchorDates(events)
+
+    return events.map(event => {
+        // Only process relative dates that haven't been resolved
+        if (event.dateType !== 'relative') {
+            return { ...event, resolvedFromRelative: false, requiresAnchor: false }
+        }
+
+        // Find the best anchor date for this event
+        const anchorDate = findAnchorDate(event, anchors)
+
+        if (!anchorDate) {
+            // No anchor found - flag as REQUIRES_ANCHOR
+            return {
+                ...event,
+                resolvedFromRelative: false,
+                requiresAnchor: true,
+                description: event.description + ' [REQUIRES_ANCHOR: Unable to resolve relative date without context]'
+            }
+        }
+
+        // Attempt to resolve the relative date using patterns
+        if (event.rawText) {
+            const resolvedDate = attemptRelativeDateResolution(event.rawText, anchorDate)
+
+            if (resolvedDate) {
+                // Successfully resolved - update the event
+                return {
+                    ...event,
+                    date: format(resolvedDate, 'yyyy-MM-dd'),
+                    dateType: 'resolved' as const,
+                    anchorDate: format(anchorDate, 'yyyy-MM-dd'),
+                    resolvedFromRelative: true,
+                    requiresAnchor: false
+                }
+            }
+        }
+
+        // Pattern matching failed - try chrono-node with reference date
+        try {
+            const chronoResults = chrono.parse(event.rawText || '', anchorDate, { forwardDate: true })
+            if (chronoResults.length > 0) {
+                const chronoDate = chronoResults[0].start.date()
+                if (isValid(chronoDate)) {
+                    return {
+                        ...event,
+                        date: format(chronoDate, 'yyyy-MM-dd'),
+                        dateType: 'resolved' as const,
+                        anchorDate: format(anchorDate, 'yyyy-MM-dd'),
+                        resolvedFromRelative: true,
+                        requiresAnchor: false
+                    }
+                }
+            }
+        } catch {
+            // Chrono-node failed, keep as unresolved
+        }
+
+        // Could not resolve even with anchor - keep original but flag
+        return {
+            ...event,
+            anchorDate: format(anchorDate, 'yyyy-MM-dd'),
+            resolvedFromRelative: false,
+            requiresAnchor: false,
+            description: event.description + ' [Could not parse relative date pattern]'
+        }
+    })
+}
+
+/**
  * Extract and analyze temporal events from documents using AI-powered date extraction.
  * This is the main entry point for temporal analysis.
  *
@@ -307,8 +627,12 @@ export async function parseTemporalEvents(
     // Normalizes all dates to YYYY-MM-DD format and filters invalid dates
     const normalizedEvents = normalizeWithDateFns(filteredEvents)
 
+    // Layer 4: Resolve relative dates using anchor detection
+    // Converts relative references like "three weeks later" to absolute dates
+    const resolvedEvents = resolveRelativeDates(normalizedEvents)
+
     // Map validated results to TemporalEvent with Phase 1 fields
-    const events: TemporalEvent[] = normalizedEvents.map((e, i: number) => ({
+    const events: TemporalEvent[] = resolvedEvents.map((e, i: number) => ({
         id: `time-${i}`,
         date: e.date,
         time: e.time || undefined,
@@ -332,9 +656,11 @@ export async function parseTemporalEvents(
     }))
 
     // Track validation layers used for transparency
-    const validationLayers: string[] = ['ai', 'chrono', 'date-fns']
-    const chronoValidatedCount = normalizedEvents.filter(e => e.chronoValidated).length
-    const dateFnsValidatedCount = normalizedEvents.filter(e => e.dateFnsValidated).length
+    const validationLayers: string[] = ['ai', 'chrono', 'date-fns', 'relative-resolution']
+    const chronoValidatedCount = resolvedEvents.filter(e => e.chronoValidated).length
+    const dateFnsValidatedCount = resolvedEvents.filter(e => e.dateFnsValidated).length
+    const relativesResolvedCount = resolvedEvents.filter(e => e.resolvedFromRelative).length
+    const requiresAnchorCount = resolvedEvents.filter(e => e.requiresAnchor).length
 
     return {
         timeline: events,

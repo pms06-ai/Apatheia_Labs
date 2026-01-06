@@ -114,8 +114,9 @@
             "command": "grep -q 'import.*format.*from.*date-fns' src/lib/engines/temporal.ts && grep -q 'isValid' src/lib/engines/temporal.ts && echo 'OK' || echo 'MISSING'",
             "expected": "OK"
           },
-          "status": "pending",
-          "notes": "Use tree-shakeable imports from date-fns (format, isValid, parse). Normalize all dates to YYYY-MM-DD string format. Filter invalid dates."
+          "status": "completed",
+          "notes": "Layer 3 date-fns normalization and validation implemented and committed (6553c85). Added normalizeWithDateFns() function that: (1) Parses dates using parseISO with Date constructor fallback, (2) Validates dates with isValid(), (3) Normalizes to YYYY-MM-DD format with format(), (4) Filters out invalid dates. The function is integrated into parseTemporalEvents() pipeline and metadata now includes 'date-fns' in validationLayersUsed. Verification passed.",
+          "updated_at": "2026-01-06T03:10:57.858198+00:00"
         }
       ]
     },
@@ -476,5 +477,5 @@
   "planStatus": "in_progress",
   "updated_at": "2026-01-06T03:01:05.784Z",
   "recoveryNote": "Task recovered from stuck state at 2026-01-06T03:01:05.784Z",
-  "last_updated": "2026-01-06T03:08:46.084159+00:00"
+  "last_updated": "2026-01-06T03:10:57.858198+00:00"
 }
