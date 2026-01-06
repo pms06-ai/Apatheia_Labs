@@ -1,0 +1,108 @@
+=== AUTO-BUILD PROGRESS ===
+
+Project: Complete Temporal Analysis Engine
+Workspace: C:\Users\pstep\OneDrive\Desktop\apatheia-scaffold\.auto-claude\specs\012-complete-temporal-analysis-engine
+Started: 2026-01-05 (Session 1 - Planning)
+
+Workflow Type: feature
+Rationale: New capability implementation that extends the existing analysis engine suite. Adds date extraction, normalization, and inconsistency detection as a new analysis dimension. Follows patterns from entity-resolution, omission, and narrative engines.
+
+Session 1 (Planner):
+- ✅ Completed deep codebase investigation (Phase 0)
+- ✅ Read spec.md, project_index.json, context.json, complexity_assessment.json
+- ✅ Updated context.json with pattern findings
+- ✅ Created implementation_plan.json
+- ✅ Created init.sh
+- ✅ Created build-progress.txt
+
+Phase Summary:
+- Phase 1 (Dependencies): 1 subtask - Install chrono-node dependency
+- Phase 2 (Core Implementation): 4 subtasks - Multi-layer validation pipeline (AI → chrono-node → date-fns)
+- Phase 3 (Temporal Logic): 3 subtasks - Relative date resolution, backdating detection, contradiction detection
+- Phase 4 (Engine Integration): 2 subtasks - Export temporal engine, register in index.ts
+- Phase 5 (Testing): 4 subtasks - Unit tests for extraction, relative dates, backdating, multi-document analysis
+- Phase 6 (Verification): 3 subtasks - Type-check, test suite, manual verification
+
+Total Phases: 6
+Total Subtasks: 15
+
+Services Involved:
+- typescript: Main implementation service (TypeScript/Next.js)
+
+Files to Modify:
+- src/lib/engines/temporal.ts - Core temporal engine (MAIN WORK)
+- package.json - Add chrono-node@^2.7.0 dependency
+- src/lib/engines/index.ts - Register temporal engine (if needed)
+
+Files to Reference (Patterns):
+- src/lib/ai-client.ts - Multi-provider AI with generateJSON()
+- src/lib/engines/entity-resolution.ts - AI extraction pattern
+- src/lib/engines/omission.ts - Inconsistency detection pattern
+- src/lib/engines/narrative.ts - Multi-document cross-referencing
+
+Key Technical Decisions:
+1. Multi-layer validation: AI → chrono-node → date-fns (prevents hallucination, ensures accuracy)
+2. Tree-shakeable imports from date-fns (bundle size optimization)
+3. Store dates as YYYY-MM-DD strings (maintains compatibility with existing TemporalEvent schema)
+4. Extend existing interfaces with optional fields (backward compatible)
+5. Use isBefore/isAfter from date-fns for all temporal logic (immutability guaranteed)
+
+Parallelism Analysis:
+- Max parallel phases: 1
+- Recommended workers: 1
+- Parallel groups: None (sequential dependencies throughout)
+- Speedup estimate: Sequential execution required
+
+Verification Strategy:
+- Risk Level: HIGH (95% accuracy requirement, complex temporal reasoning)
+- Test Types: Unit + Integration
+- Security Scanning: Not required
+- Acceptance Criteria:
+  * Date extraction ≥95% accuracy on test dataset
+  * Relative date resolution functional ('three weeks later' → absolute)
+  * Backdating detection automatic
+  * Cross-document contradictions detected
+  * Citation tracking implemented (text + position)
+  * No regressions in existing tests
+  * Code quality checks pass (type-check, lint, format)
+
+=== STARTUP COMMAND ===
+
+To continue building this spec, run:
+
+  source auto-claude/.venv/bin/activate && python auto-claude/run.py --spec 012 --parallel 1
+
+Example (from project root):
+  source auto-claude/.venv/bin/activate && python auto-claude/run.py --spec 012 --parallel 1
+
+=== IMPLEMENTATION NOTES ===
+
+Critical Patterns to Follow:
+1. AI Extraction: Use generateJSON() from @/lib/ai-client (multi-provider fallback built-in)
+2. Validation: ALWAYS validate AI outputs with chrono-node to prevent hallucination
+3. Normalization: Use date-fns format() to convert Date → 'YYYY-MM-DD' strings
+4. Immutability: All date-fns functions return NEW Date objects (never mutate)
+5. Tree-Shaking: Import { format, isValid, isBefore } from 'date-fns' (NOT default import)
+
+Edge Cases to Handle:
+- Ambiguous formats: Use chrono strict mode for formal docs
+- False positive numbers: Context validation (section "5.12.2023" vs date)
+- Missing anchors: Flag relative dates with REQUIRES_ANCHOR status
+- Timezone ambiguity: Flag international documents for manual review
+- Multiple calendars: Skip non-Gregorian, flag for Phase 2
+
+DO:
+- Validate EVERY date with isValid() before using in logic
+- Log confidence scores for all extracted dates
+- Maintain document-to-date mappings with citation positions
+- Follow existing engine export patterns (entity-resolution.ts)
+- Add comprehensive test coverage (95%+ accuracy target)
+
+DON'T:
+- Trust AI-extracted dates without chrono-node validation
+- Mutate Date objects (use immutable date-fns operations)
+- Skip edge case handling (degrades accuracy below 95% target)
+- Break existing TemporalEvent interface (extend with optional fields)
+- Attempt timezone conversions in Phase 1 (deferred to Phase 2)
+
+=== END SESSION 1 ===

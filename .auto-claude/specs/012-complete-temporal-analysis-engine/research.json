@@ -1,0 +1,636 @@
+{
+  "integrations_researched": [
+    {
+      "name": "date-fns",
+      "type": "library",
+      "description": "Modern JavaScript date utility library for date manipulation, formatting, and calculation",
+      "verified_package": {
+        "name": "date-fns",
+        "install_command": "npm install date-fns",
+        "version": "^4.1.0",
+        "verified": true,
+        "source": "Already installed in package.json line 51"
+      },
+      "api_patterns": {
+        "imports": [
+          "import { format, parseISO, parse } from 'date-fns';",
+          "import { differenceInDays, addWeeks, subDays, isBefore, isAfter } from 'date-fns';",
+          "import { isValid, compareAsc, startOfDay, endOfDay } from 'date-fns';"
+        ],
+        "initialization": "Direct import - no initialization required",
+        "key_functions": [
+          "parse(dateString, formatString, referenceDate) - Parse dates from various formats",
+          "parseISO(isoString) - Parse ISO 8601 date strings",
+          "format(date, 'yyyy-MM-dd') - Format dates for output",
+          "differenceInDays(laterDate, earlierDate) - Calculate temporal distances",
+          "isBefore(date1, date2) - Compare dates for timeline ordering",
+          "isAfter(date1, date2) - Detect backdating (document references future events)",
+          "addWeeks(date, amount), addDays(date, amount) - Resolve relative dates like 'three weeks later'",
+          "isValid(date) - Validate parsed dates",
+          "compareAsc(date1, date2) - Sort events chronologically"
+        ],
+        "verified_against": "Context7 MCP (/date-fns/date-fns) + package.json + spec #004 research"
+      },
+      "configuration": {
+        "tree_shaking": "Fully tree-shakeable - only bundle imported functions",
+        "timezone_support": "Available via date-fns-tz (not needed for Phase 1)",
+        "localization": "100+ locales available via separate imports",
+        "dependencies": "None - standalone library"
+      },
+      "use_case_fit": {
+        "date_extraction": "✓ Excellent - supports parse() with custom format strings",
+        "relative_date_conversion": "✓ Perfect - add/sub functions for 'three weeks later' type conversions",
+        "date_comparison": "✓ Built-in isBefore/isAfter for detecting temporal impossibilities",
+        "date_formatting": "✓ Format dates consistently across timeline output",
+        "performance": "Lightweight, tree-shakeable, pure functions"
+      },
+      "gotchas": [
+        "parse() requires exact format string - won't auto-detect formats",
+        "Requires reference date for relative parsing (e.g., 'three weeks later' needs anchor)",
+        "Returns invalid Date object for unparseable strings - must check with isValid()",
+        "All functions are immutable - don't modify original dates"
+      ],
+      "research_sources": [
+        "Context7 MCP: /date-fns/date-fns (58 code snippets, score: 57.9)",
+        "package.json - version 4.1.0 installed",
+        "Spec #004 research.json comprehensive analysis"
+      ]
+    },
+    {
+      "name": "chrono-node",
+      "type": "library",
+      "description": "Natural language date parser for extracting dates from unstructured text",
+      "verified_package": {
+        "name": "chrono-node",
+        "install_command": "npm install chrono-node",
+        "version": "latest (recommend ^2.7.0)",
+        "verified": false,
+        "reason": "Not currently installed, requires npm registry verification"
+      },
+      "api_patterns": {
+        "imports": [
+          "import * as chrono from 'chrono-node';",
+          "import { parseDate } from 'chrono-node';"
+        ],
+        "initialization": "const results = chrono.parse('text with dates');",
+        "key_functions": [
+          "chrono.parse(text) - Extract all dates from text, returns ParsedResult[]",
+          "chrono.parseDate(text) - Quick parse, returns single Date or null",
+          "result.start.date() - Get JavaScript Date from ParsedResult",
+          "result.text - Original matched text ('January 10, 2023')",
+          "result.index - Position in source text for citation tracking",
+          "chrono.strict.parse(text) - Strict mode to reduce false positives",
+          "chrono.casual.parse(text) - Permissive mode for varied formats"
+        ],
+        "example_usage": "const dates = chrono.parse('The meeting was on January 15, 2023'); // [{start: {date: Date(2023-01-15)}, text: 'January 15, 2023', index: 19}]",
+        "verified_against": "Known library pattern - web verification pending"
+      },
+      "configuration": {
+        "parsers": "Supports EN, FR, DE, ES, PT, NL, JA, ZH locales",
+        "custom_parsers": "Can extend with custom refiners for domain-specific date formats",
+        "strictness": "Three modes: strict, casual, default",
+        "dependencies": "dayjs (peer dependency in some versions)"
+      },
+      "use_case_fit": {
+        "date_extraction_from_documents": "✓ Excellent - designed for extracting dates from prose",
+        "varied_format_handling": "✓ Handles 'January 10, 2023', '01/10/2023', 'three weeks later', 'last Friday'",
+        "relative_date_detection": "✓ Detects relative expressions but requires reference date",
+        "accuracy_95_percent": "~ High accuracy on common formats, may need validation layer",
+        "citation_tracking": "✓ Returns index/position for tracing dates back to source text"
+      },
+      "gotchas": [
+        "Relative dates ('next week', 'three days later') parsed relative to current time by default - need to provide reference date",
+        "May extract false positives from numbers that look like dates (e.g., 'Chapter 5.12.2023')",
+        "Doesn't distinguish between document creation date and event dates mentioned in text",
+        "Performance: Can be slower on very large documents (5000+ words)",
+        "Strict mode may miss valid dates; casual mode may have false positives"
+      ],
+      "research_sources": [
+        "Known npm package: chrono-node",
+        "Common pattern in date extraction tools",
+        "Used in production systems for NLP date parsing"
+      ],
+      "recommendation": "Strong candidate for Phase 1 - handles NLP date extraction that date-fns cannot. Combine: chrono-node for extraction + date-fns for manipulation."
+    },
+    {
+      "name": "AI Client (Anthropic, Groq, Gemini)",
+      "type": "service",
+      "description": "Multi-provider AI client for JSON extraction via LLMs",
+      "verified_package": {
+        "name": "@anthropic-ai/sdk",
+        "install_command": "Already installed",
+        "version": "^0.71.2",
+        "verified": true,
+        "additional_providers": [
+          "@google/generative-ai@^0.21.0",
+          "groq-sdk@^0.8.0"
+        ],
+        "source": "package.json lines 30, 33, 53"
+      },
+      "api_patterns": {
+        "imports": [
+          "import { generateJSON } from '@/lib/ai-client';",
+          "import type { AIProvider } from '@/lib/ai-client';"
+        ],
+        "initialization": "Uses env.ts to select provider automatically",
+        "key_functions": [
+          "generateJSON(task: string, prompt: string): Promise<any> - Main extraction function",
+          "Returns parsed JSON object from AI response",
+          "Automatically routes to preferred provider (anthropic/groq/gemini)"
+        ],
+        "existing_usage_pattern": "const result = await generateJSON('Temporal Parser', TEMPORAL_PARSER_PROMPT.replace('{documents}', docContents))",
+        "verified_against": "Codebase - src/lib/ai-client.ts, src/lib/engines/temporal.ts"
+      },
+      "configuration": {
+        "env_vars": [
+          "ANTHROPIC_API_KEY",
+          "GROQ_API_KEY",
+          "GOOGLE_API_KEY",
+          "AI_PROVIDER (selects provider)"
+        ],
+        "model_selection": "Configurable per provider in env.ts",
+        "json_mode": "Enabled by default for structured extraction",
+        "error_handling": "Built-in error handling and retries in ai-client.ts"
+      },
+      "use_case_fit": {
+        "date_extraction_from_unstructured_text": "✓ Current approach for temporal.ts",
+        "temporal_inconsistency_detection": "✓ Can identify contradictions via prompt engineering",
+        "relative_date_resolution": "~ AI can interpret context but may hallucinate anchor dates",
+        "accuracy_95_percent": "⚠ Depends on prompt quality and model - needs validation layer"
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "external_api": true,
+        "costs": "API usage costs (Anthropic/Groq/Gemini pricing)",
+        "rate_limits": "Provider-dependent rate limits"
+      },
+      "gotchas": [
+        "AI may hallucinate dates not present in text",
+        "Inconsistent date format extraction without strict prompting",
+        "Cannot guarantee 95% accuracy without validation layer",
+        "Relative dates ('three weeks later') may be misinterpreted without clear context",
+        "Mock mode in temporal.ts for development without API keys"
+      ],
+      "research_sources": [
+        "Codebase analysis: src/lib/ai-client.ts",
+        "Existing implementation: src/lib/engines/temporal.ts",
+        "Similar pattern in entity-resolution.ts, omission.ts, narrative.ts"
+      ],
+      "recommendation": "Primary tool for initial date extraction. Supplement with chrono-node or date-fns validation to achieve 95% accuracy target."
+    },
+    {
+      "name": "vis-timeline (Phase 2 Integration)",
+      "type": "library",
+      "description": "Interactive timeline visualization library for displaying temporal events",
+      "verified_package": {
+        "name": "vis-timeline",
+        "install_command": "npm install vis-timeline",
+        "version": "^7.7.0 (latest per Context7)",
+        "verified": false,
+        "reason": "Not yet installed - Phase 2 dependency per requirements.json"
+      },
+      "api_patterns": {
+        "imports": [
+          "import { Timeline } from 'vis-timeline/standalone';",
+          "import 'vis-timeline/styles/vis-timeline-graph2d.css';"
+        ],
+        "initialization": "const timeline = new Timeline(container, items, options);",
+        "data_format_required": {
+          "id": "string - event.id from TemporalEvent",
+          "content": "string - event.description",
+          "start": "Date - parsed from event.date + event.time",
+          "className": "string - based on confidence/inconsistency",
+          "type": "'box' | 'point' | 'range'"
+        },
+        "integration_with_temporal_engine": {
+          "source": "TemporalEvent[] from parseTemporalEvents()",
+          "mapping": "Transform TemporalEvent -> vis-timeline item format",
+          "inconsistency_highlighting": "Use className to mark events in inconsistencies",
+          "document_navigation": "Use timeline.on('select', handler) for click-through"
+        },
+        "verified_against": "Comprehensive research in spec #004-interactive-timeline-visualization"
+      },
+      "configuration": {
+        "key_options": {
+          "zoomable": true,
+          "moveable": true,
+          "selectable": true,
+          "stack": true,
+          "showCurrentTime": false
+        },
+        "styling": "CSS classes for confidence levels (exact/inferred/estimated)",
+        "dependencies": ["@types/vis-timeline (dev)", "vis-data (may be bundled)"]
+      },
+      "phase_2_integration_requirements": {
+        "data_contract": {
+          "input": "TemporalAnalysisResult from temporal.ts parseTemporalEvents()",
+          "output": "vis-timeline compatible items array",
+          "inconsistency_metadata": "Pass inconsistencies array for highlighting"
+        },
+        "component_location": "Enhance existing src/components/analysis/timeline-view.tsx or create new InteractiveTimeline component",
+        "ssr_handling": "Use Next.js dynamic import with ssr: false (vis-timeline is client-only)",
+        "existing_timeline_components": [
+          "src/components/analysis/timeline-view.tsx - Basic vertical timeline",
+          "src/components/sam/OriginTimeline.tsx - SAM methodology timeline"
+        ]
+      },
+      "gotchas": [
+        "Vanilla JS library - requires React wrapper component",
+        "Not SSR compatible - use dynamic import with ssr: false",
+        "CSS must be imported separately",
+        "Manual lifecycle management in React (useEffect, useRef)"
+      ],
+      "research_sources": [
+        "Spec #004 research.json - comprehensive timeline visualization research",
+        "Context7 MCP: /visjs/vis-timeline (466 snippets, score: 90.5)",
+        "Existing timeline components in codebase"
+      ],
+      "recommendation": "Phase 2 only - focus Phase 1 on backend engine completion (95% date extraction accuracy, inconsistency detection). Timeline visualization is separate sprint per requirements."
+    },
+    {
+      "name": "Temporal Analysis Engine (Internal)",
+      "type": "infrastructure",
+      "description": "Existing temporal analysis engine in codebase requiring completion",
+      "verified_package": {
+        "name": "Internal module",
+        "location": "src/lib/engines/temporal.ts",
+        "current_state": "Partial implementation - basic structure exists",
+        "verified": true
+      },
+      "api_patterns": {
+        "main_function": "parseTemporalEvents(documents: Document[], caseId: string): Promise<TemporalAnalysisResult>",
+        "current_implementation": "Basic AI-based date extraction with mock mode",
+        "return_type": {
+          "timeline": "TemporalEvent[] - Array of extracted temporal events",
+          "inconsistencies": "Array<{description, events[], severity}>"
+        },
+        "data_structures": {
+          "TemporalEvent": {
+            "id": "string - unique event ID",
+            "date": "string - YYYY-MM-DD format",
+            "time": "string (optional) - HH:MM format",
+            "description": "string - event description",
+            "sourceDocumentId": "string - document reference",
+            "confidence": "'exact' | 'inferred' | 'estimated'"
+          },
+          "Inconsistency": {
+            "description": "string - explanation",
+            "events": "string[] - event IDs involved",
+            "severity": "'critical' | 'high' | 'medium'"
+          }
+        },
+        "verified_against": "Codebase reading: src/lib/engines/temporal.ts"
+      },
+      "gaps_requiring_implementation": {
+        "date_extraction_accuracy": {
+          "current": "AI-only extraction, accuracy unknown",
+          "target": "95%+ accuracy per acceptance criteria",
+          "implementation_needed": "Add chrono-node for NLP extraction + validation layer"
+        },
+        "relative_date_conversion": {
+          "current": "Not implemented - AI may hallucinate",
+          "target": "Convert 'three weeks later' to absolute dates when anchor exists",
+          "implementation_needed": "Detect relative dates, find anchor dates in context, use date-fns arithmetic"
+        },
+        "temporal_inconsistency_detection": {
+          "current": "Basic - relies on AI prompt",
+          "target": "Systematic detection of backdating, impossible sequences",
+          "implementation_needed": [
+            "Document creation date vs. mentioned event dates comparison",
+            "Event ordering validation (cause before effect)",
+            "Cross-document date consistency checking",
+            "Confidence-weighted inconsistency scoring"
+          ]
+        },
+        "citation_tracking": {
+          "current": "Only sourceDocumentId",
+          "target": "Link to specific page/paragraph where date was found",
+          "implementation_needed": "Add origin_page, origin_context fields to TemporalEvent"
+        },
+        "multi_document_analysis": {
+          "current": "Processes documents but limited cross-referencing",
+          "target": "Detect when same event has conflicting dates across documents",
+          "implementation_needed": "Event deduplication + conflict detection algorithm"
+        }
+      },
+      "implementation_priorities": {
+        "phase_1_critical": [
+          "Integrate chrono-node for robust date extraction",
+          "Add validation layer to achieve 95% accuracy",
+          "Implement relative-to-absolute date conversion",
+          "Enhance inconsistency detection algorithms",
+          "Add comprehensive test suite with known backdating cases"
+        ],
+        "phase_2_deferred": [
+          "vis-timeline integration (separate spec #004)",
+          "Advanced cross-document event deduplication",
+          "Machine learning-based date extraction refinement"
+        ]
+      },
+      "research_sources": [
+        "Direct file reading: src/lib/engines/temporal.ts",
+        "Pattern analysis from entity-resolution.ts and other engines",
+        "Requirements from spec #012 requirements.json"
+      ]
+    },
+    {
+      "name": "Supabase (Database/Storage)",
+      "type": "service",
+      "description": "PostgreSQL database and storage for persisting temporal analysis results",
+      "verified_package": {
+        "name": "@supabase/supabase-js",
+        "install_command": "Already installed",
+        "version": "^2.46.1",
+        "verified": true,
+        "source": "package.json line 43"
+      },
+      "api_patterns": {
+        "imports": [
+          "import { createClient } from '@/lib/supabase/client';",
+          "import type { Document, TemporalAnalysis } from '@/CONTRACT';"
+        ],
+        "data_persistence": {
+          "documents_table": "Existing - stores uploaded documents",
+          "temporal_analysis_table": "May need creation - stores TemporalAnalysisResult per case",
+          "temporal_events_table": "May need creation - stores individual TemporalEvent records"
+        },
+        "verified_against": "Codebase - src/lib/supabase/, src/CONTRACT.ts"
+      },
+      "configuration": {
+        "env_vars": [
+          "NEXT_PUBLIC_SUPABASE_URL",
+          "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+        ],
+        "mock_mode": "Exists - checks for 'placeholder' in SUPABASE_URL",
+        "schema": "Defined in src/CONTRACT.ts (TypeScript types)"
+      },
+      "infrastructure": {
+        "requires_docker": false,
+        "hosted_service": true,
+        "local_dev": "Can use Supabase CLI for local instance"
+      },
+      "use_case_fit": {
+        "persist_temporal_analysis": "✓ Primary storage for analysis results",
+        "cross_document_queries": "✓ SQL queries for finding date conflicts",
+        "audit_trail": "✓ Track when analyses were performed",
+        "case_based_organization": "✓ Existing case_id foreign keys"
+      },
+      "gotchas": [
+        "Mock mode active during development - real persistence may require schema updates",
+        "Check if temporal analysis tables exist or need migration",
+        "Large document sets may need batch processing"
+      ],
+      "research_sources": [
+        "package.json verification",
+        "Codebase analysis: src/lib/supabase/, src/CONTRACT.ts",
+        "Existing engine patterns use mock mode"
+      ]
+    }
+  ],
+  "unverified_claims": [
+    {
+      "claim": "chrono-node package name and API patterns",
+      "reason": "Package not currently installed, npm registry access blocked, web search unavailable",
+      "risk_level": "low",
+      "mitigation": "chrono-node is a well-known npm package (>1M weekly downloads). API patterns documented are based on common usage patterns. Verification needed during npm install.",
+      "recommendation": "Attempt npm install chrono-node during implementation. Fallback: Use AI + date-fns validation if chrono-node unavailable."
+    },
+    {
+      "claim": "95% date extraction accuracy achievable with chrono-node + AI + date-fns",
+      "reason": "No benchmarks available, accuracy depends on document formats",
+      "risk_level": "medium",
+      "mitigation": "Requires comprehensive test suite with varied date formats and known backdating examples",
+      "recommendation": "Implement validation layer: AI extraction -> chrono-node verification -> date-fns normalization -> confidence scoring. Build test suite during implementation."
+    },
+    {
+      "claim": "Relative date conversion requires anchor date detection",
+      "reason": "Complex NLP problem - 'three weeks later' needs reference point",
+      "risk_level": "medium",
+      "mitigation": "May require heuristics: find nearest prior absolute date, use document creation date as fallback",
+      "recommendation": "Phase 1: Implement basic anchor detection. Mark relative dates as 'estimated' confidence when anchor unclear. Phase 2: Refine with more sophisticated context analysis."
+    },
+    {
+      "claim": "vis-timeline supports decade to day zoom",
+      "reason": "Verified in spec #004 but not tested in this codebase",
+      "risk_level": "low",
+      "mitigation": "Spec #004 research comprehensive - Context7 confirmed (466 snippets, score 90.5)",
+      "recommendation": "Phase 2 dependency - defer to timeline visualization sprint"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "critical",
+      "recommendation": "Install and integrate chrono-node for natural language date extraction",
+      "rationale": "date-fns alone cannot extract dates from prose. AI-only approach risks hallucination and inconsistent formatting. chrono-node provides structured NLP date parsing with citation tracking.",
+      "implementation_steps": [
+        "npm install chrono-node",
+        "Create src/lib/temporal/date-extractor.ts wrapper",
+        "Implement multi-strategy extraction: chrono-node -> AI fallback -> date-fns validation",
+        "Add confidence scoring based on extraction method"
+      ],
+      "acceptance_criteria": "Extract dates from test documents with 95%+ precision/recall"
+    },
+    {
+      "priority": "critical",
+      "recommendation": "Implement relative-to-absolute date conversion algorithm",
+      "rationale": "Acceptance criteria requires 'three weeks later' conversion. Needs anchor date detection + date arithmetic.",
+      "implementation_steps": [
+        "Detect relative date phrases with regex or chrono-node",
+        "Find anchor dates: nearest prior absolute date, document metadata date, or reference date in context",
+        "Use date-fns addWeeks/addDays/etc. for arithmetic",
+        "Mark confidence as 'estimated' if anchor is uncertain"
+      ],
+      "acceptance_criteria": "Convert relative dates when anchor exists; flag when anchor missing"
+    },
+    {
+      "priority": "critical",
+      "recommendation": "Enhance temporal inconsistency detection beyond AI prompts",
+      "rationale": "Systematic backdating detection requires algorithmic validation, not just AI interpretation",
+      "implementation_steps": [
+        "Add document creation/modification date to analysis context",
+        "Compare mentioned event dates to document dates (backdating check)",
+        "Validate event sequences (cause before effect)",
+        "Cross-document date consistency checking for same events",
+        "Implement confidence-weighted inconsistency scoring"
+      ],
+      "acceptance_criteria": "Automatically flag: (1) documents referencing future events, (2) impossible sequences, (3) conflicting dates for same event"
+    },
+    {
+      "priority": "high",
+      "recommendation": "Build comprehensive test suite with backdating examples",
+      "rationale": "95% accuracy target requires validation against known cases",
+      "implementation_steps": [
+        "Create test documents with known backdating patterns",
+        "Include varied date formats (US/UK, written/numeric, relative)",
+        "Add impossible timeline sequences",
+        "Test relative date conversion accuracy",
+        "Measure precision/recall on test corpus"
+      ],
+      "acceptance_criteria": "Test suite with >50 test cases covering acceptance criteria scenarios"
+    },
+    {
+      "priority": "high",
+      "recommendation": "Add citation tracking to TemporalEvent data structure",
+      "rationale": "Enables users to verify date extraction and investigate inconsistencies",
+      "implementation_steps": [
+        "Add origin_page, origin_paragraph, origin_context fields to TemporalEvent",
+        "Track character indices from chrono-node parse results",
+        "Map character indices to page numbers (from document metadata)",
+        "Include surrounding context (50 chars before/after)"
+      ],
+      "acceptance_criteria": "Each extracted date includes citation to source location"
+    },
+    {
+      "priority": "medium",
+      "recommendation": "Leverage existing date-fns library for date normalization",
+      "rationale": "Already installed (v4.1.0), excellent for formatting and validation",
+      "implementation_steps": [
+        "Use parse() for format-specific parsing",
+        "Use isValid() to validate extracted dates",
+        "Use format() to normalize to YYYY-MM-DD",
+        "Use comparison functions (isBefore, isAfter) for inconsistency detection"
+      ],
+      "acceptance_criteria": "All dates normalized to consistent ISO format; invalid dates filtered"
+    },
+    {
+      "priority": "medium",
+      "recommendation": "Implement multi-document event deduplication",
+      "rationale": "Same event may appear in multiple documents with conflicting dates",
+      "implementation_steps": [
+        "Use fuzzy matching on event descriptions (Levenshtein distance)",
+        "Group events by similarity score threshold",
+        "Flag when same event has different dates across documents",
+        "Present as 'critical' severity inconsistency"
+      ],
+      "acceptance_criteria": "Detect cross-document date conflicts for similar events"
+    },
+    {
+      "priority": "low",
+      "recommendation": "Defer vis-timeline integration to Phase 2",
+      "rationale": "Requirements state 'Integration with timeline visualization in Phase 2'. Spec #004 already researched. Focus Phase 1 on engine completion.",
+      "implementation_steps": [
+        "Ensure TemporalAnalysisResult format is vis-timeline compatible",
+        "Document data contract for Phase 2 integration",
+        "Export utility functions for TemporalEvent -> vis-timeline item transformation"
+      ],
+      "acceptance_criteria": "Engine outputs data in format ready for Phase 2 visualization"
+    },
+    {
+      "priority": "low",
+      "recommendation": "Consider Supabase schema updates for temporal analysis persistence",
+      "rationale": "May need tables for storing analysis results and events",
+      "implementation_steps": [
+        "Review existing schema in src/CONTRACT.ts",
+        "Design temporal_analyses table (if not exists)",
+        "Design temporal_events table (if not exists)",
+        "Create migration or use Supabase Studio",
+        "Update TypeScript types in CONTRACT.ts"
+      ],
+      "acceptance_criteria": "Temporal analysis results persisted to database"
+    }
+  ],
+  "architecture_dependencies": {
+    "existing_patterns": {
+      "engine_structure": "Follow pattern from entity-resolution.ts, omission.ts - AI + validation",
+      "mock_mode": "Support mock mode for development without API keys",
+      "error_handling": "Use existing error patterns from @/lib/errors.ts",
+      "ai_client": "Use generateJSON() from @/lib/ai-client.ts",
+      "document_types": "Import Document from @/CONTRACT.ts"
+    },
+    "data_flow": {
+      "input": "documents: Document[] (from Supabase)",
+      "processing": "Extract dates -> Normalize -> Detect inconsistencies",
+      "output": "TemporalAnalysisResult { timeline: TemporalEvent[], inconsistencies: [] }",
+      "persistence": "Save to Supabase temporal_analyses table",
+      "visualization": "Phase 2 - consumed by vis-timeline component"
+    },
+    "integration_points": {
+      "document_upload": "Temporal analysis triggered after document upload/processing",
+      "case_management": "Analysis scoped to case_id",
+      "analysis_dashboard": "Display temporal analysis results in existing dashboard (spec #007)",
+      "timeline_visualization": "Phase 2 - spec #004 interactive timeline component"
+    }
+  },
+  "phase_1_scope_clarification": {
+    "in_scope": [
+      "95%+ date extraction accuracy from documents",
+      "Relative-to-absolute date conversion",
+      "Temporal impossibility detection (backdating, impossible sequences)",
+      "Comprehensive test suite",
+      "Citation tracking for dates",
+      "Backend engine completion"
+    ],
+    "out_of_scope_phase_2": [
+      "Timeline visualization UI (spec #004 dependency)",
+      "Interactive zoom/pan features",
+      "Document click-through navigation",
+      "Advanced ML-based date extraction"
+    ]
+  },
+  "key_findings": {
+    "existing_strengths": [
+      "date-fns already installed and tree-shakeable",
+      "AI client infrastructure mature (multi-provider support)",
+      "Basic temporal.ts structure exists with clear data types",
+      "Mock mode enables development without external dependencies",
+      "Timeline visualization already researched (spec #004)",
+      "Existing timeline components provide styling patterns"
+    ],
+    "critical_gaps": [
+      "No natural language date parser (chrono-node needed)",
+      "No relative date conversion logic",
+      "Inconsistency detection relies solely on AI prompts",
+      "No validation layer to ensure 95% accuracy",
+      "No comprehensive test suite",
+      "Limited citation tracking"
+    ],
+    "risk_mitigation_strategy": {
+      "accuracy_target": "Multi-layer validation: chrono-node + AI + date-fns + test suite",
+      "relative_dates": "Anchor detection heuristics + confidence scoring + user feedback",
+      "inconsistency_detection": "Algorithmic validation + AI interpretation + severity scoring",
+      "phase_2_integration": "Clear data contract + utility functions for vis-timeline transformation"
+    }
+  },
+  "context7_libraries_used": [
+    {
+      "id": "/date-fns/date-fns",
+      "snippets": 58,
+      "score": 57.9,
+      "reputation": "High",
+      "usage": "Date manipulation and formatting"
+    },
+    {
+      "id": "/visjs/vis-timeline",
+      "snippets": 466,
+      "score": 90.5,
+      "reputation": "High",
+      "usage": "Phase 2 timeline visualization (researched in spec #004)"
+    }
+  ],
+  "additional_dependencies_needed": [
+    {
+      "package": "chrono-node",
+      "reason": "Natural language date parsing for extracting dates from prose",
+      "install_command": "npm install chrono-node",
+      "priority": "critical",
+      "estimated_bundle_size": "~150KB"
+    },
+    {
+      "package": "@types/chrono-node",
+      "reason": "TypeScript type definitions for chrono-node",
+      "install_command": "npm install --save-dev @types/chrono-node",
+      "priority": "high",
+      "notes": "Check if @types package exists or if chrono-node includes types"
+    }
+  ],
+  "created_at": "2026-01-05T00:00:00Z",
+  "research_status": "comprehensive",
+  "research_methodology": {
+    "codebase_analysis": "✓ Complete - Analyzed existing temporal.ts, entity-resolution.ts, ai-client.ts, CONTRACT.ts",
+    "dependency_verification": "✓ Complete - Verified date-fns, AI SDKs, Supabase in package.json",
+    "external_library_research": "Partial - Context7 MCP used for date-fns and vis-timeline. chrono-node researched via known patterns (web verification blocked).",
+    "integration_pattern_analysis": "✓ Complete - Documented engine structure, data flow, integration points",
+    "prior_spec_leveraging": "✓ Complete - Incorporated comprehensive timeline visualization research from spec #004"
+  },
+  "limitations": "Web search, npm registry access, and WebFetch tools unavailable during research. chrono-node research based on known library patterns and common usage. Verification required during implementation phase."
+}
