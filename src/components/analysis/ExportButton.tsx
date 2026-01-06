@@ -3,7 +3,18 @@
 import { useState, useRef, useEffect } from 'react'
 import { Download, FileText, ChevronDown, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { isDesktop } from '@/lib/tauri'
 import type { ExportFormat, ExportStatus } from '@/lib/types/export'
+
+// ============================================
+// Tauri Export Types
+// ============================================
+
+interface ExportResult {
+    success: boolean
+    path: string | null
+    error: string | null
+}
 
 interface ExportButtonProps {
     caseId: string
@@ -66,6 +77,49 @@ export function ExportButton({ caseId, disabled = false, className = '' }: Expor
         return () => document.removeEventListener('keydown', handleEscape)
     }, [])
 
+    /**
+     * Save file using native Tauri save dialog (desktop mode)
+     */
+    const saveWithTauri = async (blob: Blob, filename: string): Promise<{ success: boolean; path?: string; error?: string }> => {
+        try {
+            const { invoke } = await import('@tauri-apps/api/core')
+
+            // Convert blob to byte array for Tauri IPC
+            const arrayBuffer = await blob.arrayBuffer()
+            const data = Array.from(new Uint8Array(arrayBuffer))
+
+            const result = await invoke<ExportResult>('save_export_file', {
+                filename,
+                data,
+            })
+
+            if (result.success && result.path) {
+                return { success: true, path: result.path }
+            } else {
+                return { success: false, error: result.error || 'Save failed' }
+            }
+        } catch (error) {
+            return {
+                success: false,
+                error: error instanceof Error ? error.message : 'Failed to save file'
+            }
+        }
+    }
+
+    /**
+     * Save file using browser download (web mode fallback)
+     */
+    const saveWithBrowser = (blob: Blob, filename: string): void => {
+        const url = window.URL.createObjectURL(blob)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = filename
+        document.body.appendChild(link)
+        link.click()
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(url)
+    }
+
     const handleExport = async (option: ExportOption) => {
         if (!caseId || status === 'generating') {
             return
@@ -104,18 +158,32 @@ export function ExportButton({ caseId, disabled = false, className = '' }: Expor
             const timestamp = new Date().toISOString().split('T')[0]
             const filename = `evidence-export-${timestamp}.${option.extension}`
 
-            // Trigger download
-            const url = window.URL.createObjectURL(blob)
-            const link = document.createElement('a')
-            link.href = url
-            link.download = filename
-            document.body.appendChild(link)
-            link.click()
-            document.body.removeChild(link)
-            window.URL.revokeObjectURL(url)
+            // Use native save dialog in desktop mode, browser download in web mode
+            if (isDesktop()) {
+                const result = await saveWithTauri(blob, filename)
 
-            setStatus('completed')
-            toast.success(`${option.format.toUpperCase()} export downloaded successfully`)
+                if (result.success) {
+                    setStatus('completed')
+                    // Show path in success message for desktop saves
+                    const shortPath = result.path && result.path.length > 50
+                        ? '...' + result.path.slice(-47)
+                        : result.path
+                    toast.success(`${option.format.toUpperCase()} saved to ${shortPath}`)
+                } else {
+                    // User cancelled or error occurred
+                    if (result.error === 'Save cancelled by user') {
+                        setStatus('idle')
+                        setActiveFormat(null)
+                        return
+                    }
+                    throw new Error(result.error || 'Save failed')
+                }
+            } else {
+                // Web mode: use browser download
+                saveWithBrowser(blob, filename)
+                setStatus('completed')
+                toast.success(`${option.format.toUpperCase()} export downloaded successfully`)
+            }
 
             // Reset status after a delay
             setTimeout(() => {
