@@ -1,0 +1,92 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run type checking
+      run: npm run type-check
+
+    - name: Run linting
+      run: npm run lint
+
+    - name: Run tests with coverage
+      run: npm run test:ci
+      env:
+        # Test environment variables (mocked in setup.ts)
+        NEXT_PUBLIC_SUPABASE_URL: https://test.supabase.co
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: test-anon-key
+        GROQ_API_KEY: test-groq-key
+        GOOGLE_AI_API_KEY: test-gemini-key
+
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-report
+        path: coverage/
+        retention-days: 30
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: junit.xml
+        retention-days: 30
+
+    - name: Check coverage thresholds
+      run: |
+        # Extract coverage percentages from the coverage summary
+        # Jest will fail if coverage is below thresholds set in jest.config.js (80%)
+        # This step ensures the workflow fails if coverage check failed
+        if [ ! -f coverage/coverage-summary.json ]; then
+          echo "Coverage summary not found!"
+          exit 1
+        fi
+
+        # Parse coverage and verify all metrics meet 80% threshold
+        node -e "
+          const summary = require('./coverage/coverage-summary.json');
+          const total = summary.total;
+          const metrics = ['lines', 'statements', 'functions', 'branches'];
+          let passed = true;
+
+          console.log('Coverage Summary:');
+          console.log('================');
+
+          for (const metric of metrics) {
+            const pct = total[metric].pct;
+            const status = pct >= 80 ? '✓' : '✗';
+            console.log(\`\${status} \${metric}: \${pct}%\`);
+            if (pct < 80) {
+              passed = false;
+            }
+          }
+
+          if (!passed) {
+            console.log('\\nCoverage below 80% threshold!');
+            process.exit(1);
+          }
+
+          console.log('\\nAll coverage thresholds met!');
+        "
