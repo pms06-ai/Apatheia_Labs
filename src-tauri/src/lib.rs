@@ -161,6 +161,8 @@ pub fn run() {
             commands::get_sam_results,
             commands::cancel_sam_analysis,
             commands::resume_sam_analysis,
+            // Export commands
+            commands::save_export_file,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
