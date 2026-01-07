@@ -42,6 +42,17 @@ export interface EngineFinding {
   finding_count: number
 }
 
+export interface EngineError {
+  job_id: string
+  engine_id: string
+  error: string
+}
+
+export interface EngineMockMode {
+  job_id?: string
+  message: string
+}
+
 export interface EngineComplete {
   job_id: string
   status: 'completed' | 'failed' | 'cancelled'
@@ -165,6 +176,24 @@ export function onEngineComplete(
 }
 
 /**
+ * Listen for engine errors
+ */
+export function onEngineError(
+  callback: (error: EngineError) => void
+): Promise<UnlistenFn> {
+  return createListener('engine:error', callback)
+}
+
+/**
+ * Listen for mock mode warnings
+ */
+export function onEngineMockMode(
+  callback: (payload: EngineMockMode) => void
+): Promise<UnlistenFn> {
+  return createListener('engine:mock_mode', callback)
+}
+
+/**
  * Listen for job cancellation
  */
 export function onEngineCancelled(
@@ -193,6 +222,8 @@ export async function setupEventListeners(handlers: {
   onEngineProgress?: (progress: EngineProgress) => void
   onEngineFinding?: (finding: EngineFinding) => void
   onEngineComplete?: (result: EngineComplete) => void
+  onEngineError?: (error: EngineError) => void
+  onEngineMockMode?: (payload: EngineMockMode) => void
 }): Promise<EventListeners> {
   const unlisteners: UnlistenFn[] = []
 
@@ -216,6 +247,12 @@ export async function setupEventListeners(handlers: {
   }
   if (handlers.onEngineComplete) {
     unlisteners.push(await onEngineComplete(handlers.onEngineComplete))
+  }
+  if (handlers.onEngineError) {
+    unlisteners.push(await onEngineError(handlers.onEngineError))
+  }
+  if (handlers.onEngineMockMode) {
+    unlisteners.push(await onEngineMockMode(handlers.onEngineMockMode))
   }
 
   return {

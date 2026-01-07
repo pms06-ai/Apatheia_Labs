@@ -13,6 +13,8 @@ import type {
   CaseType,
   DocType,
   ProcessingStatus,
+  SemanticSearchResult,
+  AnalysisResult,
 } from '@/CONTRACT'
 
 // Re-export settings types for convenience
@@ -163,11 +165,11 @@ export async function getFindings(caseId: string): Promise<Finding[]> {
 /**
  * Get full analysis results
  */
-export async function getAnalysis(caseId: string) {
+export async function getAnalysis(caseId: string): Promise<AnalysisResult> {
   if (isDesktop()) {
     return getTauriClient().getAnalysis(caseId)
   }
-  return { findings: [], contradictions: [], omissions: [] }
+  return { findings: [], entities: [], claims: [], contradictions: [], omissions: [] }
 }
 
 /**
@@ -306,7 +308,14 @@ export async function checkPythonStatus(): Promise<PythonStatus> {
 // S.A.M. Commands
 // ============================================
 
-import type { SAMPhase, SAMStatus } from '@/CONTRACT'
+import type {
+  SAMPhase,
+  SAMStatus,
+  ClaimOrigin,
+  ClaimPropagation,
+  AuthorityMarker,
+  SAMOutcome,
+} from '@/CONTRACT'
 
 export interface SAMAnalysisInput {
   case_id: string
@@ -316,6 +325,7 @@ export interface SAMAnalysisInput {
 }
 
 export interface SAMProgressResult {
+  id?: string
   analysis_id: string
   status: SAMStatus
   current_phase: SAMPhase | null
@@ -336,13 +346,18 @@ export interface SAMProgressResult {
 }
 
 export interface SAMResultsData {
-  origins: any[]
-  propagations: any[]
-  authority_markers: any[]
-  outcomes: any[]
-  false_premises: any[]
-  authority_laundering: any[]
-  causation_chains: any[]
+  origins: ClaimOrigin[]
+  propagations: ClaimPropagation[]
+  authority_markers: AuthorityMarker[]
+  outcomes: SAMOutcome[]
+  false_premises: ClaimOrigin[]
+  authority_laundering: AuthorityMarker[]
+  causation_chains: Array<{
+    outcome_id: string
+    root_claims: string[]
+    propagation_path: string[]
+    authority_accumulation: number
+  }>
 }
 
 /**
@@ -367,6 +382,7 @@ export async function getSAMProgress(analysisId: string): Promise<SAMProgressRes
 
   // Map the raw result to the typed interface
   return {
+    id: result.analysis_id,
     analysis_id: result.analysis_id,
     status: result.status as SAMStatus,
     current_phase: result.current_phase as SAMPhase | null,
@@ -394,7 +410,36 @@ export async function getSAMResults(analysisId: string): Promise<SAMResultsData 
   if (!isDesktop()) {
     return null
   }
-  return getTauriClient().getSAMResults(analysisId)
+  const result = await getTauriClient().getSAMResults(analysisId)
+  if (!result) return null
+
+  const falsePremises = result.origins.filter((origin) => origin.is_false_premise)
+  const authorityLaundering = result.authority_markers.filter(
+    (marker) => marker.is_authority_laundering
+  )
+
+  return {
+    origins: result.origins,
+    propagations: result.propagations,
+    authority_markers: result.authority_markers,
+    outcomes: result.outcomes,
+    false_premises: falsePremises,
+    authority_laundering: authorityLaundering,
+    causation_chains: [],
+  }
+}
+
+/**
+ * Search document chunks (semantic search)
+ */
+export async function searchDocuments(
+  query: string,
+  caseId: string
+): Promise<SemanticSearchResult[]> {
+  if (!isDesktop()) {
+    throw new Error('Search only available in desktop mode')
+  }
+  return getTauriClient().searchDocuments(query, caseId)
 }
 
 /**

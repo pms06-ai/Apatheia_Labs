@@ -10,11 +10,13 @@ import type {
   Document,
   Entity,
   Finding,
+  Claim,
   Contradiction,
   Omission,
   CaseType,
   DocType,
   ProcessingStatus,
+  SemanticSearchResult,
 } from '@/CONTRACT'
 
 // ============================================
@@ -23,9 +25,12 @@ import type {
 
 /**
  * Check if running in Tauri desktop environment
+ * Tauri 2.x uses __TAURI_INTERNALS__ for IPC
  */
 export const isDesktop = (): boolean => {
-  return typeof window !== 'undefined' && '__TAURI__' in window
+  if (typeof window === 'undefined') return false
+  // Tauri 2.x detection
+  return '__TAURI_INTERNALS__' in window || '__TAURI__' in window
 }
 
 /**
@@ -93,10 +98,12 @@ interface AnalysisResult {
   findings: Finding[]
   contradictions: Contradiction[]
   omissions: Omission[]
+  entities?: Entity[]
+  claims?: Claim[]
   error?: string
 }
 
-interface EngineResult {
+interface EngineRunResponse {
   success: boolean
   engine_id: string
   findings: Finding[]
@@ -124,6 +131,23 @@ interface SubmitAnalysisResult {
 interface ListJobsResult {
   success: boolean
   jobs: JobProgress[]
+  error?: string
+}
+
+interface SearchResponse {
+  success: boolean
+  results: SemanticSearchResult[]
+  error?: string
+}
+
+interface PickedFile {
+  path: string
+  filename: string
+}
+
+interface PickFilesResult {
+  success: boolean
+  files: PickedFile[]
   error?: string
 }
 
@@ -294,6 +318,8 @@ export class TauriClient {
 
   async getAnalysis(caseId: string): Promise<{
     findings: Finding[]
+    entities: Entity[]
+    claims: Claim[]
     contradictions: Contradiction[]
     omissions: Omission[]
   }> {
@@ -301,6 +327,8 @@ export class TauriClient {
     if (!result.success) throw new Error(result.error || 'Failed to get analysis')
     return {
       findings: result.findings,
+      entities: result.entities || [],
+      claims: result.claims || [],
       contradictions: result.contradictions,
       omissions: result.omissions,
     }
@@ -311,8 +339,8 @@ export class TauriClient {
     engine_id: string
     document_ids: string[]
     options?: Record<string, unknown>
-  }): Promise<EngineResult> {
-    const result = await this.call<EngineResult>('run_engine', { input })
+  }): Promise<EngineRunResponse> {
+    const result = await this.call<EngineRunResponse>('run_engine', { input })
     if (!result.success) throw new Error(result.error || 'Failed to run engine')
     return result
   }
@@ -344,12 +372,12 @@ export class TauriClient {
       success: boolean
       progress?: JobProgress
       error?: string
-    }>('get_job_progress', { jobId })
+    }>('get_job_progress', { job_id: jobId })
     return result.progress || null
   }
 
   async cancelJob(jobId: string): Promise<void> {
-    const result = await this.call<SubmitAnalysisResult>('cancel_job', { jobId })
+    const result = await this.call<SubmitAnalysisResult>('cancel_job', { job_id: jobId })
     if (!result.success) throw new Error(result.error || 'Failed to cancel job')
   }
 
@@ -357,6 +385,17 @@ export class TauriClient {
     const result = await this.call<ListJobsResult>('list_jobs')
     if (!result.success) throw new Error(result.error || 'Failed to list jobs')
     return result.jobs
+  }
+
+  async searchDocuments(query: string, caseId: string): Promise<SemanticSearchResult[]> {
+    const result = await this.call<SearchResponse>('search_documents', {
+      query,
+      case_id: caseId,
+    })
+    if (!result.success) {
+      throw new Error(result.error || 'Search failed')
+    }
+    return result.results
   }
 
   // ==========================================
@@ -368,36 +407,12 @@ export class TauriClient {
       throw new Error('File picker only available in desktop mode')
     }
 
-    try {
-      const { open } = await import('@tauri-apps/plugin-dialog')
-
-      const selected = await open({
-        multiple: true,
-        filters: [
-          {
-            name: 'Documents',
-            extensions: ['pdf', 'txt', 'md', 'json', 'csv', 'html', 'docx']
-          },
-          {
-            name: 'All Files',
-            extensions: ['*']
-          }
-        ]
-      })
-
-      if (!selected) return []
-
-      const paths = Array.isArray(selected) ? selected : [selected]
-
-      return paths.map(path => {
-        // Extract filename from path (handles Windows backslashes and Unix slashes)
-        const filename = path.split(/[/\\]/).pop() || 'unknown'
-        return { path, filename }
-      })
-    } catch (e) {
-      console.error('Failed to pick documents:', e)
-      throw new Error('Failed to open file picker')
+    const result = await this.call<PickFilesResult>('pick_documents')
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to open file picker')
     }
+
+    return result.files || []
   }
 
   async uploadFromPath(
