@@ -150,38 +150,8 @@ jest.mock('@/lib/groq', () => ({
   ]),
 }))
 
-/**
- * Gemini SDK Mock
- *
- * Matches actual exports from @/lib/gemini:
- * - MODELS: Available model constants
- * - gemini: Object with generateContent method
- * - analyzeLongDocument: Long document analysis
- * - compareDocuments: Multi-document comparison
- * - extractTimeline: Timeline extraction
- * - generateComplaint: Complaint generation
- * - streamAnalysis: Streaming analysis generator
- */
-jest.mock('@/lib/gemini', () => ({
-  MODELS: {
-    FLASH: 'gemini-1.5-flash',
-    PRO: 'gemini-1.5-pro',
-  },
-  gemini: {
-    generateContent: jest.fn().mockResolvedValue({
-      response: { text: () => '{"result": "Mock Gemini response"}' },
-    }),
-  },
-  analyzeLongDocument: jest.fn().mockResolvedValue('{"analysis": "Mock long document analysis"}'),
-  compareDocuments: jest.fn().mockResolvedValue('{"contradictions": [], "omissions": [], "summary": "Mock comparison"}'),
-  extractTimeline: jest.fn().mockResolvedValue('{"events": [], "timeline_gaps": [], "date_conflicts": []}'),
-  generateComplaint: jest.fn().mockResolvedValue('Mock regulatory complaint draft'),
-  streamAnalysis: jest.fn().mockImplementation(async function* () {
-    yield 'Mock '
-    yield 'Gemini '
-    yield 'stream'
-  }),
-}))
+// Gemini SDK Mock - REMOVED (module deleted in refactor)
+// Model routing now consolidated in @/lib/ai-client
 
 /**
  * Anthropic SDK Mock
