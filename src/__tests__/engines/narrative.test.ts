@@ -21,7 +21,8 @@ jest.mock('@/lib/ai-client', () => ({
 }))
 
 jest.mock('@/lib/supabase/server', () => {
-  const mockChain = {
+  // Default chain for tests that don't override
+  const defaultChain = {
     select: jest.fn().mockReturnThis(),
     insert: jest.fn().mockReturnThis(),
     update: jest.fn().mockReturnThis(),
@@ -36,8 +37,9 @@ jest.mock('@/lib/supabase/server', () => {
   return {
     supabaseAdmin: {
       from: (...args: unknown[]) => {
-        mockSupabaseFrom(...args)
-        return mockChain
+        // If mockSupabaseFrom has a return value set, use it; otherwise use default
+        const result = mockSupabaseFrom(...args)
+        return result !== undefined ? result : defaultChain
       },
     },
     createAdminClient: jest.fn(),

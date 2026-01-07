@@ -268,30 +268,31 @@ describe('Temporal Engine', () => {
   })
 
   describe('Relative Date Resolution', () => {
+    // Use local dates (year, month-1, day) to avoid timezone issues
     it('should resolve "three weeks later" with anchor date 2024-01-01 to 2024-01-22', async () => {
       // Test case from spec: anchor "2024-01-01" + "three weeks later" = "2024-01-22"
-      const anchor = new Date('2024-01-01')
+      const anchor = new Date(2024, 0, 1) // Local date
       const resolved = addWeeks(anchor, 3)
 
       expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-01-22')
     })
 
     it('should resolve "two weeks later" correctly', () => {
-      const anchor = new Date('2024-01-01')
+      const anchor = new Date(2024, 0, 1)
       const resolved = addWeeks(anchor, 2)
 
       expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-01-15')
     })
 
     it('should resolve "the following month" correctly', () => {
-      const anchor = new Date('2024-01-15')
+      const anchor = new Date(2024, 0, 15)
       const resolved = addMonths(anchor, 1)
 
       expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-02-15')
     })
 
     it('should resolve "five days later" correctly', () => {
-      const anchor = new Date('2024-01-01')
+      const anchor = new Date(2024, 0, 1)
       const resolved = addDays(anchor, 5)
 
       expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-01-06')
@@ -317,11 +318,11 @@ describe('Temporal Engine', () => {
       ]
 
       // Verify date-fns produces correct results for each number
-      const anchor = new Date('2024-01-01')
+      const anchor = new Date(2024, 0, 1)
 
       for (const { word, expected } of numberWordTests) {
         const result = addWeeks(anchor, expected)
-        const expectedDate = new Date('2024-01-01')
+        const expectedDate = new Date(2024, 0, 1)
         expectedDate.setDate(expectedDate.getDate() + expected * 7)
 
         expect(format(result, 'yyyy-MM-dd')).toBe(format(expectedDate, 'yyyy-MM-dd'))
@@ -379,84 +380,84 @@ describe('Temporal Engine', () => {
       })
 
       it('should resolve "the following week" correctly', () => {
-        const anchor = new Date('2024-02-15')
+        const anchor = new Date(2024, 1, 15) // Feb 15
         const resolved = addWeeks(anchor, 1)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-02-22')
       })
 
       it('should resolve "the previous week" correctly', () => {
-        const anchor = new Date('2024-02-15')
+        const anchor = new Date(2024, 1, 15) // Feb 15
         const resolved = addWeeks(anchor, -1)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-02-08')
       })
 
       it('should resolve "the following day" / "the next day" correctly', () => {
-        const anchor = new Date('2024-01-31')
+        const anchor = new Date(2024, 0, 31) // Jan 31
         const resolved = addDays(anchor, 1)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-02-01') // Month boundary
       })
 
       it('should resolve "the previous day" correctly', () => {
-        const anchor = new Date('2024-03-01')
+        const anchor = new Date(2024, 2, 1) // Mar 1
         const resolved = addDays(anchor, -1)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-02-29') // Leap year boundary
       })
 
       it('should resolve "a fortnight later" (14 days) correctly', () => {
-        const anchor = new Date('2024-01-01')
+        const anchor = new Date(2024, 0, 1)
         const resolved = addDays(anchor, 14)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-01-15')
       })
 
       it('should resolve "four months later" correctly', () => {
-        const anchor = new Date('2024-01-15')
+        const anchor = new Date(2024, 0, 15)
         const resolved = addMonths(anchor, 4)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-05-15')
       })
 
       it('should resolve "six months earlier" correctly', () => {
-        const anchor = new Date('2024-06-15')
+        const anchor = new Date(2024, 5, 15) // Jun 15
         const resolved = addMonths(anchor, -6)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2023-12-15')
       })
 
       it('should resolve "two years later" correctly', () => {
-        const anchor = new Date('2024-01-15')
+        const anchor = new Date(2024, 0, 15)
         const resolved = addMonths(anchor, 24) // Using addMonths for 2 years
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2026-01-15')
       })
 
       it('should handle numeric relative dates ("2 weeks later")', () => {
-        const anchor = new Date('2024-03-01')
+        const anchor = new Date(2024, 2, 1) // Mar 1
         const resolved = addWeeks(anchor, 2)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-03-15')
       })
 
       it('should handle "ten days later" with written number', () => {
-        const anchor = new Date('2024-01-01')
+        const anchor = new Date(2024, 0, 1)
         const resolved = addDays(anchor, 10)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-01-11')
       })
 
       it('should handle year boundary crossing ("three weeks later" from late December)', () => {
-        const anchor = new Date('2023-12-20')
+        const anchor = new Date(2023, 11, 20) // Dec 20, 2023
         const resolved = addWeeks(anchor, 3)
 
         expect(format(resolved, 'yyyy-MM-dd')).toBe('2024-01-10')
       })
 
       it('should handle month-end edge case ("one month later" from Jan 31)', () => {
-        const anchor = new Date('2024-01-31')
+        const anchor = new Date(2024, 0, 31)
         const resolved = addMonths(anchor, 1)
 
         // date-fns handles month overflow - Jan 31 + 1 month = Feb 29 (leap year 2024)
@@ -464,7 +465,7 @@ describe('Temporal Engine', () => {
       })
 
       it('should handle leap year correctly ("one year later" from Feb 29)', () => {
-        const anchor = new Date('2024-02-29') // Leap year
+        const anchor = new Date(2024, 1, 29) // Leap year Feb 29
         const resolved = addMonths(anchor, 12)
 
         // Feb 29, 2024 + 1 year = Feb 28, 2025 (non-leap year)

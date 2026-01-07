@@ -162,6 +162,7 @@ export async function detectOmissions(
       systematicPattern: true,
       overallBiasDirection: 'pro_authority'
     }
+  } else {
     // Real AI Analysis via Router
     const analysisPrompt = OMISSION_DETECTION_PROMPT
       .replace('{source_content}', sourceContent)
