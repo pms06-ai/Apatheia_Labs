@@ -14,7 +14,7 @@ use tauri::Manager;
 use db::Database;
 use orchestrator::EngineOrchestrator;
 use storage::Storage;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
@@ -26,6 +26,8 @@ pub struct AppState {
     pub storage: Arc<Mutex<Storage>>,
     /// Cancellation tokens for running S.A.M. analyses
     pub sam_tokens: Arc<Mutex<HashMap<String, CancellationToken>>>,
+    /// Allowlist for file uploads (security)
+    pub allowed_uploads: Arc<Mutex<HashSet<String>>>,
 }
 
 impl AppState {
@@ -40,6 +42,7 @@ impl AppState {
             db: Arc::new(Mutex::new(db)),
             storage: Arc::new(Mutex::new(storage)),
             sam_tokens: Arc::new(Mutex::new(HashMap::new())),
+            allowed_uploads: Arc::new(Mutex::new(HashSet::new())),
         })
     }
 }
@@ -107,19 +110,14 @@ pub fn run() {
             
             app.manage(Arc::new(RwLock::new(orchestrator)));
             
-            // Initialize state asynchronously
-            let app_handle = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                match AppState::new(app_data_dir).await {
-                    Ok(state) => {
-                        app_handle.manage(state);
-                        log::info!("Application state initialized successfully");
-                    }
-                    Err(e) => {
-                        log::error!("Failed to initialize application state: {}", e);
-                    }
-                }
-            });
+            // Initialize state synchronously so commands always have access
+            let state = tauri::async_runtime::block_on(AppState::new(app_data_dir))
+                .map_err(|e| {
+                    log::error!("Failed to initialize application state: {}", e);
+                    e
+                })?;
+            app.manage(state);
+            log::info!("Application state initialized successfully");
             
             Ok(())
         })
@@ -163,6 +161,8 @@ pub fn run() {
             commands::resume_sam_analysis,
             // Export commands
             commands::save_export_file,
+            // Search commands
+            commands::search_documents,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

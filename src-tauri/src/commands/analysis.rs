@@ -6,10 +6,57 @@ use crate::sam::{SAMExecutor, SAMConfig, SAMPhase};
 use crate::AppState;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
-use tauri::State;
+use tauri::{Manager, State};
 use tokio::sync::RwLock;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
+use crate::commands::settings::{get_python_command, load_settings_sync};
+use std::path::PathBuf;
+use std::process::Command;
+use tempfile::NamedTempFile;
+
+fn resolve_embeddings_script(app: &tauri::AppHandle, script_name: &str) -> Result<PathBuf, String> {
+    if let Ok(current_dir) = std::env::current_dir() {
+        let dev_path = current_dir.join("scripts").join(script_name);
+        if dev_path.exists() {
+            return Ok(dev_path);
+        }
+    }
+
+    let resource_dir = app
+        .path()
+        .resource_dir()
+        .map_err(|e| format!("Failed to resolve resource dir: {}", e))?;
+    let bundled_path = resource_dir.join("scripts").join(script_name);
+    if bundled_path.exists() {
+        return Ok(bundled_path);
+    }
+
+    let bundled_parent_path = resource_dir.join("..").join("scripts").join(script_name);
+    if bundled_parent_path.exists() {
+        return Ok(bundled_parent_path);
+    }
+
+    Err(format!(
+        "Embeddings script not found in dev or bundled resources: {}",
+        script_name
+    ))
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SearchResult {
+    pub chunk_id: String,
+    pub document_id: String,
+    pub content: String,
+    pub similarity: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SearchResponse {
+    pub success: bool,
+    pub results: Vec<SearchResult>,
+    pub error: Option<String>,
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RunEngineInput {
@@ -782,4 +829,164 @@ pub async fn resume_sam_analysis(
             error: Some(e.to_string()),
         }),
     }
+}
+
+/// Semantic search implementation
+#[tauri::command]
+pub async fn search_documents(
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+    query: String,
+    case_id: String,
+) -> Result<SearchResponse, String> {
+    let db = state.db.lock().await;
+
+    // Fetch all chunks for the case that have embeddings
+    #[derive(sqlx::FromRow)]
+    struct ChunkRow {
+        id: String,
+        document_id: String,
+        chunk_index: i64,
+        content: String,
+        embedding: Option<String>,
+    }
+
+    let rows = sqlx::query_as::<_, ChunkRow>(
+        "SELECT dc.id, dc.document_id, dc.chunk_index, dc.content, dc.embedding 
+         FROM document_chunks dc
+         JOIN documents d ON dc.document_id = d.id
+         WHERE d.case_id = ? AND dc.embedding IS NOT NULL"
+    )
+    .bind(&case_id)
+    .fetch_all(db.pool())
+    .await
+    .map_err(|e| format!("Database error: {}", e))?;
+
+    if rows.is_empty() {
+        return Ok(SearchResponse {
+            success: true,
+            results: vec![],
+            error: None,
+        });
+    }
+
+    // specific struct for python input
+    #[derive(Serialize)]
+    struct SearchChunkInput {
+        id: String,
+        content: String,
+        embedding: Vec<f32>,
+    }
+
+    let mut search_inputs = Vec::new();
+    for row in &rows {
+        if let Some(emb_str) = &row.embedding {
+            if let Ok(vec) = serde_json::from_str::<Vec<f32>>(emb_str) {
+                search_inputs.push(SearchChunkInput {
+                    id: row.id.clone(),
+                    content: row.content.clone(),
+                    embedding: vec,
+                });
+            }
+        }
+    }
+
+    if search_inputs.is_empty() {
+        return Ok(SearchResponse {
+            success: true,
+            results: vec![],
+            error: Some("No embeddings found for this case's documents.".to_string()),
+        });
+    }
+
+    // Write to temp file
+    let input_file = NamedTempFile::new().map_err(|e| format!("Failed to create temp file: {}", e))?;
+    let (file, input_path) = input_file.keep().map_err(|e| format!("Failed to keep temp file: {}", e))?;
+    drop(file);
+    
+    let input_json = serde_json::to_string(&search_inputs).map_err(|e| format!("Serialization error: {}", e))?;
+    std::fs::write(&input_path, input_json).map_err(|e| format!("Write error: {}", e))?;
+
+    // Call Python script
+    let settings = load_settings_sync(&app_handle).unwrap_or_default();
+    let python_cmd = get_python_command(&settings.python);
+    let script_path = resolve_embeddings_script(&app_handle, "embeddings.py")?;
+    let script_path_str = script_path.to_string_lossy().to_string();
+
+    // run: python embeddings.py search "query" --data "path"
+    let output = Command::new(&python_cmd)
+        .arg(&script_path_str)
+        .arg("search")
+        .arg(&query)
+        .arg("--data")
+        .arg(input_path.to_str().unwrap_or_default())
+        .output()
+        .map_err(|e| {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                format!("Python not found at '{}'", python_cmd)
+            } else {
+                format!("Failed to execute python search: {}", e)
+            }
+        })?;
+
+    // Clean up temp file
+    let _ = std::fs::remove_file(&input_path);
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Search script failed: {}", stderr));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    
+    // Parse result
+    #[derive(Deserialize)]
+    struct PythonSearchResult {
+        success: bool,
+        results: Option<Vec<PythonResultItem>>,
+        error: Option<String>,
+    }
+    
+    #[derive(Deserialize)]
+    struct PythonResultItem {
+        chunk: PythonChunkData,
+        score: f64,
+    }
+    
+    #[derive(Deserialize)]
+    struct PythonChunkData {
+        id: String,
+    }
+
+    let py_result: PythonSearchResult = serde_json::from_str(&stdout).map_err(|e| format!("Failed to parse search output: {}", e))?;
+
+    if !py_result.success {
+        return Ok(SearchResponse {
+            success: false,
+            results: vec![],
+            error: py_result.error,
+        });
+    }
+
+    // Map back to our response struct
+    let mut mapped_results = Vec::new();
+    if let Some(items) = py_result.results {
+        for item in items {
+            // Find the original row to get all details safely
+            if let Some(row) = rows.iter().find(|r| r.id == item.chunk.id) {
+                mapped_results.push(SearchResult {
+                    chunk_id: row.chunk_index.to_string(),
+                    document_id: row.document_id.clone(),
+                    content: row.content.clone(),
+                    similarity: item.score,
+                });
+            }
+        }
+    }
+
+    Ok(SearchResponse {
+        success: true,
+        results: mapped_results,
+        error: None,
+    })
 }
