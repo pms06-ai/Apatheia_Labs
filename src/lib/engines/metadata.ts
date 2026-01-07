@@ -38,7 +38,7 @@ export const ENGINE_REGISTRY = {
         description: 'Analyzes argument structures using Toulmin model',
         keyQuestion: 'Is the argument logically sound and supported?',
         priority: null,
-        status: 'active'
+        status: 'planned'
     },
     bias_detection: {
         id: 'bias_detection',
@@ -49,7 +49,7 @@ export const ENGINE_REGISTRY = {
         description: 'Detects systematic bias patterns using statistical analysis',
         keyQuestion: 'Is there systematic bias against a party?',
         priority: null,
-        status: 'active'
+        status: 'planned'
     },
     contradiction: {
         id: 'contradiction',
@@ -71,7 +71,7 @@ export const ENGINE_REGISTRY = {
         description: 'Audits compliance with statutory duties and obligations',
         keyQuestion: 'Did the authority follow statutory procedures?',
         priority: null,
-        status: 'active'
+        status: 'planned'
     },
     professional_tracker: {
         id: 'professional_tracker',
@@ -82,7 +82,7 @@ export const ENGINE_REGISTRY = {
         description: 'Tracks individual professional conduct across case history',
         keyQuestion: 'Is this professional behaving consistently?',
         priority: null,
-        status: 'active'
+        status: 'planned'
     },
 
     // V6.0 Engines

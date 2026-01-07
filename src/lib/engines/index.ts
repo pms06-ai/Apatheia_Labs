@@ -11,6 +11,7 @@ import { narrativeEngine, type NarrativeAnalysisResult } from './narrative'
 import { coordinationEngine, type CoordinationAnalysisResult } from './coordination'
 import { temporalEngine, type TemporalAnalysisResult } from './temporal'
 import { entityResolutionEngine, type EntityResolutionResult } from './entity-resolution'
+import { documentaryEngine, type DocumentaryAnalysisResult } from './documentary'
 import { supabaseAdmin } from '@/lib/supabase/server'
 import { type EngineId } from './metadata'
 
@@ -24,7 +25,7 @@ export { ENGINE_REGISTRY, getEngine, getActiveEngines, getNewEngines } from './m
 export type { EngineId } from './metadata'
 
 // Engine types
-export type EngineResult =
+export type EngineAnalysisResult =
   | OmissionAnalysisResult
   | ExpertAnalysisResult
   | ContradictionAnalysisResult
@@ -32,6 +33,7 @@ export type EngineResult =
   | CoordinationAnalysisResult
   | TemporalAnalysisResult
   | EntityResolutionResult
+  | DocumentaryAnalysisResult
 
 export interface EngineRunParams {
   engineId: EngineId
@@ -43,7 +45,7 @@ export interface EngineRunParams {
 export interface EngineRunResult {
   engineId: EngineId
   success: boolean
-  result?: EngineResult
+  result?: EngineAnalysisResult
   error?: string
   duration: number
 }
@@ -56,7 +58,7 @@ export async function runEngine(params: EngineRunParams): Promise<EngineRunResul
   const { engineId, caseId, documentIds } = params
 
   try {
-    let result: EngineResult | undefined
+    let result: EngineAnalysisResult | undefined
 
     switch (engineId) {
       case 'omission': {
@@ -93,7 +95,7 @@ export async function runEngine(params: EngineRunParams): Promise<EngineRunResul
         break
       }
 
-      case 'temporal': {
+      case 'temporal_parser': {
         const results = await temporalEngine.parseTemporalEvents(await fetchDocs(caseId, documentIds), caseId)
         result = results
         break
@@ -101,6 +103,12 @@ export async function runEngine(params: EngineRunParams): Promise<EngineRunResul
 
       case 'entity_resolution': {
         const results = await entityResolutionEngine.resolveEntities(await fetchDocs(caseId, documentIds), caseId)
+        result = results
+        break
+      }
+
+      case 'documentary': {
+        const results = await documentaryEngine.analyzeDocumentaryBias(await fetchDocs(caseId, documentIds), caseId)
         result = results
         break
       }
@@ -139,7 +147,9 @@ export { omissionEngine } from './omission'
 export { expertWitnessEngine, ExpertWitnessEngine } from './expert-witness'
 export { temporalEngine } from './temporal'
 export { entityResolutionEngine } from './entity-resolution'
+export { documentaryEngine } from './documentary'
 export type { OmissionAnalysisResult, OmissionFinding } from './omission'
 export type { ExpertAnalysisResult, ExpertViolation } from './expert-witness'
 export type { TemporalAnalysisResult, TemporalEvent, TemporalInconsistency } from './temporal'
 export type { EntityResolutionResult, ResolvedEntity, EntityLinkageProposal, EntityGraphData } from './entity-resolution'
+export type { DocumentaryAnalysisResult, DocumentaryFinding } from './documentary'

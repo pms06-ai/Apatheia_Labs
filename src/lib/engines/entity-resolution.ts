@@ -561,7 +561,7 @@ export function buildEntityGraph(
           targetName: linkage.entity2Name,
         }
 
-        graph.addEdge(sourceId, targetId, edgeAttributes, edgeKey)
+        graph.addEdgeWithKey(edgeKey, sourceId, targetId, edgeAttributes)
       }
     }
   }

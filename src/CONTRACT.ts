@@ -507,6 +507,15 @@ export interface AnalysisResult {
   entities: Entity[]
   claims: Claim[]
   contradictions: Contradiction[]
+  omissions: Omission[]
+}
+
+export interface EngineResult {
+  success: boolean
+  engineId: Engine
+  findings: Finding[]
+  durationMs: number
+  error?: string
 }
 
 // ============================================

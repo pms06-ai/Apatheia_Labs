@@ -375,7 +375,7 @@ function parseNumberWord(word: string): number {
         'eleven': 11, 'twelve': 12
     }
     const lower = word.toLowerCase()
-    return numberWords[lower] ?? parseInt(word, 10) || 1
+    return numberWords[lower] ?? (parseInt(word, 10) || 1)
 }
 
 /**
