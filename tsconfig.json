@@ -30,6 +30,7 @@
   ],
   "exclude": [
     "node_modules",
-    "modal"
+    "modal",
+    "src/__tests__"
   ]
 }

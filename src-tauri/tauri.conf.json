@@ -10,6 +10,7 @@
     "beforeBuildCommand": "npm run build && npm run build:sidecar"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Phronesis FCIP",
@@ -43,7 +44,9 @@
     "publisher": "Apatheia Labs",
     "resources": [
       "sidecars/engine-runner.js",
-      "sidecars/package.json"
+      "sidecars/package.json",
+      "../scripts/embeddings.py",
+      "../scripts/requirements.txt"
     ],
     "externalBin": [],
     "windows": {

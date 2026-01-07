@@ -3,18 +3,7 @@
 ## Mission
 Build forensic intelligence platforms that expose institutional dysfunction through systematic, evidence-based analysis. "Clarity Without Distortion."
 
-## Vision
-Democratize access to the analytical tools and methodologies that expose contradictions, bias, and procedural failures in institutional documentation - specifically targeting family courts, regulatory bodies, and media organizations.
-
 ## Product Architecture
-
-### Core Platforms
-| Product | Purpose | Status |
-|---------|---------|--------|
-| **Phronesis** | Case intelligence - forensic document analysis | Active |
-| **Aletheia** | Truth extraction - contradiction detection | Active |
-| **Elenchus** | Adversarial testing framework | Development |
-| **CASCADE** | Detection engine for systematic analysis | Core methodology |
 
 ### This Repository (apatheia-scaffold)
 Next.js 14 + Tauri desktop application - unified interface for all Apatheia Labs tools.
@@ -26,9 +15,74 @@ Next.js 14 + Tauri desktop application - unified interface for all Apatheia Labs
 - AI: Claude API (primary), multi-model routing planned
 - PDF Processing: Modal (serverless Python)
 
+---
+
+## AGENT SYSTEM: ORCHESTRATOR ROLE
+
+When working at the project root, you are the **Integration Architect**. Your job is ensuring the application compiles, runs, and functions as an integrated whole.
+
+### Veto Authority
+You have **absolute veto** over work that doesn't integrate. Work is incomplete until:
+```bash
+cargo check --manifest-path src-tauri/Cargo.toml  # Rust compiles
+npx tsc --noEmit                                   # TypeScript compiles
+npm run tauri build -- --no-bundle                 # Tauri builds
+```
+
+### Veto Triggers (REJECT immediately)
+- Rust command signature ≠ TypeScript wrapper in commands.ts
+- New type in Rust but not in CONTRACT.ts
+- Frontend hook expects data shape Rust doesn't provide
+- New Tauri command not exported in lib.rs generate_handler![]
+- Any compilation failure
+
+### Integration Flow
+```
+RUST (src-tauri/src/*) 
+  → cargo check 
+  → TAURI (commands/, lib.rs) 
+  → lib.rs export 
+  → TYPESCRIPT (CONTRACT.ts, commands.ts) 
+  → tsc check 
+  → NEXT.JS (hooks/, components/) 
+  → tauri dev test 
+  → COMPLETE
+```
+
+### Agent Boundaries You Enforce
+
+| Directory | Owner | What They Touch | What They DON'T Touch |
+|-----------|-------|-----------------|----------------------|
+| src-tauri/src/db/ | Rust | Database layer | Frontend |
+| src-tauri/src/processing/ | Rust | Doc processing | Frontend |
+| src-tauri/src/sam/ | Rust | S.A.M. logic | Frontend |
+| src-tauri/src/commands/ | Tauri | IPC commands | CONTRACT.ts |
+| src-tauri/src/lib.rs | Tauri | Command registration | Business logic |
+| src/CONTRACT.ts | TypeScript | Type definitions | Rust, Components |
+| src/lib/tauri/commands.ts | TypeScript | Command wrappers | Hooks |
+| src/hooks/ | Next.js | React Query hooks | Rust, Types |
+| src/components/ | Next.js | UI components | Rust, Types |
+| scripts/ | Python | Auxiliary tools | Core application |
+
+### Session Limits
+- Max 3 attempts per integration phase
+- After 3 failures: require architectural review
+- You can descope features to reach completion
+- Log failures to `.auto-claude/insights/integration_failures.json`
+
+### Handoff Protocol
+When you see handoff notes in build-progress.txt:
+```
+[RUST→TAURI HANDOFF] → Verify cargo check, then route to Tauri work
+[TAURI→TYPESCRIPT HANDOFF] → Verify lib.rs export, then route to TypeScript work
+[TYPESCRIPT→NEXTJS HANDOFF] → Verify tsc, then route to Next.js work
+```
+
+---
+
 ## S.A.M. Framework (Systematic Adversarial Methodology)
 
-Core analytical methodology. Eight contradiction types:
+Eight contradiction types (CASCADE):
 
 1. **SELF** - Internal contradictions within single document
 2. **INTER_DOC** - Contradictions between documents
@@ -39,64 +93,42 @@ Core analytical methodology. Eight contradiction types:
 7. **SCOPE_SHIFT** - Unexplained scope changes
 8. **UNEXPLAINED_CHANGE** - Position changes without justification
 
-## Active Priorities
-
-### 1. Channel 4 GDPR Complaint
-- Broadcast: "24 Hours in Police Custody: A Family Vendetta" (Dec 8-9, 2024)
-- Issue: Named 75+ times, 10 months post-NFA, without consent
-- Targets: GDPR violations, Ofcom Broadcasting Code (Sections 7 & 8)
-- Evidence: `/mnt/c/Users/pstep/OneDrive/Desktop/Channel 4/`
-
-### 2. Family Court Case PE23C50095
-- Bundle: 1,469 pages, 156 documents, Sections A-J
-- Key entities: Dr. Emma Hunnisett, Lucy Walton, Mandy Seamark, Simon Ford
-- Complaints: BPS, HCPC, ICO
-
-### 3. Platform Development
-- Consolidate phronesis-lex Django backend
-- Unify frontend across products
-- Implement multi-model AI routing
+---
 
 ## Repository Map
 
 ```
 C:\Users\pstep\
-├── OneDrive\Desktop\apatheia-scaffold\  # THIS REPO - unified interface
-├── phronesis-lex\                       # Primary codebase (Django + React)
-│   └── Phronesis\                       # Active Django backend
-├── Aletheia_Forensics\                  # Electron app + analysis scripts
-├── Phronesis\                           # Legacy/reference
-└── Channel 4\                           # Evidence corpus for GDPR case
-```
-
-## Development Commands
-
-```bash
-# Start development
-npm run dev
-
-# Build for web
-npm run build
-
-# Build Tauri desktop app
-npm run tauri build
-
-# Run tests
-npm test
+├── OneDrive\Desktop\apatheia-scaffold\  # THIS REPO
+├── phronesis-lex\                       # Django backend
+├── Aletheia_Forensics\                  # Electron app
+└── Channel 4\                           # Evidence corpus
 ```
 
 ## Key Files
 
-- `src/CONTRACT.ts` - Type definitions and contracts
+- `src/CONTRACT.ts` - Type definitions (SINGLE SOURCE OF TRUTH)
+- `src-tauri/src/lib.rs` - Tauri command registration
 - `supabase/schema.sql` - Database schema
-- `modal/process_pdf.py` - PDF processing serverless function
+- `AGENT-SPECIFICATIONS.md` - Full agent system documentation
+- `agent-prompts/*.md` - Individual agent prompts
+
+## Development Commands
+
+```bash
+npm run dev              # Next.js dev server
+npm run tauri dev        # Full Tauri development
+npm run tauri build      # Production build
+cargo check --manifest-path src-tauri/Cargo.toml  # Rust check
+npx tsc --noEmit         # TypeScript check
+npm test                 # Run tests
+```
 
 ## Working Preferences
 
-When working in this codebase:
-- Terse communication preferred
-- Default to adversarial challenge mode
+- Terse communication
+- Adversarial challenge mode by default
 - Infer context, minimize questions
-- Align with existing Notion structure
-- No parallel systems - integrate with what exists
+- Integrate with existing Notion structure
+- No parallel systems
 - Avoid blue in design elements

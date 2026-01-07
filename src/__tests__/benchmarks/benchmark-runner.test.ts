@@ -111,43 +111,53 @@ function formatMetricsReport(result: BenchmarkResult): string {
 // MOCK SETUP
 // ============================================
 
+// Use ReturnType to get proper mock type from jest.fn()
+type MockFn = ReturnType<typeof jest.fn>
+
 const mockGenerateJSON = jest.fn()
 const mockSupabaseFrom = jest.fn()
 
 // Mock chain for Supabase query builder
-const createMockChain = (resolvedData: unknown = []) => ({
-  select: jest.fn().mockReturnThis(),
-  insert: jest.fn().mockReturnThis(),
-  update: jest.fn().mockReturnThis(),
-  delete: jest.fn().mockReturnThis(),
-  eq: jest.fn().mockReturnThis(),
-  in: jest.fn().mockReturnThis(),
-  order: jest.fn().mockReturnThis(),
-  limit: jest.fn().mockReturnThis(),
-  single: jest.fn().mockResolvedValue({ data: null, error: null }),
-  then: jest.fn((resolve) => resolve({ data: resolvedData, error: null })),
-})
+const createMockChain = (resolvedData: unknown = []) => {
+  const chain: Record<string, MockFn> = {
+    select: jest.fn().mockReturnThis() as MockFn,
+    insert: jest.fn().mockReturnThis() as MockFn,
+    update: jest.fn().mockReturnThis() as MockFn,
+    delete: jest.fn().mockReturnThis() as MockFn,
+    eq: jest.fn().mockReturnThis() as MockFn,
+    in: jest.fn().mockReturnThis() as MockFn,
+    order: jest.fn().mockReturnThis() as MockFn,
+    limit: jest.fn().mockReturnThis() as MockFn,
+    single: jest.fn().mockResolvedValue({ data: null, error: null }) as MockFn,
+    then: jest.fn().mockImplementation((resolve: (value: { data: unknown; error: null }) => unknown) =>
+      resolve({ data: resolvedData, error: null })
+    ) as MockFn,
+  }
+  return chain
+}
 
 // Mock AI client
 jest.mock('@/lib/ai-client', () => ({
   generateJSON: (...args: unknown[]) => mockGenerateJSON(...args),
-  analyze: jest.fn().mockResolvedValue({ result: {}, model: 'mock', usage: {} }),
-  compareDocuments: jest.fn().mockResolvedValue('{}'),
+  analyze: jest.fn(() => Promise.resolve({ result: {}, model: 'mock', usage: {} })),
+  compareDocuments: jest.fn(() => Promise.resolve('{}')),
 }))
 
 // Mock Supabase
 jest.mock('@/lib/supabase/server', () => {
-  const defaultMockChain = {
-    select: jest.fn().mockReturnThis(),
-    insert: jest.fn().mockReturnThis(),
-    update: jest.fn().mockReturnThis(),
-    delete: jest.fn().mockReturnThis(),
-    eq: jest.fn().mockReturnThis(),
-    in: jest.fn().mockReturnThis(),
-    order: jest.fn().mockReturnThis(),
-    limit: jest.fn().mockReturnThis(),
-    single: jest.fn().mockResolvedValue({ data: null, error: null }),
-    then: jest.fn((resolve) => resolve({ data: [], error: null })),
+  const defaultMockChain: Record<string, MockFn> = {
+    select: jest.fn().mockReturnThis() as MockFn,
+    insert: jest.fn().mockReturnThis() as MockFn,
+    update: jest.fn().mockReturnThis() as MockFn,
+    delete: jest.fn().mockReturnThis() as MockFn,
+    eq: jest.fn().mockReturnThis() as MockFn,
+    in: jest.fn().mockReturnThis() as MockFn,
+    order: jest.fn().mockReturnThis() as MockFn,
+    limit: jest.fn().mockReturnThis() as MockFn,
+    single: jest.fn().mockResolvedValue({ data: null, error: null }) as MockFn,
+    then: jest.fn().mockImplementation((resolve: (value: { data: unknown[]; error: null }) => unknown) =>
+      resolve({ data: [], error: null })
+    ) as MockFn,
   }
 
   return {
@@ -289,25 +299,26 @@ describe('Benchmark Runner', () => {
 
       // Setup mocks for document retrieval
       const mockDocsChain = {
-        select: jest.fn().mockReturnThis(),
-        in: jest.fn().mockReturnThis(),
-        then: jest.fn((resolve) => resolve({ data: benchmarkDocs, error: null })),
+        select: jest.fn().mockReturnThis() as MockFn,
+        in: jest.fn().mockReturnThis() as MockFn,
+        then: jest.fn().mockImplementation((resolve: (v: { data: unknown; error: null }) => unknown) =>
+          resolve({ data: benchmarkDocs, error: null })) as MockFn,
       }
 
       const mockChunksChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({
+        select: jest.fn().mockReturnThis() as MockFn,
+        eq: jest.fn().mockReturnThis() as MockFn,
+        order: (jest.fn() as MockFn).mockResolvedValue({
           data: benchmarkDocs.map(doc => ({
             content: doc.extracted_text || '',
             chunk_index: 0,
           })),
           error: null,
         }),
-        insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+        insert: (jest.fn() as MockFn).mockResolvedValue({ data: null, error: null }),
       }
 
-      mockSupabaseFrom.mockImplementation((table) => {
+      mockSupabaseFrom.mockImplementation((table: unknown) => {
         if (table === 'documents') return mockDocsChain
         return mockChunksChain
       })
@@ -329,7 +340,7 @@ describe('Benchmark Runner', () => {
         implication: 'Credibility impact',
       }))
 
-      mockGenerateJSON.mockResolvedValue({
+      ;(mockGenerateJSON as MockFn).mockResolvedValue({
         contradictions: detectedContradictions,
         claimClusters: [],
       })
@@ -387,29 +398,30 @@ describe('Benchmark Runner', () => {
       const mockDocsChain = {
         select: jest.fn().mockReturnThis(),
         in: jest.fn().mockReturnThis(),
-        then: jest.fn((resolve) => resolve({ data: cleanDocs, error: null })),
+        then: jest.fn().mockImplementation((resolve: (v: { data: unknown; error: null }) => unknown) =>
+          resolve({ data: cleanDocs, error: null })) as MockFn,
       }
 
       const mockChunksChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({
+        select: jest.fn().mockReturnThis() as MockFn,
+        eq: jest.fn().mockReturnThis() as MockFn,
+        order: (jest.fn() as MockFn).mockResolvedValue({
           data: cleanDocs.map(doc => ({
             content: doc.extracted_text || '',
             chunk_index: 0,
           })),
           error: null,
         }),
-        insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+        insert: (jest.fn() as MockFn).mockResolvedValue({ data: null, error: null }),
       }
 
-      mockSupabaseFrom.mockImplementation((table) => {
+      mockSupabaseFrom.mockImplementation((table: unknown) => {
         if (table === 'documents') return mockDocsChain
         return mockChunksChain
       })
 
       // Engine should return no contradictions for clean documents
-      mockGenerateJSON.mockResolvedValue({
+      ;(mockGenerateJSON as MockFn).mockResolvedValue({
         contradictions: [],
         claimClusters: [],
       })
@@ -448,31 +460,32 @@ describe('Benchmark Runner', () => {
         }))
 
       const mockDocsChain = {
-        select: jest.fn().mockReturnThis(),
-        in: jest.fn().mockReturnThis(),
-        then: jest.fn((resolve) => resolve({ data: narrativeDocs, error: null })),
+        select: jest.fn().mockReturnThis() as MockFn,
+        in: jest.fn().mockReturnThis() as MockFn,
+        then: jest.fn().mockImplementation((resolve: (v: { data: unknown; error: null }) => unknown) =>
+          resolve({ data: narrativeDocs, error: null })) as MockFn,
       }
 
       const mockChunksChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({
+        select: jest.fn().mockReturnThis() as MockFn,
+        eq: jest.fn().mockReturnThis() as MockFn,
+        order: (jest.fn() as MockFn).mockResolvedValue({
           data: narrativeDocs.map(doc => ({
             content: doc.extracted_text || '',
             chunk_index: 0,
           })),
           error: null,
         }),
-        insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+        insert: (jest.fn() as MockFn).mockResolvedValue({ data: null, error: null }),
       }
 
-      mockSupabaseFrom.mockImplementation((table) => {
+      mockSupabaseFrom.mockImplementation((table: unknown) => {
         if (table === 'documents') return mockDocsChain
         return mockChunksChain
       })
 
       // Simulate narrative findings
-      mockGenerateJSON.mockResolvedValue({
+      ;(mockGenerateJSON as MockFn).mockResolvedValue({
         claims: [
           {
             claim: 'Subject location and timing',
@@ -546,29 +559,30 @@ describe('Benchmark Runner', () => {
       const mockDocsChain = {
         select: jest.fn().mockReturnThis(),
         in: jest.fn().mockReturnThis(),
-        then: jest.fn((resolve) => resolve({ data: institutionalDocs, error: null })),
+        then: jest.fn().mockImplementation((resolve: (v: { data: unknown; error: null }) => unknown) =>
+          resolve({ data: institutionalDocs, error: null })) as MockFn,
       }
 
       const mockChunksChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({
+        select: jest.fn().mockReturnThis() as MockFn,
+        eq: jest.fn().mockReturnThis() as MockFn,
+        order: (jest.fn() as MockFn).mockResolvedValue({
           data: institutionalDocs.map(doc => ({
             content: doc.extracted_text || '',
             chunk_index: 0,
           })),
           error: null,
         }),
-        insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+        insert: (jest.fn() as MockFn).mockResolvedValue({ data: null, error: null }),
       }
 
-      mockSupabaseFrom.mockImplementation((table) => {
+      mockSupabaseFrom.mockImplementation((table: unknown) => {
         if (table === 'documents') return mockDocsChain
         return mockChunksChain
       })
 
       // Simulate coordination findings
-      mockGenerateJSON.mockResolvedValue({
+      ;(mockGenerateJSON as MockFn).mockResolvedValue({
         sharedFindings: [
           {
             phrase: 'concerns regarding',
@@ -629,22 +643,22 @@ describe('Benchmark Runner', () => {
       }))
 
       const mockChunksChain = {
-        select: jest.fn().mockReturnThis(),
-        eq: jest.fn().mockReturnThis(),
-        order: jest.fn().mockResolvedValue({
+        select: jest.fn().mockReturnThis() as MockFn,
+        eq: jest.fn().mockReturnThis() as MockFn,
+        order: (jest.fn() as MockFn).mockResolvedValue({
           data: omissionDocs.map(doc => ({
             content: doc.extracted_text || '',
             chunk_index: 0,
           })),
           error: null,
         }),
-        insert: jest.fn().mockResolvedValue({ data: null, error: null }),
+        insert: (jest.fn() as MockFn).mockResolvedValue({ data: null, error: null }),
       }
 
       mockSupabaseFrom.mockReturnValue(mockChunksChain)
 
       // Simulate omission findings
-      mockGenerateJSON.mockResolvedValue({
+      ;(mockGenerateJSON as MockFn).mockResolvedValue({
         omissions: [
           {
             type: 'selective_quote',
