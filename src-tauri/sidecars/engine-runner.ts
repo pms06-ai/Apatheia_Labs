@@ -1248,6 +1248,41 @@ const professionalTrackerEngine: EngineExecutor = async (config, caseId, documen
 };
 
 // =============================================================================
+// Prompt Executor - Generic AI prompt execution for S.A.M. and other uses
+// =============================================================================
+
+const promptExecutorEngine: EngineExecutor = async (config, caseId, documentIds, options) => {
+  const systemPrompt = options?.system_prompt as string;
+  const userContent = options?.user_content as string;
+
+  if (!systemPrompt || !userContent) {
+    throw new Error('prompt_executor requires system_prompt and user_content in options');
+  }
+
+  log(`Executing prompt_executor with ${userContent.length} chars of content`);
+
+  const result = await generateJSON(config, systemPrompt, userContent);
+
+  // Check for parse errors from generateJSON
+  if (result && typeof result === 'object' && '_parseError' in result) {
+    throw new Error(`AI response parse error: ${(result as { error?: string }).error || 'Unknown error'}`);
+  }
+
+  return [{
+    id: uuidv4(),
+    engine_id: 'prompt_executor',
+    finding_type: 'ai_response',
+    title: 'AI Response',
+    description: 'Raw AI response from prompt execution',
+    severity: 'info',
+    confidence: 1.0,
+    document_ids: documentIds,
+    evidence: result,  // The actual AI response JSON goes here
+    metadata: { prompt_length: userContent.length },
+  }];
+};
+
+// =============================================================================
 // Engine Registry
 // =============================================================================
 
@@ -1265,6 +1300,8 @@ const engines: Record<string, EngineExecutor> = {
   'bias_detection': biasDetectionEngine,
   'accountability_audit': accountabilityAuditEngine,
   'professional_tracker': professionalTrackerEngine,
+  // Generic prompt executor for S.A.M. and custom prompts
+  'prompt_executor': promptExecutorEngine,
 };
 
 // =============================================================================

@@ -41,6 +41,8 @@ pub enum EngineId {
     Memory,
     Linguistic,
     BiasCascade,
+    // Generic prompt executor for S.A.M. and custom prompts
+    PromptExecutor,
 }
 
 impl std::fmt::Display for EngineId {
@@ -62,6 +64,7 @@ impl std::fmt::Display for EngineId {
             Self::Memory => write!(f, "memory"),
             Self::Linguistic => write!(f, "linguistic"),
             Self::BiasCascade => write!(f, "bias_cascade"),
+            Self::PromptExecutor => write!(f, "prompt_executor"),
         }
     }
 }
@@ -86,6 +89,7 @@ impl EngineId {
             "memory" => Some(Self::Memory),
             "linguistic" => Some(Self::Linguistic),
             "bias_cascade" => Some(Self::BiasCascade),
+            "prompt_executor" => Some(Self::PromptExecutor),
             // Aliases (for backward compatibility)
             "temporal" => Some(Self::TemporalParser), // legacy alias
             _ => None,
@@ -255,6 +259,7 @@ impl EngineOrchestrator {
         
         // Track mock mode usage for warning
         let mut mock_mode_detected = false;
+        let mut had_failure = false;
 
         // Run each engine
         let mut completed = 0;
@@ -328,6 +333,7 @@ impl EngineOrchestrator {
                     Err(e) => {
                         warn!("Engine {} failed: {}", engine_id, e);
                         job.results.insert(engine_id, Err(e.clone()));
+                        had_failure = true;
 
                         // Emit error event
                         if let Some(ref handle) = app_handle {
@@ -347,7 +353,11 @@ impl EngineOrchestrator {
         // Mark job as complete
         {
             let mut job = job_arc.lock().await;
-            job.status = JobStatus::Completed;
+            job.status = if had_failure {
+                JobStatus::Failed
+            } else {
+                JobStatus::Completed
+            };
             job.completed_at = Some(chrono::Utc::now());
         }
         
@@ -355,7 +365,7 @@ impl EngineOrchestrator {
         if let Some(ref handle) = app_handle {
             let _ = handle.emit("engine:complete", serde_json::json!({
                 "job_id": job_id,
-                "status": "completed",
+                "status": if had_failure { "failed" } else { "completed" },
                 "engines_completed": completed,
             }));
         }

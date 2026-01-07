@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS document_chunks (
     document_id TEXT NOT NULL,
     chunk_index INTEGER NOT NULL,
     content TEXT NOT NULL,
+    embedding TEXT, -- JSON array of floats for semantic search
     page_number INTEGER,
     metadata TEXT DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),

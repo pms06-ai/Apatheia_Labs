@@ -5,7 +5,7 @@ use crate::processing;
 use crate::AppState;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use tauri::{AppHandle, State};
+use tauri::{AppHandle, Manager, State};
 use tauri_plugin_dialog::DialogExt;
 use uuid::Uuid;
 
@@ -350,6 +350,13 @@ pub async fn pick_documents(app_handle: AppHandle) -> Result<PickFilesResult, St
                 })
                 .collect();
             
+            // Add picked files to allowlist
+            let app_state: State<AppState> = app_handle.state();
+            let mut allowed = app_state.allowed_uploads.lock().await;
+            for file in &picked {
+                allowed.insert(file.path.clone());
+            }
+            
             Ok(PickFilesResult {
                 success: true,
                 files: picked,
@@ -379,6 +386,22 @@ pub async fn upload_from_path(
     doc_type: Option<String>,
 ) -> Result<DocumentResult, String> {
     println!("DEBUG: upload_from_path called for case_id: {}, file_path: {}", case_id, file_path);
+    
+    // Security check: Verify file is in allowlist
+    {
+        let mut allowed = state.allowed_uploads.lock().await;
+        if !allowed.contains(&file_path) {
+            log::warn!("Security violation: Attempted to upload file not in allowlist: {}", file_path);
+            return Ok(DocumentResult {
+                success: false,
+                data: None,
+                error: Some("Security violation: File access denied".into()),
+            });
+        }
+        // Remove from allowlist (one-time use)
+        allowed.remove(&file_path);
+    }
+
     let path = PathBuf::from(&file_path);
     
     // Read file

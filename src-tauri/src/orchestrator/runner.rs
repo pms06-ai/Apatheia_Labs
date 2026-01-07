@@ -123,6 +123,17 @@ impl EngineRunner {
         case_id: &str,
         document_ids: &[String],
     ) -> Result<EngineResult, String> {
+        self.run_engine_with_options(engine_id, case_id, document_ids, None).await
+    }
+
+    /// Run an engine with custom options (for S.A.M. prompt execution)
+    pub async fn run_engine_with_options(
+        &self,
+        engine_id: EngineId,
+        case_id: &str,
+        document_ids: &[String],
+        options: Option<serde_json::Value>,
+    ) -> Result<EngineResult, String> {
         info!("Running engine {} for case {} with {} documents",
               engine_id, case_id, document_ids.len());
 
@@ -135,7 +146,7 @@ impl EngineRunner {
 
         if let Some(ref sidecar_path) = self.sidecar_path {
             if sidecar_path.exists() {
-                let findings = self.run_via_sidecar(sidecar_path, engine_id, case_id, document_ids).await?;
+                let findings = self.run_via_sidecar(sidecar_path, engine_id, case_id, document_ids, options).await?;
                 return Ok(EngineResult { findings, used_mock_mode: false });
             } else {
                 warn!("Sidecar path does not exist: {}", sidecar_path.display());
@@ -155,12 +166,13 @@ impl EngineRunner {
         engine_id: EngineId,
         case_id: &str,
         document_ids: &[String],
+        options: Option<serde_json::Value>,
     ) -> Result<Vec<EngineFinding>, String> {
         let request = EngineRequest {
             engine_id: engine_id.to_string(),
             case_id: case_id.to_string(),
             document_ids: document_ids.to_vec(),
-            options: None,
+            options,
         };
         
         let request_json = serde_json::to_string(&request)

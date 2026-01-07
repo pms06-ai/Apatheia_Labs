@@ -151,6 +151,91 @@ async fn run_python_ocr(app_handle: &AppHandle, file_path: &str) -> Result<Strin
     Ok(result)
 }
 
+/// Generate embeddings for a batch of chunks
+async fn generate_embeddings_batch(app_handle: &AppHandle, chunks: &mut Vec<Chunk>) -> Result<(), String> {
+    if chunks.is_empty() {
+        return Ok(());
+    }
+
+    let python_config = get_python_config(app_handle);
+    let python_cmd = get_python_command(&python_config);
+    
+    // We assume the script is at scripts/embeddings.py relative to app root
+    // In dev:
+    let script_path = Path::new("scripts/embeddings.py");
+    // In prod, check resources... for now assume dev path or bundled path logic similar to OCR
+    let script_path_str = if script_path.exists() {
+        "scripts/embeddings.py".to_string()
+    } else {
+        // resource/tools/embeddings.py ? For now fall back to assumption
+        "scripts/embeddings.py".to_string()
+    };
+
+    // Prepare input file
+    let input_file = NamedTempFile::new().map_err(|e| format!("Failed to create temp input file: {}", e))?;
+    let (file, input_path) = input_file.keep().map_err(|e| format!("Failed to keep input file: {}", e))?;
+    drop(file);
+    let input_guard = TempFileGuard::new(input_path.clone());
+
+    // Write chunks to input file
+    let input_data: Vec<_> = chunks.iter().map(|c| {
+        serde_json::json!({
+            "id": c.id,
+            "text": c.text
+        })
+    }).collect();
+    
+    let input_json = serde_json::to_string(&input_data).map_err(|e| format!("Failed to serialize chunks: {}", e))?;
+    std::fs::write(&input_path, input_json).map_err(|e| format!("Failed to write input file: {}", e))?;
+
+    // Prepare output file
+    let output_file = NamedTempFile::new().map_err(|e| format!("Failed to create temp output file: {}", e))?;
+    let (file, output_path) = output_file.keep().map_err(|e| format!("Failed to keep output file: {}", e))?;
+    drop(file);
+    let output_guard = TempFileGuard::new(output_path.clone());
+
+    info!("Generating embeddings for {} chunks...", chunks.len());
+
+    let output = Command::new(&python_cmd)
+        .arg(&script_path_str)
+        .arg("generate_batch")
+        .arg("--input")
+        .arg(input_guard.path_str())
+        .arg("--output")
+        .arg(output_guard.path_str())
+        .output()
+        .map_err(|e| format!("Failed to execute Python embedding script: {}", e))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("Embedding generation failed: {}", stderr));
+    }
+
+    // Read output
+    let output_content = std::fs::read_to_string(&output_path).map_err(|e| format!("Failed to read embedding output: {}", e))?;
+    
+    // Parse output
+    // The script should return a list of objects with "embedding" field
+    // We need to map them back to our chunks
+    let results: Vec<serde_json::Value> = serde_json::from_str(&output_content).map_err(|e| format!("Failed to parse embedding output: {}", e))?;
+    
+    // Create a map for faster lookup, though order should be preserved
+    // Actually, let's just assume order is preserved or match by ID if needed.
+    // For simplicity, let's iterate and match by ID.
+    
+    for result in results {
+        if let (Some(id), Some(embedding_val)) = (result.get("id").and_then(|i| i.as_u64()), result.get("embedding")) {
+             if let Some(chunk) = chunks.iter_mut().find(|c| c.id == id as usize) {
+                 if let Ok(vec) = serde_json::from_value::<Vec<f32>>(embedding_val.clone()) {
+                     chunk.embedding = Some(vec);
+                 }
+             }
+        }
+    }
+
+    Ok(())
+}
+
 /// Process a document after upload
 /// - Extract text based on file type
 /// - Chunk text for semantic search
@@ -216,6 +301,10 @@ pub async fn process_document(
                     Err(e) => {
                          error!("Native extraction also failed: {}", e);
                          update_status(state, document_id, "failed", Some(&e.to_string())).await?;
+                         let _ = app_handle.emit("document:processing_error", serde_json::json!({
+                             "document_id": document_id,
+                             "error": format!("Text extraction failed: {}", e)
+                         }));
                          return Err(format!("Text extraction failed: {}", e));
                     }
                  }
@@ -227,6 +316,10 @@ pub async fn process_document(
             Err(e) => {
                 error!("Text extraction failed for {}: {}", document_id, e);
                 update_status(state, document_id, "failed", Some(&e.to_string())).await?;
+                let _ = app_handle.emit("document:processing_error", serde_json::json!({
+                    "document_id": document_id,
+                    "error": format!("Text extraction failed: {}", e)
+                }));
                 return Err(format!("Text extraction failed: {}", e));
             }
         }
@@ -239,12 +332,24 @@ pub async fn process_document(
     }));
     
     // Chunk text for semantic search
-    let chunks = chunk_text(&extracted_text, 512, 50);
+    let mut chunks = chunk_text(&extracted_text, 512, 50);
     let chunk_count = chunks.len();
 
     let _ = app_handle.emit("document:processing_progress", serde_json::json!({
         "document_id": document_id,
-        "progress": 80,
+        "progress": 70,
+        "stage": "generating_embeddings"
+    }));
+
+    // Generate embeddings
+    if let Err(e) = generate_embeddings_batch(app_handle, &mut chunks).await {
+        error!("Failed to generate embeddings for {}: {}. Continuing without embeddings.", document_id, e);
+        // We continue, but chunks won't have embeddings
+    }
+
+    let _ = app_handle.emit("document:processing_progress", serde_json::json!({
+        "document_id": document_id,
+        "progress": 85,
         "stage": "saving"
     }));
 
@@ -267,14 +372,17 @@ pub async fn process_document(
     if !chunks.is_empty() {
         for chunk in chunks {
             let chunk_id = format!("{}-{}", document_id, chunk.id);
+            let embedding_json = chunk.embedding.as_ref().map(|v| serde_json::to_string(v).unwrap_or_default());
+            
             sqlx::query(
-                "INSERT INTO document_chunks (id, document_id, chunk_index, content, page_number, metadata, created_at)
-                 VALUES (?, ?, ?, ?, NULL, '{}', ?)"
+                "INSERT INTO document_chunks (id, document_id, chunk_index, content, embedding, page_number, metadata, created_at)
+                 VALUES (?, ?, ?, ?, ?, NULL, '{}', ?)"
             )
             .bind(&chunk_id)
             .bind(document_id)
             .bind(chunk.id as i64)
             .bind(&chunk.text)
+            .bind(embedding_json)
             .bind(&now)
             .execute(db.pool())
             .await

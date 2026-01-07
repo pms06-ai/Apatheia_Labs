@@ -22,6 +22,10 @@ pub struct Chunk {
     
     /// Approximate token count (simple word split)
     pub token_count: usize,
+
+    /// Embedding vector (optional, populated later)
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub embedding: Option<Vec<f32>>,
 }
 
 /// Split text into overlapping chunks
@@ -52,6 +56,7 @@ pub fn chunk_text(text: &str, chunk_size: usize, overlap: usize) -> Vec<Chunk> {
             start_offset: 0,
             end_offset: text.len(),
             token_count: words.len(),
+            embedding: None,
         }];
     }
     
@@ -81,6 +86,7 @@ pub fn chunk_text(text: &str, chunk_size: usize, overlap: usize) -> Vec<Chunk> {
             start_offset,
             end_offset,
             token_count: chunk_words.len(),
+            embedding: None,
         });
         
         chunk_id += 1;
@@ -118,6 +124,7 @@ pub fn chunk_by_sentences(text: &str, max_chunk_size: usize) -> Vec<Chunk> {
                 start_offset,
                 end_offset: start_offset + current_chunk.len(),
                 token_count: current_tokens,
+                embedding: None,
             });
             
             chunk_id += 1;
@@ -141,6 +148,7 @@ pub fn chunk_by_sentences(text: &str, max_chunk_size: usize) -> Vec<Chunk> {
             start_offset,
             end_offset: start_offset + current_chunk.len(),
             token_count: current_tokens,
+            embedding: None,
         });
     }
     

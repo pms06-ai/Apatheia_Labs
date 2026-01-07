@@ -1,17 +1,16 @@
-//! S.A.M. Executor - Runs analysis phases via Claude Code CLI
+//! S.A.M. Executor - Runs analysis phases via TypeScript sidecar
 //!
-//! Spawns Claude Code as a sidecar process for each phase,
+//! Uses the EngineRunner to execute prompts via the TypeScript sidecar,
 //! parsing structured JSON output and storing results in SQLite.
 
 use log::{info, debug, warn};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use std::process::Stdio;
-use tokio::io::{AsyncBufReadExt, BufReader};
-use tokio::process::Command;
-use tokio::time::{timeout, Duration};
+use tokio::time::Duration;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
+
+use crate::orchestrator::{EngineId, EngineRunner};
 
 /// S.A.M. analysis phases
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -107,6 +106,7 @@ impl Default for SAMConfig {
 
 /// Phase result from Claude Code
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct PhaseResult {
     success: bool,
     phase: String,
@@ -193,6 +193,7 @@ struct AuthorityData {
 
 /// ARRIVE phase output structure
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct ArriveOutput {
     #[serde(default)]
     outcomes: Vec<OutcomeData>,
@@ -216,6 +217,7 @@ struct OutcomeData {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 struct CausationChainData {
     outcome_id: String,
     root_claims: Vec<String>,
@@ -334,8 +336,8 @@ impl SAMExecutor {
         // Build prompt for this phase
         let prompt = self.build_phase_prompt(&phase).await?;
 
-        // Run Claude Code
-        let result = self.run_claude_code(&prompt).await?;
+        // Run via TypeScript sidecar
+        let result = self.run_via_sidecar(&prompt).await?;
 
         // Parse and store results
         self.store_phase_results(&phase, &result).await?;
@@ -564,84 +566,39 @@ OUTPUT FORMAT (JSON only):
         Ok(prompt)
     }
 
-    /// Run Claude Code CLI with a prompt
-    async fn run_claude_code(&self, prompt: &str) -> Result<serde_json::Value, String> {
-        info!("Spawning Claude Code for S.A.M. analysis");
+    /// Run AI via TypeScript sidecar using prompt_executor engine
+    async fn run_via_sidecar(&self, prompt: &str) -> Result<serde_json::Value, String> {
+        info!("Running S.A.M. phase via TypeScript sidecar");
 
-        // Check if claude is available
-        let claude_check = Command::new("claude")
-            .arg("--version")
-            .output()
-            .await;
+        // Create engine runner and find sidecar
+        let mut runner = EngineRunner::new();
+        runner.find_sidecar();
 
-        if claude_check.is_err() {
-            warn!("Claude Code CLI not found, using mock mode");
+        // Check if sidecar is available
+        if runner.is_mock_mode() {
+            warn!("Sidecar not available, using mock mode");
             return self.run_mock_analysis(prompt).await;
         }
 
-        // Spawn claude with the prompt
-        let mut child = Command::new("claude")
-            .arg("-p")
-            .arg(prompt)
-            .arg("--output-format")
-            .arg("json")
-            .stdin(Stdio::null())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| format!("Failed to spawn Claude Code: {}", e))?;
+        // Call prompt_executor engine with the S.A.M. prompt
+        let options = serde_json::json!({
+            "system_prompt": "You are a forensic document analyst executing the S.A.M. (Systematic Adversarial Methodology) analysis. You must respond with valid JSON only, no markdown or other formatting.",
+            "user_content": prompt
+        });
 
-        // Run with timeout
-        let result = timeout(
-            Duration::from_secs(self.config.timeout_seconds),
-            async {
-                let stdout = child.stdout.take()
-                    .ok_or("Failed to get stdout handle")?;
-                let mut reader = BufReader::new(stdout);
-                let mut output = String::new();
+        let result = runner.run_engine_with_options(
+            EngineId::PromptExecutor,
+            &self.config.case_id,
+            &self.config.document_ids,
+            Some(options),
+        ).await?;
 
-                // Read all output
-                loop {
-                    let mut line = String::new();
-                    match reader.read_line(&mut line).await {
-                        Ok(0) => break, // EOF
-                        Ok(_) => output.push_str(&line),
-                        Err(e) => return Err(format!("Failed to read output: {}", e)),
-                    }
-                }
-
-                // Wait for process
-                let status = child.wait().await
-                    .map_err(|e| format!("Failed to wait for Claude Code: {}", e))?;
-
-                if !status.success() {
-                    // Read stderr for error details
-                    if let Some(stderr) = child.stderr.take() {
-                        let mut stderr_reader = BufReader::new(stderr);
-                        let mut error_output = String::new();
-                        let _ = stderr_reader.read_line(&mut error_output).await;
-                        return Err(format!("Claude Code failed: {}", error_output));
-                    }
-                    return Err("Claude Code exited with error".to_string());
-                }
-
-                // Parse JSON from output
-                // Claude Code may include non-JSON preamble, so find the JSON block
-                let json_start = output.find('{').ok_or("No JSON found in output")?;
-                let json_str = &output[json_start..];
-
-                serde_json::from_str(json_str)
-                    .map_err(|e| format!("Failed to parse Claude Code output: {}. Output was: {}", e, json_str))
-            }
-        ).await;
-
-        match result {
-            Ok(inner) => inner,
-            Err(_) => {
-                // Timeout
-                let _ = child.kill().await;
-                Err("Claude Code timed out".to_string())
-            }
+        // Extract AI response from findings[0].evidence
+        if let Some(finding) = result.findings.first() {
+            // The evidence field contains the raw AI response
+            Ok(finding.evidence.clone())
+        } else {
+            Err("No response from AI sidecar".to_string())
         }
     }
 
