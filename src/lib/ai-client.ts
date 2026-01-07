@@ -1,6 +1,8 @@
 import { getPreferredAIProvider } from './env'
-import { analyze as analyzeGroq } from './groq'
-import { analyze as analyzeAnthropic } from './anthropic'
+import { analyze as analyzeGroq, MODELS as GROQ_MODELS } from './groq'
+import { analyze as analyzeAnthropic, MODELS as ANTHROPIC_MODELS } from './anthropic'
+import type { AnalysisRequest as GroqAnalysisRequest } from './groq'
+import type { AnalysisRequest as AnthropicAnalysisRequest } from './anthropic'
 
 export type AIProvider = 'anthropic' | 'groq' | 'gemini' | 'openai' | 'mock'
 
@@ -30,10 +32,10 @@ export async function analyze(request: AnalysisRequest): Promise<AnalysisRespons
     switch (provider) {
         case 'anthropic':
             // Map generic request to Anthropic specific if needed
-            return analyzeAnthropic(request as any)
+            return analyzeAnthropic(toAnthropicRequest(request))
 
         case 'groq': {
-            const gResponse = await analyzeGroq(request as any)
+            const gResponse = await analyzeGroq(toGroqRequest(request))
             return {
                 ...gResponse,
                 usage: {
@@ -64,6 +66,45 @@ export async function analyze(request: AnalysisRequest): Promise<AnalysisRespons
             // Fallback
             throw new Error("Unknown AI provider")
     }
+}
+
+function toAnthropicRequest(request: AnalysisRequest): AnthropicAnalysisRequest {
+    const model = resolveAnthropicModel(request.model)
+    return {
+        text: request.text,
+        task: request.task,
+        customPrompt: request.customPrompt,
+        model,
+        jsonMode: request.jsonMode
+    }
+}
+
+function toGroqRequest(request: AnalysisRequest): GroqAnalysisRequest {
+    const model = resolveGroqModel(request.model)
+    return {
+        text: request.text,
+        task: request.task,
+        customPrompt: request.customPrompt,
+        model
+    }
+}
+
+function resolveAnthropicModel(model?: string): AnthropicAnalysisRequest['model'] {
+    if (!model) return undefined
+    return isValidAnthropicModel(model) ? model : undefined
+}
+
+function resolveGroqModel(model?: string): GroqAnalysisRequest['model'] {
+    if (!model) return undefined
+    return isValidGroqModel(model) ? model : undefined
+}
+
+function isValidAnthropicModel(model: string): model is keyof typeof ANTHROPIC_MODELS {
+    return Object.prototype.hasOwnProperty.call(ANTHROPIC_MODELS, model)
+}
+
+function isValidGroqModel(model: string): model is keyof typeof GROQ_MODELS {
+    return Object.prototype.hasOwnProperty.call(GROQ_MODELS, model)
 }
 
 function getMockResponse(request: AnalysisRequest): any {
@@ -138,52 +179,3 @@ export async function generateJSON(systemPrompt: string, userContent: string): P
     return response.result
 }
 
-/**
- * Compare multiple documents for contradictions
- */
-export async function compareDocuments(
-    documents: Array<{ name: string; content: string }>,
-    focusAreas?: string[]
-): Promise<string> {
-    const documentList = documents
-        .map((d, i) => `=== DOCUMENT ${i + 1}: ${d.name} ===\n${d.content}`)
-        .join('\n\n')
-
-    const focusPrompt = focusAreas?.length
-        ? `Focus particularly on: ${focusAreas.join(', ')}`
-        : ''
-
-    const prompt = `You are a forensic analyst comparing multiple documents for contradictions and inconsistencies.
-
-${documentList}
-
-Analyze these documents and identify:
-1. Direct contradictions between statements
-2. Timeline inconsistencies
-3. Information present in one document but omitted from another
-4. Claims that lack supporting evidence
-5. Circular reasoning or self-referential citations
-
-${focusPrompt}
-
-Return your analysis in JSON format:
-{
-  "contradictions": [
-    {
-      "title": "Short title",
-      "type": "direct|temporal|logical|omission",
-      "severity": "critical|high|medium|low",
-      "statement_a": "Query from Doc A",
-      "statement_b": "Query from Doc B",
-      "explanation": "..."
-    }
-  ],
-  "omissions": [],
-  "timeline_issues": [],
-  "unsupported_claims": [],
-  "summary": "..."
-}`
-
-    const result = await generateJSON('You are a forensic analyst.', prompt)
-    return JSON.stringify(result)
-}

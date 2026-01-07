@@ -590,6 +590,25 @@ export default function SettingsPage() {
             )}
           </div>
 
+          {pythonStatus && !pythonStatus.available && (
+            <div className="mb-4 rounded-lg border border-status-critical/30 bg-status-critical/10 p-3">
+              <div className="flex items-center gap-2 text-sm text-status-critical">
+                <AlertCircle className="h-4 w-4" />
+                <span>Python not configured. Search and OCR features require Python.</span>
+              </div>
+              <div className="mt-2 text-xs text-charcoal-400">
+                <a
+                  className="text-bronze-400 hover:text-bronze-300 underline"
+                  href="https://www.python.org/downloads/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Download Python
+                </a>
+              </div>
+            </div>
+          )}
+
           {/* Python Path Inputs */}
           <div className="space-y-4">
             <div>

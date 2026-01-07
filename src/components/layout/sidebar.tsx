@@ -14,7 +14,7 @@ import {
   Search
 } from 'lucide-react'
 import { useCaseStore } from '@/hooks/use-case-store'
-import { createClient } from '@/lib/supabase/client'
+import { getDataLayer, isDesktop } from '@/lib/data'
 import type { Case } from '@/CONTRACT'
 
 const navigation = [
@@ -39,21 +39,19 @@ export function Sidebar() {
   const [cases, setCases] = useState<Case[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  const supabase = createClient()
-
   useEffect(() => {
     const fetchCases = async () => {
       try {
-        const { data } = await supabase
-          .from('cases')
-          .select('*')
-          .order('updated_at', { ascending: false })
+        // Use unified data layer (routes to Tauri in desktop, Supabase in web)
+        const db = await getDataLayer()
+        const data = await db.getCases()
 
-        if (data) {
+        if (data && data.length > 0) {
           setCases(data)
           // Set first case as active if none selected
-          if (!activeCase && data.length > 0) {
+          if (!activeCase) {
             setActiveCase(data[0])
+            console.log('[Sidebar] Auto-selected case:', data[0].name)
           }
         }
       } catch (error) {
@@ -64,7 +62,7 @@ export function Sidebar() {
     }
 
     fetchCases()
-  }, [activeCase, setActiveCase, supabase])
+  }, [activeCase, setActiveCase])
 
   const handleCaseSelect = (selectedCase: Case) => {
     setActiveCase(selectedCase)

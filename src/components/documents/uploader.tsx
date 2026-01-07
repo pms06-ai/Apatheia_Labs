@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
 import { Upload, FileText, X, Loader2, FolderOpen } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -11,6 +11,8 @@ import { formatFileSize } from '@/lib/utils'
 import { isDesktop } from '@/lib/tauri'
 import { pickDocuments, uploadFromPath } from '@/lib/tauri/commands'
 import toast from 'react-hot-toast'
+import type { DocType } from '@/CONTRACT'
+import { useFileUploadQueue } from '@/hooks/use-file-upload-queue'
 
 const ACCEPTED_TYPES = {
   'application/pdf': ['.pdf'],
@@ -25,7 +27,7 @@ const ACCEPTED_TYPES = {
   'video/mp4': ['.mp4'],
 }
 
-const DOC_TYPES = [
+const DOC_TYPES: Array<{ value: DocType; label: string }> = [
   { value: 'court_order', label: 'Court Order' },
   { value: 'witness_statement', label: 'Witness Statement' },
   { value: 'expert_report', label: 'Expert Report' },
@@ -38,21 +40,18 @@ const DOC_TYPES = [
   { value: 'other', label: 'Other' },
 ]
 
-interface QueuedFile {
-  file?: File
-  path?: string
-  filename: string
-  size?: number
-  docType: string
-  status: 'pending' | 'uploading' | 'processing' | 'completed' | 'error'
-  progress: number
-  error?: string
-}
-
 export function DocumentUploader() {
-  const [queue, setQueue] = useState<QueuedFile[]>([])
+  const { queue, addFiles, updateFile, removeFile } = useFileUploadQueue()
   const activeCase = useCaseStore((state) => state.activeCase)
-  const isDesktopMode = isDesktop()
+  // Check desktop mode after mount to ensure Tauri globals are available
+  const [isDesktopMode, setIsDesktopMode] = useState(false)
+  const defaultDocType: DocType = 'other'
+  const isDocType = (value: string): value is DocType =>
+    DOC_TYPES.some((type) => type.value === value)
+
+  useEffect(() => {
+    setIsDesktopMode(isDesktop())
+  }, [])
 
   const uploadMutation = useUploadDocument()
   const processMutation = useProcessDocument()
@@ -63,11 +62,11 @@ export function DocumentUploader() {
       file,
       filename: file.name,
       size: file.size,
-      docType: 'other',
+      docType: defaultDocType,
       status: 'pending' as const,
       progress: 0,
     }))
-    setQueue((prev) => [...prev, ...newFiles])
+    addFiles(newFiles)
   }, [])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -86,25 +85,20 @@ export function DocumentUploader() {
       const newFiles = files.map((f) => ({
         path: f.path,
         filename: f.filename,
-        docType: 'other',
+        docType: defaultDocType,
         status: 'pending' as const,
         progress: 0,
       }))
-      setQueue((prev) => [...prev, ...newFiles])
+      addFiles(newFiles)
     } catch (error) {
       toast.error('Failed to open file picker')
       console.error('File picker error:', error)
     }
   }
 
-  const updateFileType = (index: number, docType: string) => {
-    setQueue((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, docType } : item))
-    )
-  }
-
-  const removeFile = (index: number) => {
-    setQueue((prev) => prev.filter((_, i) => i !== index))
+  const updateFileType = (index: number, docTypeValue: string) => {
+    const nextDocType = isDocType(docTypeValue) ? docTypeValue : defaultDocType
+    updateFile(index, (item) => ({ ...item, docType: nextDocType }))
   }
 
   const uploadFile = async (index: number) => {
@@ -115,57 +109,35 @@ export function DocumentUploader() {
 
     const item = queue[index]
 
-    setQueue((prev) =>
-      prev.map((f, i) =>
-        i === index ? { ...f, status: 'uploading', progress: 30 } : f
-      )
-    )
+    updateFile(index, (file) => ({ ...file, status: 'uploading', progress: 30 }))
 
     try {
       if (isDesktopMode && item.path) {
         // Desktop mode: upload from path
         console.log('[Uploader] Starting desktop upload:', { caseId: activeCase.id, path: item.path, docType: item.docType })
-        await uploadFromPath(activeCase.id, item.path, item.docType as any)
+        await uploadFromPath(activeCase.id, item.path, item.docType)
 
-        setQueue((prev) =>
-          prev.map((f, i) =>
-            i === index ? { ...f, status: 'completed', progress: 100 } : f
-          )
-        )
+        updateFile(index, (file) => ({ ...file, status: 'completed', progress: 100 }))
       } else if (item.file) {
         console.log('[Uploader] Starting WEB upload (Fallback):', { file: item.file.name })
         // Web mode: upload file blob
         const result = await uploadMutation.mutateAsync({
           file: item.file,
           caseId: activeCase.id,
-          docType: item.docType as any,
+          docType: item.docType,
         })
 
-        setQueue((prev) =>
-          prev.map((f, i) =>
-            i === index ? { ...f, status: 'processing', progress: 60 } : f
-          )
-        )
+        updateFile(index, (file) => ({ ...file, status: 'processing', progress: 60 }))
 
         // Trigger processing
         await processMutation.mutateAsync(result.id)
 
-        setQueue((prev) =>
-          prev.map((f, i) =>
-            i === index ? { ...f, status: 'completed', progress: 100 } : f
-          )
-        )
+        updateFile(index, (file) => ({ ...file, status: 'completed', progress: 100 }))
       }
 
       toast.success(`${item.filename} uploaded and processed`)
     } catch (error) {
-      setQueue((prev) =>
-        prev.map((f, i) =>
-          i === index
-            ? { ...f, status: 'error', error: 'Upload failed' }
-            : f
-        )
-      )
+      updateFile(index, (file) => ({ ...file, status: 'error', error: 'Upload failed' }))
       toast.error(`Failed to upload ${item.filename}: ${(error as Error).message}`)
       console.error('Upload error:', error)
     }

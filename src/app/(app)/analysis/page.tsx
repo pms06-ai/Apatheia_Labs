@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Play, FileText, AlertTriangle, Clock, Share2, Filter, Layers } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -15,6 +15,11 @@ import { useCaseStore } from '@/hooks/use-case-store'
 import { isDesktop } from '@/lib/tauri'
 import toast from 'react-hot-toast'
 import { getDataLayer } from '@/lib/data'
+import { useEngineProgress } from '@/hooks/use-engine-progress'
+import { useMultiSelect } from '@/hooks/use-multi-select'
+import { asNarrativeEvidence } from '@/lib/analysis/evidence'
+import { buildCoordinationGraph, getGraphStats } from '@/lib/analysis/graph-transformer'
+import type { Severity } from '@/CONTRACT'
 
 // Engine icons mapping
 const ENGINE_ICONS: Record<string, string> = {
@@ -32,21 +37,9 @@ const ENGINE_ICONS: Record<string, string> = {
   documentary: 'Δ'
 }
 
-interface EngineStatus {
-  running: boolean
-  progress: number
-  lastRun?: string
-  findingsCount?: number
-  error?: string
-}
-
-interface JobProgress {
-  jobId: string
-  status: 'pending' | 'running' | 'completed' | 'cancelled' | 'failed'
-  engines: string[]
-  completedEngines: number
-  totalEngines: number
-  currentEngine?: string
+function toTimelineSeverity(severity: Severity | null): 'critical' | 'high' | 'medium' | 'low' | undefined {
+  if (!severity || severity === 'info') return undefined
+  return severity
 }
 
 export default function AnalysisPage() {
@@ -58,14 +51,35 @@ export default function AnalysisPage() {
   const runEngineMutation = useRunEngine()
 
   const [selectedEngine, setSelectedEngine] = useState<string | null>('omission')
-  const [selectedDocs, setSelectedDocs] = useState<string[]>([])
-  const [engineStatuses, setEngineStatuses] = useState<Record<string, EngineStatus>>({})
-  const [currentJob, setCurrentJob] = useState<JobProgress | null>(null)
   const [batchMode, setBatchMode] = useState(false)
-  const [selectedEngines, setSelectedEngines] = useState<string[]>([])
-  const [mockModeWarning, setMockModeWarning] = useState<string | null>(null)
+  const {
+    selected: selectedDocs,
+    toggle: toggleDocSelection,
+    clear: clearSelectedDocs,
+    selectAll: selectAllDocs,
+  } = useMultiSelect<string>([])
+  const {
+    selected: selectedEngines,
+    toggle: toggleEngineSelection,
+    clear: clearSelectedEngines,
+  } = useMultiSelect<string>([])
+  const {
+    engineStatuses,
+    currentJob,
+    mockModeWarning,
+    clearMockModeWarning,
+    setEngineStatuses,
+  } = useEngineProgress({
+    onFindingsUpdate: refetchFindings,
+    onMockModeWarning: () => {
+      toast.error('AI Analysis Unavailable - Using Mock Data', {
+        duration: 5000,
+        icon: '??',
+      })
+    },
+  })
 
-  const engines = Object.values(ENGINE_REGISTRY).filter(e => e.status === 'active')
+  const engines = Object.values(ENGINE_REGISTRY).filter((engine) => engine.status === 'active')
     .sort((a, b) => {
       // Sort by priority first (V6.0 engines), then alphabetically by name
       const aPriority = a.priority || 99
@@ -75,119 +89,6 @@ export default function AnalysisPage() {
       }
       return a.name.localeCompare(b.name)
     })
-
-  // Listen to Tauri events for real-time progress
-  useEffect(() => {
-    if (!isDesktop()) return
-
-    let unlisten: (() => void) | undefined
-
-    async function setupListeners() {
-      const { listen } = await import('@tauri-apps/api/event')
-
-      // Job started
-      const unlistenStart = await listen<{ job_id: string; engines: string[] }>('engine:job_started', (event) => {
-        setCurrentJob({
-          jobId: event.payload.job_id,
-          status: 'running',
-          engines: event.payload.engines,
-          completedEngines: 0,
-          totalEngines: event.payload.engines.length,
-        })
-      })
-
-      // Engine progress
-      const unlistenProgress = await listen<{
-        job_id: string
-        engine_id: string
-        completed: number
-        total: number
-      }>('engine:progress', (event) => {
-        setCurrentJob(prev => prev ? {
-          ...prev,
-          currentEngine: event.payload.engine_id,
-          completedEngines: event.payload.completed,
-        } : null)
-
-        setEngineStatuses(prev => ({
-          ...prev,
-          [event.payload.engine_id]: {
-            running: true,
-            progress: Math.round((event.payload.completed / event.payload.total) * 100),
-          }
-        }))
-      })
-
-      // Engine finding
-      const unlistenFinding = await listen<{
-        job_id: string
-        engine_id: string
-        finding_count: number
-      }>('engine:finding', (event) => {
-        setEngineStatuses(prev => ({
-          ...prev,
-          [event.payload.engine_id]: {
-            running: false,
-            progress: 100,
-            lastRun: new Date().toISOString(),
-            findingsCount: event.payload.finding_count,
-          }
-        }))
-        // Refetch findings to update UI
-        refetchFindings()
-      })
-
-      // Job complete
-      const unlistenComplete = await listen<{ job_id: string }>('engine:complete', () => {
-        setCurrentJob(prev => prev ? { ...prev, status: 'completed' } : null)
-        setTimeout(() => setCurrentJob(null), 3000) // Clear after 3s
-        refetchFindings()
-      })
-
-      // Engine error
-      const unlistenError = await listen<{
-        job_id: string
-        engine_id: string
-        error: string
-      }>('engine:error', (event) => {
-        setEngineStatuses(prev => ({
-          ...prev,
-          [event.payload.engine_id]: {
-            running: false,
-            progress: 0,
-            error: event.payload.error,
-          }
-        }))
-      })
-
-      // Mock mode warning
-      const unlistenMockMode = await listen<{
-        job_id?: string
-        message: string
-      }>('engine:mock_mode', (event) => {
-        setMockModeWarning(event.payload.message)
-        toast.error('AI Analysis Unavailable - Using Mock Data', {
-          duration: 5000,
-          icon: '⚠️',
-        })
-      })
-
-      unlisten = () => {
-        unlistenStart()
-        unlistenProgress()
-        unlistenFinding()
-        unlistenComplete()
-        unlistenError()
-        unlistenMockMode()
-      }
-    }
-
-    setupListeners()
-
-    return () => {
-      if (unlisten) unlisten()
-    }
-  }, [refetchFindings])
 
   const handleRunEngine = async (engineId: string) => {
     if (!caseId || selectedDocs.length === 0) return
@@ -241,26 +142,6 @@ export default function AnalysisPage() {
     }
   }
 
-  const toggleDocSelection = (docId: string) => {
-    setSelectedDocs(prev =>
-      prev.includes(docId)
-        ? prev.filter(id => id !== docId)
-        : [...prev, docId]
-    )
-  }
-
-  const toggleEngineSelection = (engineId: string) => {
-    setSelectedEngines(prev =>
-      prev.includes(engineId)
-        ? prev.filter(id => id !== engineId)
-        : [...prev, engineId]
-    )
-  }
-
-  const selectAllDocs = () => {
-    setSelectedDocs(documents?.map(d => d.id) || [])
-  }
-
   const engineFindings = findings?.filter(f => f.engine === selectedEngine) || []
 
   return (
@@ -278,7 +159,7 @@ export default function AnalysisPage() {
             </div>
           </div>
           <button
-            onClick={() => setMockModeWarning(null)}
+            onClick={clearMockModeWarning}
             className="text-amber-500 hover:text-amber-400 text-sm px-2"
           >
             Dismiss
@@ -414,7 +295,7 @@ export default function AnalysisPage() {
             <div className="flex items-center justify-between mb-3">
               <span className="text-sm text-charcoal-300">{selectedEngines.length} engines selected</span>
               <button
-                onClick={() => setSelectedEngines([])}
+                onClick={clearSelectedEngines}
                 className="text-xs text-charcoal-400 hover:text-charcoal-200"
               >
                 Clear
@@ -455,11 +336,11 @@ export default function AnalysisPage() {
               </Badge>
             </div>
             <div className="flex gap-3">
-              <button onClick={selectAllDocs} className="text-xs font-medium text-bronze-500 hover:text-bronze-400 transition-colors">
+              <button onClick={() => selectAllDocs(documents?.map(d => d.id) || [])} className="text-xs font-medium text-bronze-500 hover:text-bronze-400 transition-colors">
                 Select All
               </button>
               <div className="w-px h-4 bg-charcoal-700" />
-              <button onClick={() => setSelectedDocs([])} className="text-xs text-charcoal-400 hover:text-charcoal-300 transition-colors">
+              <button onClick={clearSelectedDocs} className="text-xs text-charcoal-400 hover:text-charcoal-300 transition-colors">
                 Clear
               </button>
             </div>
@@ -585,119 +466,50 @@ export default function AnalysisPage() {
               </TabsContent>
 
               <TabsContent value="timeline" className="h-full m-0 p-6">
-                <TimelineView events={engineFindings.map((f, i) => ({
-                  id: f.id,
-                  date: (f.evidence as any)?.date || new Date().toISOString(),
-                  title: f.title,
-                  description: f.description || '',
-                  type: (f.evidence as any)?.driftDirection === 'toward_finding' ? 'strengthened' :
-                    (f.evidence as any)?.driftDirection === 'toward_exoneration' ? 'weakened' : 'anomaly',
-                  severity: f.severity as any
-                }))} />
+                <TimelineView events={engineFindings.map((f) => {
+                  const narrativeEvidence = asNarrativeEvidence(f.evidence)
+                  const driftDirection = narrativeEvidence.driftDirection
+                  const type = driftDirection === 'toward_finding'
+                    ? 'strengthened'
+                    : driftDirection === 'toward_exoneration'
+                      ? 'weakened'
+                      : 'anomaly'
+                  return {
+                    id: f.id,
+                    date: narrativeEvidence.date || new Date().toISOString(),
+                    title: f.title,
+                    description: f.description || '',
+                    type,
+                    severity: toTimelineSeverity(f.severity),
+                  }
+                })} />
               </TabsContent>
 
               <TabsContent value="network" className="h-full m-0 p-6 flex flex-col">
                 {(() => {
-                  const nodes = new Map<string, { id: string, label: string, type: any }>()
-                  const links: any[] = []
-
-                  // Helper to add node if not exists
-                  const addNode = (inst: string) => {
-                    const id = inst.toLowerCase().replace(/\s+/g, '_')
-                    if (!nodes.has(id)) {
-                      nodes.set(id, {
-                        id,
-                        label: inst.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
-                        type: id.includes('police') ? 'police' :
-                          id.includes('social') ? 'social_services' :
-                            id.includes('expert') ? 'expert' :
-                              id.includes('court') ? 'court' : 'other'
-                      })
-                    }
-                    return id
-                  }
-
-                  engineFindings.forEach(f => {
-                    const ev = f.evidence as any
-                    if (!ev) return
-
-                    // 1. Information Flow
-                    if (ev.source && ev.target) {
-                      const s = addNode(ev.source)
-                      const t = addNode(ev.target)
-                      links.push({
-                        source: s,
-                        target: t,
-                        strength: f.severity === 'critical' ? 4 : f.severity === 'high' ? 3 : 1,
-                        label: ev.type
-                      })
-                    }
-
-                    // 2. Independence Violation (clique)
-                    if (ev.institutions && Array.isArray(ev.institutions)) {
-                      const ids = ev.institutions.map(addNode)
-                      for (let i = 0; i < ids.length; i++) {
-                        for (let j = i + 1; j < ids.length; j++) {
-                          links.push({
-                            source: ids[i],
-                            target: ids[j],
-                            strength: f.severity === 'critical' ? 5 : 3,
-                            label: 'Violation'
-                          })
-                        }
-                      }
-                    }
-
-                    // 3. Shared Language (clique)
-                    if (ev.documents && Array.isArray(ev.documents)) {
-                      const insts = new Set<string>()
-                      ev.documents.forEach((d: any) => {
-                        if (d.institution) insts.add(d.institution)
-                      })
-                      const ids = Array.from(insts).map(addNode)
-                      for (let i = 0; i < ids.length; i++) {
-                        for (let j = i + 1; j < ids.length; j++) {
-                          links.push({
-                            source: ids[i],
-                            target: ids[j],
-                            strength: f.severity === 'critical' ? 4 : 2,
-                            label: 'Shared Lang'
-                          })
-                        }
-                      }
-                    }
-                  })
-
-                  // Fallback to default nodes if empty (to show something)
-                  if (nodes.size === 0) {
-                    addNode('police')
-                    addNode('social_services')
-                    addNode('expert')
-                    addNode('court')
-                  }
-
-                  const graphNodes = Array.from(nodes.values())
+                  const graph = buildCoordinationGraph(engineFindings)
+                  const stats = getGraphStats(graph)
 
                   return (
                     <>
-                      <NetworkGraph nodes={graphNodes} links={links} />
+                      <NetworkGraph nodes={graph.nodes} links={graph.links} />
 
                       <div className="mt-8 grid grid-cols-3 gap-4">
                         <div className="bg-charcoal-800 p-4 rounded-lg border border-charcoal-700">
                           <div className="text-2xl font-display text-status-critical mb-1">
-                            {links.filter((l: any) => l.label === 'Violation').length}
+                            {stats.independenceViolations}
                           </div>
                           <div className="text-xs text-charcoal-400 uppercase tracking-wide">Independence Violations</div>
                         </div>
                         <div className="bg-charcoal-800 p-4 rounded-lg border border-charcoal-700">
                           <div className="text-2xl font-display text-bronze-500 mb-1">
-                            {links.filter((l: any) => l.label === 'Shared Lang').length}
+                            {stats.linguisticCollusions}
                           </div>
                           <div className="text-xs text-charcoal-400 uppercase tracking-wide">Linguistic Collusions</div>
                         </div>
                         <div className="bg-charcoal-800 p-4 rounded-lg border border-charcoal-700">
                           <div className="text-2xl font-display text-charcoal-200 mb-1">
-                            {nodes.size}
+                            {stats.nodesAnalyzed}
                           </div>
                           <div className="text-xs text-charcoal-400 uppercase tracking-wide">Nodes Analyzed</div>
                         </div>

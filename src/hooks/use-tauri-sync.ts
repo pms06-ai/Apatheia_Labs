@@ -17,6 +17,8 @@ import {
   type DocumentProcessingError,
   type EngineProgress,
   type EngineFinding,
+  type EngineError,
+  type EngineMockMode,
   type EngineComplete,
   type JobStarted,
 } from '@/lib/tauri/events'
@@ -193,6 +195,18 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
     }
   }, [queryClient, showToasts, options])
 
+  const handleEngineError = useCallback((error: EngineError) => {
+    if (showToasts) {
+      toast.error(`Engine ${error.engine_id} failed: ${error.error}`)
+    }
+  }, [showToasts])
+
+  const handleEngineMockMode = useCallback((payload: EngineMockMode) => {
+    if (showToasts) {
+      toast.error(`Mock mode active: ${payload.message}`)
+    }
+  }, [showToasts])
+
   // ==========================================
   // Setup Effect
   // ==========================================
@@ -213,6 +227,8 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
         onEngineProgress: handleEngineProgress,
         onEngineFinding: handleEngineFinding,
         onEngineComplete: handleEngineComplete,
+        onEngineError: handleEngineError,
+        onEngineMockMode: handleEngineMockMode,
       })
     }
 
@@ -229,6 +245,8 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
     handleEngineProgress,
     handleEngineFinding,
     handleEngineComplete,
+    handleEngineError,
+    handleEngineMockMode,
   ])
 
   // ==========================================

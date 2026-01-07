@@ -19,6 +19,9 @@ import type {
   Omission,
   CaseType,
   DocType,
+  AnalysisResult,
+  EngineResult,
+  Engine,
   SAMPhase,
   SAMStatus,
   ClaimOrigin,
@@ -69,20 +72,6 @@ export interface EntityLinkageUpdate {
   status: 'confirmed' | 'rejected'
   reviewedBy?: string
   reviewedAt: string
-}
-
-export interface AnalysisResult {
-  findings: Finding[]
-  contradictions: Contradiction[]
-  omissions: Omission[]
-}
-
-export interface EngineResult {
-  success: boolean
-  engineId: string
-  findings: Finding[]
-  durationMs: number
-  error?: string
 }
 
 export interface JobProgress {
@@ -259,7 +248,14 @@ async function createTauriDataLayer(): Promise<DataLayer> {
 
     // Analysis
     async getAnalysis(caseId: string) {
-      return tauri.getAnalysis(caseId)
+      const analysis = await tauri.getAnalysis(caseId)
+      return {
+        findings: analysis.findings || [],
+        entities: analysis.entities || [],
+        claims: analysis.claims || [],
+        contradictions: analysis.contradictions || [],
+        omissions: analysis.omissions || [],
+      }
     },
     
     async runEngine(input: RunEngineInput) {
@@ -271,7 +267,7 @@ async function createTauriDataLayer(): Promise<DataLayer> {
       })
       return {
         success: result.success,
-        engineId: result.engine_id,
+        engineId: result.engine_id as Engine,
         findings: result.findings,
         durationMs: result.duration_ms,
         error: result.error,
@@ -435,7 +431,7 @@ function createMockDataLayer(): DataLayer {
     async getFindings() { return [] },
     async getClaims() { return [] },
     async getContradictions() { return [] },
-    async getAnalysis() { return { findings: [], contradictions: [], omissions: [] } },
+    async getAnalysis() { return { findings: [], entities: [], claims: [], contradictions: [], omissions: [] } },
     async runEngine() { throw new Error('Mock mode - use Tauri desktop app') },
     async submitAnalysis() { throw new Error('Mock mode - use Tauri desktop app') },
     async getJobProgress() { return null },
@@ -483,15 +479,27 @@ function createMockDataLayer(): DataLayer {
 // ============================================
 
 let _dataLayer: DataLayer | null = null
+let _wasDesktop: boolean | null = null
 
 /**
  * Get the data layer singleton
  * Automatically routes to Tauri (desktop) or mock (web)
+ * Re-creates data layer if environment changes (e.g., Tauri globals become available)
  */
 export async function getDataLayer(): Promise<DataLayer> {
+  const currentlyDesktop = isDesktop()
+
+  // Re-create data layer if environment changed (Tauri globals became available)
+  if (_dataLayer && _wasDesktop !== currentlyDesktop) {
+    console.log('[DataLayer] Environment changed, recreating data layer')
+    _dataLayer = null
+  }
+
   if (_dataLayer) return _dataLayer
 
-  if (isDesktop()) {
+  _wasDesktop = currentlyDesktop
+
+  if (currentlyDesktop) {
     console.log('[DataLayer] Using Tauri backend (local SQLite)')
     _dataLayer = await createTauriDataLayer()
   } else {

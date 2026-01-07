@@ -6,6 +6,14 @@ import { Card } from '@/components/ui/card'
 import { Badge, EngineBadge } from '@/components/ui/badge'
 import type { Finding } from '@/CONTRACT'
 import { formatDate } from '@/lib/utils'
+import {
+    asCoordinationEvidence,
+    asOmissionEvidence,
+    asContradictionEvidence,
+} from '@/lib/analysis/evidence'
+import { CoordinationEvidence } from './evidence/coordination-evidence'
+import { OmissionEvidence } from './evidence/omission-evidence'
+import { ContradictionEvidence } from './evidence/contradiction-evidence'
 
 interface PremiumFindingCardProps {
     finding: Finding
@@ -14,8 +22,9 @@ interface PremiumFindingCardProps {
 
 export function PremiumFindingCard({ finding, onSelect }: PremiumFindingCardProps) {
     const [isExpanded, setIsExpanded] = useState(false)
-
-
+    const coordinationEvidence = asCoordinationEvidence(finding.evidence)
+    const omissionEvidence = asOmissionEvidence(finding.evidence)
+    const contradictionEvidence = asContradictionEvidence(finding.evidence)
 
     const severityBorder = {
         critical: 'border-l-status-critical',
@@ -23,6 +32,14 @@ export function PremiumFindingCard({ finding, onSelect }: PremiumFindingCardProp
         medium: 'border-l-status-medium',
         low: 'border-l-status-low'
     }
+
+    const badgeVariant =
+        finding.severity === 'critical' ||
+        finding.severity === 'high' ||
+        finding.severity === 'medium' ||
+        finding.severity === 'low'
+            ? finding.severity
+            : 'info'
 
     return (
         <div
@@ -63,7 +80,7 @@ export function PremiumFindingCard({ finding, onSelect }: PremiumFindingCardProp
                             </h3>
                             <div className="flex items-center gap-2">
                                 <EngineBadge engine={finding.engine} />
-                                <Badge variant={finding.severity as any} className="uppercase tracking-wider font-mono text-[10px] px-2">
+                                <Badge variant={badgeVariant} className="uppercase tracking-wider font-mono text-[10px] px-2">
                                     {finding.severity}
                                 </Badge>
                                 {finding.confidence && (
@@ -110,102 +127,17 @@ export function PremiumFindingCard({ finding, onSelect }: PremiumFindingCardProp
 
                                     {/* Coordination Evidence */}
                                     {finding.engine === 'coordination' && (
-                                        <div className="space-y-4">
-                                            {(finding.evidence as any).phrase && (
-                                                <div>
-                                                    <div className="text-charcoal-500 mb-1">Shared Phrase</div>
-                                                    <div className="text-bronze-200 bg-bronze-500/10 p-2 rounded border border-bronze-500/20 italic">
-                                                        "{(finding.evidence as any).phrase}"
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {(finding.evidence as any).documents && (
-                                                <div>
-                                                    <div className="text-charcoal-500 mb-1">Involved Documents</div>
-                                                    <div className="flex flex-wrap gap-2">
-                                                        {(finding.evidence as any).documents.map((d: any, i: number) => (
-                                                            <div key={i} className="flex flex-col bg-charcoal-800 p-2 rounded border border-charcoal-600">
-                                                                <span className="text-charcoal-200 font-medium">{d.institution}</span>
-                                                                <span className="text-charcoal-400 text-[10px]">{d.documentName}</span>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {(finding.evidence as any).source && (finding.evidence as any).target && (
-                                                <div className="flex items-center gap-4 p-3 bg-charcoal-800 rounded">
-                                                    <div className="text-right">
-                                                        <div className="text-charcoal-200 font-bold">{(finding.evidence as any).source}</div>
-                                                        <div className="text-charcoal-500 text-[10px]">SOURCE</div>
-                                                    </div>
-                                                    <div className="h-px flex-1 bg-gradient-to-r from-charcoal-600 via-bronze-500 to-charcoal-600 relative">
-                                                        <ChevronRight className="absolute -right-1 -top-2 h-4 w-4 text-bronze-500" />
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-charcoal-200 font-bold">{(finding.evidence as any).target}</div>
-                                                        <div className="text-charcoal-500 text-[10px]">TARGET</div>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <CoordinationEvidence evidence={coordinationEvidence} />
                                     )}
 
                                     {/* Omission Evidence */}
                                     {finding.engine === 'omission' && (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            <div className="bg-status-success/5 border border-status-success/20 p-3 rounded">
-                                                <div className="text-status-success text-[10px] uppercase tracking-wide mb-2 font-bold">Original Source</div>
-                                                <div className="text-charcoal-200 italic border-l-2 border-status-success pl-2">
-                                                    "{(finding.evidence as any).sourceContent}"
-                                                </div>
-                                            </div>
-                                            <div className="bg-status-critical/5 border border-status-critical/20 p-3 rounded">
-                                                <div className="text-status-critical text-[10px] uppercase tracking-wide mb-2 font-bold">Report (Omitted)</div>
-                                                <div className="text-charcoal-200 italic border-l-2 border-status-critical pl-2">
-                                                    "{(finding.evidence as any).reportContent}"
-                                                </div>
-                                            </div>
-                                            {(finding.evidence as any).omittedContent && (
-                                                <div className="md:col-span-2 bg-charcoal-800 border border-charcoal-600 p-3 rounded mt-2">
-                                                    <div className="text-charcoal-400 text-[10px] uppercase tracking-wide mb-1">Specifically Omitted</div>
-                                                    <div className="text-bronze-100 font-medium">
-                                                        "{(finding.evidence as any).omittedContent}"
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+                                        <OmissionEvidence evidence={omissionEvidence} />
                                     )}
 
                                     {/* Contradiction Evidence */}
-                                    {finding.engine === 'contradiction' && (finding.evidence as any).claim1 && (
-                                        <div className="space-y-4">
-                                            <div className="relative">
-                                                <div className="absolute left-1/2 -ml-px h-full w-0.5 bg-charcoal-700 hidden md:block"></div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                                    <div className="bg-charcoal-800 p-3 rounded border border-charcoal-600 relative">
-                                                        <div className="absolute top-3 right-full mr-4 hidden md:block text-charcoal-500 font-mono text-[10px]">CLAIM 1</div>
-                                                        <p className="text-charcoal-200">"{(finding.evidence as any).claim1.text}"</p>
-                                                        <div className="mt-2 flex items-center gap-2 text-[10px] text-bronze-500">
-                                                            <FileText className="h-3 w-3" />
-                                                            {(finding.evidence as any).claim1.author}
-                                                        </div>
-                                                    </div>
-                                                    <div className="bg-charcoal-800 p-3 rounded border border-charcoal-600 relative">
-                                                        <div className="absolute top-3 left-full ml-4 hidden md:block text-charcoal-500 font-mono text-[10px]">CLAIM 2</div>
-                                                        <p className="text-charcoal-200">"{(finding.evidence as any).claim2.text}"</p>
-                                                        <div className="mt-2 flex items-center gap-2 text-[10px] text-bronze-500">
-                                                            <FileText className="h-3 w-3" />
-                                                            {(finding.evidence as any).claim2.author}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="text-center">
-                                                <Badge variant="critical" className="bg-status-critical/10 text-status-critical border-status-critical/20">
-                                                    Conflict: {(finding.evidence as any).implication || (finding.evidence as any).explanation}
-                                                </Badge>
-                                            </div>
-                                        </div>
+                                    {finding.engine === 'contradiction' && (
+                                        <ContradictionEvidence evidence={contradictionEvidence} />
                                     )}
 
                                     {/* Fallback JSON for other engines or if structure is mismatch */}

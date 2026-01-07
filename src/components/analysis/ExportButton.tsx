@@ -1,10 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Download, FileText, ChevronDown, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { isDesktop } from '@/lib/tauri'
 import type { ExportFormat, ExportStatus } from '@/lib/types/export'
+import { useDropdownClose } from '@/hooks/use-dropdown-close'
 
 // ============================================
 // Tauri Export Types
@@ -53,29 +54,11 @@ export function ExportButton({ caseId, disabled = false, className = '' }: Expor
     const [activeFormat, setActiveFormat] = useState<ExportFormat | null>(null)
     const dropdownRef = useRef<HTMLDivElement>(null)
 
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        function handleClickOutside(event: MouseEvent) {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false)
-            }
-        }
-
-        document.addEventListener('mousedown', handleClickOutside)
-        return () => document.removeEventListener('mousedown', handleClickOutside)
-    }, [])
-
-    // Close dropdown on escape key
-    useEffect(() => {
-        function handleEscape(event: KeyboardEvent) {
-            if (event.key === 'Escape') {
-                setIsOpen(false)
-            }
-        }
-
-        document.addEventListener('keydown', handleEscape)
-        return () => document.removeEventListener('keydown', handleEscape)
-    }, [])
+    useDropdownClose({
+        refs: [dropdownRef],
+        onClose: () => setIsOpen(false),
+        enabled: isOpen,
+    })
 
     /**
      * Save file using native Tauri save dialog (desktop mode)

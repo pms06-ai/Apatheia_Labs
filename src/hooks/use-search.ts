@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { isDesktop } from '@/lib/data'
+import { isDesktop } from '@/lib/tauri/client'
+import { searchDocuments } from '@/lib/tauri/commands'
 import type { Engine } from '@/CONTRACT'
 
 // ============================================
@@ -29,11 +30,34 @@ export function useEngines() {
 // SEARCH
 // ============================================
 
+// UI-expected shape for header.tsx
+interface UISearchResult {
+  id: string
+  document_name: string
+  content: string
+  score: number
+}
+
 export function useSearch(query: string, caseId?: string) {
   return useQuery({
     queryKey: ['search', query, caseId],
     queryFn: async () => {
-      // Web mode only for now
+      if (isDesktop()) {
+        if (!caseId) {
+          throw new Error('caseId is required for desktop search')
+        }
+        const rustResults = await searchDocuments(query, caseId)
+        // Map Rust shape → UI shape
+        const results: UISearchResult[] = rustResults.map((r) => ({
+          id: r.chunk_id,
+          document_name: r.document_id,
+          content: r.content,
+          score: r.similarity,
+        }))
+        return { results }
+      }
+
+      // Web mode fallback
       const params = new URLSearchParams({ q: query })
       if (caseId) params.append('caseId', caseId)
 
