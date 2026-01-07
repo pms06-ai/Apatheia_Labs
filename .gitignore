@@ -58,7 +58,10 @@ tmp/
 # Misc
 .DS_Store
 Thumbs.db
+nul
 
+# Debug output
+**/check_output*.txt
 
 # Auto Claude data directory
 .auto-claude/
