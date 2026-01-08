@@ -555,6 +555,21 @@ CREATE TABLE cascade_contradictions (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- S.A.M. Causation Chains (ARRIVE phase links)
+CREATE TABLE sam_causation_chains (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    case_id UUID REFERENCES cases(id) ON DELETE CASCADE,
+    outcome_id UUID REFERENCES sam_outcomes(id) ON DELETE CASCADE,
+
+    -- Chain data
+    root_claims UUID[] DEFAULT '{}',          -- Claim IDs that originated the chain
+    propagation_path UUID[] DEFAULT '{}',     -- Ordered list of propagation IDs
+    authority_accumulation INTEGER DEFAULT 0,  -- Count of authority markers along path
+
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Indexes for S.A.M. tables
 CREATE INDEX idx_claim_origins_claim ON claim_origins(claim_id);
 CREATE INDEX idx_claim_origins_case ON claim_origins(case_id);
@@ -566,6 +581,8 @@ CREATE INDEX idx_authority_markers_case ON authority_markers(case_id);
 CREATE INDEX idx_sam_outcomes_case ON sam_outcomes(case_id);
 CREATE INDEX idx_sam_analyses_case ON sam_analyses(case_id);
 CREATE INDEX idx_cascade_contradictions_case ON cascade_contradictions(case_id);
+CREATE INDEX idx_sam_causation_chains_case ON sam_causation_chains(case_id);
+CREATE INDEX idx_sam_causation_chains_outcome ON sam_causation_chains(outcome_id);
 
 -- ============================================
 -- TIMELINE & NARRATIVE
