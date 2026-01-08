@@ -100,6 +100,18 @@ impl EngineJob {
         }
     }
     
+    /// Start the job
+    pub fn start(&mut self) {
+        self.status = JobStatus::Running;
+        self.started_at = Some(Utc::now());
+    }
+
+    /// Complete the job
+    pub fn complete(&mut self) {
+        self.status = JobStatus::Completed;
+        self.completed_at = Some(Utc::now());
+    }
+
     /// Get total findings count
     pub fn total_findings(&self) -> usize {
         self.results
@@ -127,7 +139,7 @@ pub struct JobProgress {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::time::Duration;
+
 
     #[test]
     fn test_job_status_transitions() {
@@ -206,7 +218,7 @@ mod tests {
 
         // Test that timeout logic structure is sound
         let timeout_duration = TokioDuration::from_millis(1);
-        let future_result = timeout(timeout_duration, async {
+        let _future_result = timeout(timeout_duration, async {
             tokio::time::sleep(TokioDuration::from_millis(10)).await;
             "completed"
         });
