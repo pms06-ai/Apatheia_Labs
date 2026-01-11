@@ -54,6 +54,7 @@ jest.mock('@/lib/engines/entity-resolution', () => ({
   },
 }))
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const hooks = require('@/hooks/use-entity-resolution') as typeof import('@/hooks/use-entity-resolution')
 useEntityResolution = hooks.useEntityResolution
 useResolvedEntities = hooks.useResolvedEntities
