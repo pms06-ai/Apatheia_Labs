@@ -13,8 +13,13 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { Spinner } from '@/components/ui/spinner'
-import { PhaseProgress } from '@/components/sam'
-import { OriginTimeline } from '@/components/sam'
+import {
+  PhaseProgress,
+  OriginTimeline,
+  PropagationFlow,
+  AuthorityAccumulation,
+  OutcomeCausation,
+} from '@/components/sam'
 import { useDocuments } from '@/hooks/use-api'
 import { useCaseStore } from '@/hooks/use-case-store'
 import {
@@ -387,35 +392,28 @@ export default function SAMPage() {
               </TabsContent>
 
               <TabsContent value="propagation" className="flex-1 overflow-y-auto p-6 m-0">
-                <div className="text-center text-charcoal-500 py-12">
-                  <p className="text-lg mb-2">Propagation Flow</p>
-                  <p className="text-sm">Coming in Phase 5</p>
-                  <div className="mt-4 text-xs">
-                    <p>{results.propagations?.length || 0} propagations tracked</p>
-                  </div>
-                </div>
+                <PropagationFlow
+                  propagations={results.propagations || []}
+                />
               </TabsContent>
 
               <TabsContent value="authority" className="flex-1 overflow-y-auto p-6 m-0">
-                <div className="text-center text-charcoal-500 py-12">
-                  <p className="text-lg mb-2">Authority Accumulation</p>
-                  <p className="text-sm">Coming in Phase 6</p>
-                  <div className="mt-4 text-xs">
-                    <p>{results.authorityMarkers?.length || 0} authority markers</p>
-                    <p>{results.authorityLaundering?.length || 0} laundering patterns</p>
-                  </div>
-                </div>
+                <AuthorityAccumulation
+                  markers={results.authorityMarkers || []}
+                  laundering={results.authorityLaundering || []}
+                />
               </TabsContent>
 
               <TabsContent value="outcomes" className="flex-1 overflow-y-auto p-6 m-0">
-                <div className="text-center text-charcoal-500 py-12">
-                  <p className="text-lg mb-2">Outcome Causation</p>
-                  <p className="text-sm">Coming in Phase 7</p>
-                  <div className="mt-4 text-xs">
-                    <p>{results.outcomes?.length || 0} outcomes identified</p>
-                    <p>{results.causationChains?.length || 0} causation chains</p>
-                  </div>
-                </div>
+                <OutcomeCausation
+                  outcomes={results.outcomes || []}
+                  chains={results.causationChains?.map(c => ({
+                    outcome_id: c.outcomeId,
+                    root_claims: c.rootClaims,
+                    propagation_path: c.propagationPath,
+                    authority_accumulation: c.authorityAccumulation,
+                  })) || []}
+                />
               </TabsContent>
             </Tabs>
           )}

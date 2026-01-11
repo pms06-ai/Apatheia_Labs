@@ -191,7 +191,21 @@ export async function runEngine(params: EngineRunParams): Promise<EngineRunResul
         const results = await omissionEngine.runFullOmissionAnalysis(caseId, documentIds.slice(1), [
           documentIds[0],
         ])
-        result = results[0]
+        if (results.length === 0) {
+          result = {
+            findings: [],
+            summary: {
+              totalOmissions: 0,
+              criticalCount: 0,
+              biasScore: 0,
+              systematicPattern: false,
+              affectedTopics: [],
+            },
+            methodology: 'Source-to-report comparison with selective quoting detection',
+          }
+        } else {
+          result = results[0]
+        }
         break
       }
 

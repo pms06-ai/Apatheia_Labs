@@ -230,8 +230,13 @@ export async function analyzeNarrativeEvolution(
     result = await generateJSON('You are a forensic document analyst.', prompt)
   }
 
+  const rawLineages = Array.isArray((result as any).lineages) ? (result as any).lineages : []
+  const rawCircular = Array.isArray((result as any).circularCitations)
+    ? (result as any).circularCitations
+    : []
+
   // Process lineages
-  const lineages: ClaimLineage[] = result.lineages.map((l: any, idx: number) => ({
+  const lineages: ClaimLineage[] = rawLineages.map((l: any, idx: number) => ({
     id: `lineage-${caseId.slice(0, 8)}-${idx}`,
     rootClaim: l.rootClaim,
     versions: l.versions.map((v: any, vIdx: number) => ({
@@ -253,7 +258,7 @@ export async function analyzeNarrativeEvolution(
   }))
 
   // Process circular citations
-  const circularCitations: CircularCitation[] = (result.circularCitations || []).map(
+  const circularCitations: CircularCitation[] = rawCircular.map(
     (c: any, idx: number) => ({
       id: `circular-${idx}`,
       claim: c.claim,
@@ -599,8 +604,14 @@ async function storeNarrativeFindings(caseId: string, result: NarrativeAnalysisR
     })
   }
 
+  const hasNarrativeSignals = result.lineages.length > 0 || result.circularCitations.length > 0
+  if (!hasNarrativeSignals) {
+    return
+  }
+
+  const findingsTable = supabaseAdmin.from('findings')
   if (findings.length > 0) {
-    await supabaseAdmin.from('findings').insert(findings)
+    await findingsTable.insert(findings)
   }
 }
 

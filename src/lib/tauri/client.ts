@@ -17,6 +17,7 @@ import type {
   DocType,
   ProcessingStatus,
   SemanticSearchResult,
+  JobProgress,
 } from '@/CONTRACT'
 
 // ============================================
@@ -111,16 +112,7 @@ interface EngineRunResponse {
   error?: string
 }
 
-interface JobProgress {
-  job_id: string
-  status: 'pending' | 'running' | 'completed' | 'cancelled' | 'failed'
-  engines: string[]
-  completed_engines: number
-  total_engines: number
-  current_engine?: string
-  started_at?: string
-  completed_at?: string
-}
+// JobProgress imported from CONTRACT.ts (matches Rust job.rs)
 
 interface SubmitAnalysisResult {
   success: boolean

@@ -321,36 +321,38 @@ export interface RegulatorySubmission {
 // ============================================
 
 // ANCHOR Phase: Claim origin tracking
+// Source: src-tauri/src/db/schema.rs:497-514
 export interface ClaimOrigin {
   id: string
   case_id: string
   claim_id: string
-  origin_document_id: string | null
+  origin_document_id: string              // Required in Rust/SQL
   origin_entity_id: string | null
   origin_date: string
   origin_page: number | null
   origin_context: string | null
-  origin_type: OriginType | null
+  origin_type: OriginType                 // Required in Rust/SQL (has CHECK constraint)
   is_false_premise: boolean
   false_premise_type: FalsePremiseType | null
   contradicting_evidence: string | null
-  confidence_score: number | null
+  confidence_score: number                // Required in Rust (defaults to 0.5)
   metadata: Record<string, unknown>
   created_at: string
 }
 
 // INHERIT Phase: Claim propagation tracking
+// Source: src-tauri/src/db/schema.rs:516-541
 export interface ClaimPropagation {
   id: string
   case_id: string
-  source_claim_id: string | null
-  source_document_id: string | null
+  source_claim_id: string                 // Required in Rust/SQL
+  source_document_id: string              // Required in Rust/SQL
   source_entity_id: string | null
-  source_date: string | null
+  source_date: string                     // Required in Rust/SQL
   target_claim_id: string | null
-  target_document_id: string | null
+  target_document_id: string              // Required in Rust/SQL
   target_entity_id: string | null
-  target_date: string | null
+  target_date: string                     // Required in Rust/SQL
   propagation_type: PropagationType | null
   verification_performed: boolean
   verification_method: string | null
@@ -367,14 +369,15 @@ export interface ClaimPropagation {
 }
 
 // COMPOUND Phase: Authority accumulation tracking
+// Source: src-tauri/src/db/schema.rs:543-559
 export interface AuthorityMarker {
   id: string
   case_id: string
   claim_id: string
   authority_entity_id: string | null
-  authority_document_id: string | null
-  authority_date: string | null
-  authority_type: AuthorityType | null
+  authority_document_id: string           // Required in Rust/SQL
+  authority_date: string                  // Required in Rust/SQL
+  authority_type: AuthorityType           // Required in Rust/SQL (has CHECK constraint)
   authority_weight: number
   endorsement_type: EndorsementType | null
   is_authority_laundering: boolean
@@ -385,18 +388,19 @@ export interface AuthorityMarker {
 }
 
 // ARRIVE Phase: Outcome mapping
+// Source: src-tauri/src/db/schema.rs:561-578
 export interface SAMOutcome {
   id: string
   case_id: string
-  outcome_type: OutcomeType | null
+  outcome_type: OutcomeType               // Required in Rust/SQL (has CHECK constraint)
   outcome_description: string
   outcome_date: string | null
-  outcome_document_id: string | null
-  harm_level: HarmLevel | null
+  outcome_document_id: string             // Required in Rust/SQL
+  harm_level: HarmLevel                   // Required in Rust/SQL (has CHECK constraint)
   harm_description: string | null
   root_claim_ids: string[]
   but_for_analysis: string | null
-  causation_confidence: number | null
+  causation_confidence: number            // Required in Rust (defaults to 0.5)
   remediation_possible: boolean
   remediation_actions: string[]
   metadata: Record<string, unknown>
@@ -475,6 +479,28 @@ export interface ARRIVEResult {
     propagation_path: string[]
     authority_accumulation: number
   }>
+}
+
+// ============================================
+// JOB PROGRESS (matches Rust orchestrator/job.rs)
+// ============================================
+
+export type JobStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+
+/**
+ * Job progress from Rust backend (snake_case via serde)
+ * Source of truth: src-tauri/src/orchestrator/job.rs:126-137
+ */
+export interface JobProgress {
+  job_id: string
+  case_id: string
+  status: JobStatus
+  total_engines: number
+  completed_engines: number
+  succeeded_engines: number
+  failed_engines: number
+  duration_ms: number | null
+  current_engine: string | null
 }
 
 // ============================================

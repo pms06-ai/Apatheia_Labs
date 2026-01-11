@@ -10,17 +10,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
 
-import {
-  useEntityResolution,
-  useResolvedEntities,
-  useEntityLinkages,
-  usePendingLinkages,
-  useEntityGraph,
-  useUpdateLinkageStatus,
-  useConfirmLinkage,
-  useRejectLinkage,
-  useRunEntityResolution,
-} from '@/hooks/use-entity-resolution'
+let useEntityResolution: typeof import('@/hooks/use-entity-resolution').useEntityResolution
+let useResolvedEntities: typeof import('@/hooks/use-entity-resolution').useResolvedEntities
+let useEntityLinkages: typeof import('@/hooks/use-entity-resolution').useEntityLinkages
+let usePendingLinkages: typeof import('@/hooks/use-entity-resolution').usePendingLinkages
+let useEntityGraph: typeof import('@/hooks/use-entity-resolution').useEntityGraph
+let useUpdateLinkageStatus: typeof import('@/hooks/use-entity-resolution').useUpdateLinkageStatus
+let useConfirmLinkage: typeof import('@/hooks/use-entity-resolution').useConfirmLinkage
+let useRejectLinkage: typeof import('@/hooks/use-entity-resolution').useRejectLinkage
+let useRunEntityResolution: typeof import('@/hooks/use-entity-resolution').useRunEntityResolution
 import type {
   EntityResolutionResult,
   EntityLinkageProposal,
@@ -35,12 +33,14 @@ import type {
 // Mock the data layer
 const mockGetDocuments = jest.fn()
 const mockGetEntities = jest.fn()
+const mockUpdateEntityLinkage = jest.fn()
 
 jest.mock('@/lib/data', () => ({
   getDataLayer: jest.fn(() =>
     Promise.resolve({
       getDocuments: mockGetDocuments,
       getEntities: mockGetEntities,
+      updateEntityLinkage: mockUpdateEntityLinkage,
     })
   ),
 }))
@@ -53,6 +53,17 @@ jest.mock('@/lib/engines/entity-resolution', () => ({
     resolveEntities: (...args: unknown[]) => mockResolveEntities(...args),
   },
 }))
+
+const hooks = require('@/hooks/use-entity-resolution') as typeof import('@/hooks/use-entity-resolution')
+useEntityResolution = hooks.useEntityResolution
+useResolvedEntities = hooks.useResolvedEntities
+useEntityLinkages = hooks.useEntityLinkages
+usePendingLinkages = hooks.usePendingLinkages
+useEntityGraph = hooks.useEntityGraph
+useUpdateLinkageStatus = hooks.useUpdateLinkageStatus
+useConfirmLinkage = hooks.useConfirmLinkage
+useRejectLinkage = hooks.useRejectLinkage
+useRunEntityResolution = hooks.useRunEntityResolution
 
 // ============================================
 // TEST FIXTURES
@@ -183,6 +194,16 @@ describe('Entity Resolution Hooks', () => {
     mockGetDocuments.mockResolvedValue([createMockDocument()])
     mockGetEntities.mockResolvedValue([])
     mockResolveEntities.mockResolvedValue(createMockResolutionResult())
+    // Dynamic mock that echoes the input parameters
+    ;(mockUpdateEntityLinkage as jest.Mock).mockImplementation(
+      (input: { linkageId: string; status: string; reviewedBy?: string }) =>
+        Promise.resolve({
+          linkageId: input.linkageId,
+          status: input.status,
+          reviewedBy: input.reviewedBy,
+          reviewedAt: new Date().toISOString(),
+        })
+    )
   })
 
   describe('useEntityResolution', () => {
@@ -423,6 +444,7 @@ describe('Entity Resolution Hooks', () => {
         })
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data).toBeDefined()
       expect(result.current.data?.status).toBe('confirmed')
       expect(result.current.data?.linkageId).toBe('link-123')
@@ -441,6 +463,7 @@ describe('Entity Resolution Hooks', () => {
         })
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data?.status).toBe('rejected')
     })
 
@@ -458,6 +481,7 @@ describe('Entity Resolution Hooks', () => {
         })
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data?.reviewedBy).toBe('user-123')
     })
 
@@ -478,6 +502,7 @@ describe('Entity Resolution Hooks', () => {
 
       const after = new Date().toISOString()
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data?.reviewedAt).toBeDefined()
       const reviewedAt = result.current.data?.reviewedAt ?? ''
       expect(reviewedAt >= before).toBe(true)
@@ -504,6 +529,7 @@ describe('Entity Resolution Hooks', () => {
         await result.current.confirmLinkageAsync('case-123', 'link-123', 'user-1')
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data?.status).toBe('confirmed')
       expect(result.current.data?.linkageId).toBe('link-123')
     })
@@ -528,6 +554,7 @@ describe('Entity Resolution Hooks', () => {
         await result.current.rejectLinkageAsync('case-123', 'link-123')
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data?.status).toBe('rejected')
     })
   })
@@ -545,6 +572,7 @@ describe('Entity Resolution Hooks', () => {
         await result.current.mutateAsync({ caseId: 'case-123' })
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(mockGetDocuments).toHaveBeenCalledWith('case-123')
       expect(mockResolveEntities).toHaveBeenCalledWith(mockDocs, 'case-123')
       expect(result.current.data).toBeDefined()
@@ -595,6 +623,7 @@ describe('Entity Resolution Hooks', () => {
         await result.current.mutateAsync({ caseId: 'case-123' })
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data?.entities).toBeDefined()
       expect(result.current.data?.linkages).toBeDefined()
       expect(result.current.data?.graph).toBeDefined()
@@ -640,6 +669,7 @@ describe('Entity Resolution Hooks', () => {
         })
       })
 
+      await waitFor(() => expect(mutationResult.current.isSuccess).toBe(true))
       expect(mutationResult.current.data?.status).toBe('confirmed')
     })
   })

@@ -344,6 +344,24 @@ export function matchPersonNames(
   const variantResult = checkVariantMatch(name1, name2)
   if (variantResult.matches) {
     const confidence = variantResult.score
+    const variantHasMultiToken = variantResult.variants.some(
+      (variant) => variant.trim().split(/\s+/).length >= 2
+    )
+    if (!variantHasMultiToken && opts.allowPartialMatch) {
+      return {
+        isMatch: confidence >= opts.minConfidence,
+        confidence,
+        confidenceLevel: getConfidenceLevel(confidence, thresholds),
+        algorithm: 'partial',
+        explanation: 'Names share a last-name-only variant',
+        details: {
+          normalized1,
+          normalized2,
+          matchingVariants: variantResult.variants,
+        },
+      }
+    }
+
     return {
       isMatch: confidence >= opts.minConfidence,
       confidence,
@@ -447,6 +465,18 @@ export function matchOrganizationNames(
 
   const normalized1 = normalizeOrganization(org1)
   const normalized2 = normalizeOrganization(org2)
+  const rawNormalized1 = org1
+    .toLowerCase()
+    .replace(/[.,'"!?;:()[\]{}]/g, '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const rawNormalized2 = org2
+    .toLowerCase()
+    .replace(/[.,'"!?;:()[\]{}]/g, '')
+    .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 
   // Handle empty inputs
   if (!normalized1 || !normalized2) {
@@ -460,19 +490,7 @@ export function matchOrganizationNames(
     }
   }
 
-  // 1. Exact match after normalization
-  if (normalized1 === normalized2) {
-    return {
-      isMatch: true,
-      confidence: 1.0,
-      confidenceLevel: 'high',
-      algorithm: 'exact',
-      explanation: 'Organization names match exactly after normalization',
-      details: { normalized1, normalized2 },
-    }
-  }
-
-  // 2. Alias matching (FBI = Federal Bureau of Investigation)
+  // 1. Alias matching (FBI = Federal Bureau of Investigation)
   const aliases1 = getOrganizationAliases(org1)
   const aliases2 = getOrganizationAliases(org2)
 
@@ -489,6 +507,25 @@ export function matchOrganizationNames(
         normalized2,
         matchingVariants: matchingAliases,
       },
+    }
+  }
+
+  // 2. Exact match after normalization
+  if (normalized1 === normalized2) {
+    const aliasCandidates = getOrganizationAliases(normalized1)
+    const usedAlias =
+      (rawNormalized1 !== normalized1 && aliasCandidates.includes(rawNormalized1)) ||
+      (rawNormalized2 !== normalized2 && aliasCandidates.includes(rawNormalized2))
+
+    return {
+      isMatch: true,
+      confidence: 1.0,
+      confidenceLevel: 'high',
+      algorithm: usedAlias ? 'alias' : 'exact',
+      explanation: usedAlias
+        ? 'Organization names match via known alias'
+        : 'Organization names match exactly after normalization',
+      details: { normalized1, normalized2 },
     }
   }
 

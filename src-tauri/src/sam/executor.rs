@@ -3,7 +3,7 @@
 //! Uses the EngineRunner to execute prompts via the TypeScript sidecar,
 //! parsing structured JSON output and storing results in SQLite.
 
-use log::{info, debug, warn};
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use tokio::time::Duration;

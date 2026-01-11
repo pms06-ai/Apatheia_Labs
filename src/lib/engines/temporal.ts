@@ -745,9 +745,9 @@ function detectImpossibleSequences(
         if (
           pattern.before.test(eventA.description) &&
           pattern.after.test(eventB.description) &&
-          isAfter(dateA, dateB)
+          isBefore(dateA, dateB)
         ) {
-          const daysDiff = Math.ceil((dateA.getTime() - dateB.getTime()) / (1000 * 60 * 60 * 24))
+          const daysDiff = Math.ceil((dateB.getTime() - dateA.getTime()) / (1000 * 60 * 60 * 24))
 
           inconsistencies.push({
             description: `IMPOSSIBLE_SEQUENCE: "${eventA.description}" (${eventA.date}) appears to precede "${eventB.description}" (${eventB.date}) but is dated ${daysDiff} days later.`,
@@ -761,9 +761,9 @@ function detectImpossibleSequences(
         if (
           pattern.before.test(eventB.description) &&
           pattern.after.test(eventA.description) &&
-          isAfter(dateB, dateA)
+          isBefore(dateB, dateA)
         ) {
-          const daysDiff = Math.ceil((dateB.getTime() - dateA.getTime()) / (1000 * 60 * 60 * 24))
+          const daysDiff = Math.ceil((dateA.getTime() - dateB.getTime()) / (1000 * 60 * 60 * 24))
 
           inconsistencies.push({
             description: `IMPOSSIBLE_SEQUENCE: "${eventB.description}" (${eventB.date}) appears to precede "${eventA.description}" (${eventA.date}) but is dated ${daysDiff} days later.`,

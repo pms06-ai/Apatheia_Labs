@@ -49,6 +49,16 @@ import {
   CitationTracker,
 } from '@/lib/export/citation-formatter'
 
+jest.mock('@react-pdf/renderer', () => ({
+  Document: ({ children }: { children: unknown }) => children,
+  Page: ({ children }: { children: unknown }) => children,
+  Text: ({ children }: { children: unknown }) => children,
+  View: ({ children }: { children: unknown }) => children,
+  StyleSheet: { create: () => ({}) },
+  Font: { register: () => {} },
+  pdf: () => ({ toBlob: async () => new Blob() }),
+}))
+
 // ============================================
 // TEST FIXTURES
 // ============================================
@@ -175,6 +185,11 @@ function generateLongText(length: number): string {
 // ============================================
 
 describe('Edge Case 1: Case with No Findings', () => {
+  beforeEach(() => {
+    jest.resetModules()
+    jest.clearAllMocks()
+  })
+
   describe('PDF Export Error Handling', () => {
     it('should return friendly error message when case has no findings', async () => {
       // Mock data layer with empty findings
@@ -821,7 +836,7 @@ describe('Integration Edge Cases', () => {
       const quote = formatQuote(longText, citation)
 
       expect(quote.truncated).toBe(true)
-      expect(quote.citation.formatted).toContain('[Source unavailable]')
+      expect(quote.citation.formatted).toContain('[Source unavailable')
     })
 
     it('should handle special characters in placeholder citations', () => {

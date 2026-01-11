@@ -28,14 +28,12 @@ import {
 } from '@/lib/engines/entity-resolution'
 import { extractEntitiesFromDocuments } from '@/lib/nlp/entity-extractor'
 import { fuzzyMatch, generateLinkageProposals } from '@/lib/nlp/fuzzy-matcher'
-import {
-  useEntityResolution,
-  useUpdateLinkageStatus,
-  useConfirmLinkage,
-  useRejectLinkage,
-  usePendingLinkages,
-  useEntityGraph,
-} from '@/hooks/use-entity-resolution'
+let useEntityResolution: typeof import('@/hooks/use-entity-resolution').useEntityResolution
+let useUpdateLinkageStatus: typeof import('@/hooks/use-entity-resolution').useUpdateLinkageStatus
+let useConfirmLinkage: typeof import('@/hooks/use-entity-resolution').useConfirmLinkage
+let useRejectLinkage: typeof import('@/hooks/use-entity-resolution').useRejectLinkage
+let usePendingLinkages: typeof import('@/hooks/use-entity-resolution').usePendingLinkages
+let useEntityGraph: typeof import('@/hooks/use-entity-resolution').useEntityGraph
 import type { Document } from '@/CONTRACT'
 
 // ============================================
@@ -207,6 +205,15 @@ jest.mock('@/lib/data', () => ({
     })
   ),
 }))
+
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const hooks = require('@/hooks/use-entity-resolution') as typeof import('@/hooks/use-entity-resolution')
+useEntityResolution = hooks.useEntityResolution
+useUpdateLinkageStatus = hooks.useUpdateLinkageStatus
+useConfirmLinkage = hooks.useConfirmLinkage
+useRejectLinkage = hooks.useRejectLinkage
+usePendingLinkages = hooks.usePendingLinkages
+useEntityGraph = hooks.useEntityGraph
 
 // Mock localStorage for persistence testing
 const localStorageMock = (() => {
@@ -497,6 +504,7 @@ describe('E2E: Entity Resolution Workflow', () => {
         })
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data).toBeDefined()
       expect(result.current.data?.status).toBe('confirmed')
       expect(result.current.data?.linkageId).toBe('link-123')
@@ -518,6 +526,7 @@ describe('E2E: Entity Resolution Workflow', () => {
         })
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data?.status).toBe('rejected')
     })
 
@@ -530,6 +539,7 @@ describe('E2E: Entity Resolution Workflow', () => {
         await confirmResult.current.confirmLinkageAsync('case-e2e-123', 'link-789', 'reviewer-1')
       })
 
+      await waitFor(() => expect(confirmResult.current.isSuccess).toBe(true))
       expect(confirmResult.current.data?.status).toBe('confirmed')
 
       const { result: rejectResult } = renderHook(() => useRejectLinkage(), {
@@ -540,6 +550,7 @@ describe('E2E: Entity Resolution Workflow', () => {
         await rejectResult.current.rejectLinkageAsync('case-e2e-123', 'link-999')
       })
 
+      await waitFor(() => expect(rejectResult.current.isSuccess).toBe(true))
       expect(rejectResult.current.data?.status).toBe('rejected')
     })
   })
@@ -664,6 +675,7 @@ describe('E2E: Entity Resolution Workflow', () => {
         })
       })
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       // Verify the data layer was called with correct parameters
       expect(mockUpdateEntityLinkage).toHaveBeenCalledWith({
         linkageId: 'link-persist-test',
@@ -689,6 +701,7 @@ describe('E2E: Entity Resolution Workflow', () => {
 
       const afterTime = new Date().toISOString()
 
+      await waitFor(() => expect(result.current.isSuccess).toBe(true))
       expect(result.current.data?.reviewedAt).toBeDefined()
       expect(result.current.data!.reviewedAt >= beforeTime).toBe(true)
       expect(result.current.data!.reviewedAt <= afterTime).toBe(true)
@@ -783,6 +796,7 @@ describe('E2E: Entity Resolution Workflow', () => {
         })
 
         // Step 6: Verify feedback recorded
+        await waitFor(() => expect(hookResult.current.isSuccess).toBe(true))
         expect(hookResult.current.data?.status).toBe('confirmed')
         expect(mockUpdateEntityLinkage).toHaveBeenCalled()
       }

@@ -58,7 +58,25 @@ tmp/
 # Misc
 .DS_Store
 Thumbs.db
+null
 nul
+
+# Test artifacts
+test-results.json
+
+# Audit outputs (generated)
+audit_report.md
+audits/
+
+# Personal tracking
+backlog.md
+
+# IDE workspace files
+*.code-workspace
+
+# Package subdirectory build artifacts
+packages/*/node_modules/
+packages/*/dist/
 
 # Debug output
 **/check_output*.txt

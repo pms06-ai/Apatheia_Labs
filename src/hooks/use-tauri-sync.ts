@@ -11,7 +11,7 @@
 'use client'
 
 import { useEffect, useRef, useCallback, useMemo } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQueryClient, useQuery } from '@tanstack/react-query'
 import { isDesktop } from '@/lib/tauri'
 import {
   setupEventListeners,
@@ -86,22 +86,28 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
   // ==========================================
 
   const handleDocumentProgress = useCallback((progress: DocumentProcessingProgress) => {
-    stateRef.current.documentProgress.set(progress.document_id, {
+    const docProgress: DocumentProgress = {
       documentId: progress.document_id,
       progress: progress.progress,
       stage: progress.stage,
       status: 'processing',
-    })
-  }, [])
+    }
+    stateRef.current.documentProgress.set(progress.document_id, docProgress)
+    // Update React Query cache for reactivity
+    queryClient.setQueryData(['doc-progress', progress.document_id], docProgress)
+  }, [queryClient])
 
   const handleDocumentComplete = useCallback(
     (result: DocumentProcessingComplete) => {
-      stateRef.current.documentProgress.set(result.document_id, {
+      const docProgress: DocumentProgress = {
         documentId: result.document_id,
         progress: 100,
         stage: 'completed',
         status: 'completed',
-      })
+      }
+      stateRef.current.documentProgress.set(result.document_id, docProgress)
+      // Update React Query cache for reactivity
+      queryClient.setQueryData(['doc-progress', result.document_id], docProgress)
 
       // Invalidate document queries
       queryClient.invalidateQueries({ queryKey: ['documents'] })
@@ -117,13 +123,16 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
 
   const handleDocumentError = useCallback(
     (error: DocumentProcessingError) => {
-      stateRef.current.documentProgress.set(error.document_id, {
+      const docProgress: DocumentProgress = {
         documentId: error.document_id,
         progress: 0,
         stage: 'error',
         status: 'error',
         error: error.error,
-      })
+      }
+      stateRef.current.documentProgress.set(error.document_id, docProgress)
+      // Update React Query cache for reactivity
+      queryClient.setQueryData(['doc-progress', error.document_id], docProgress)
 
       // Still invalidate to show error state
       queryClient.invalidateQueries({ queryKey: ['documents'] })
@@ -141,7 +150,7 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
 
   const handleJobStarted = useCallback(
     (job: JobStarted) => {
-      stateRef.current.analysisJobs.set(job.job_id, {
+      const progress: AnalysisProgress = {
         jobId: job.job_id,
         caseId: job.case_id,
         engines: job.engines,
@@ -149,7 +158,11 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
         total: job.engines.length,
         status: 'running',
         findings: 0,
-      })
+      }
+      // Store in ref for local access
+      stateRef.current.analysisJobs.set(job.job_id, progress)
+      // Store in React Query cache for reactivity
+      queryClient.setQueryData(['job-progress', job.job_id], progress)
 
       if (showToasts) {
         toast.loading(`Analysis started: ${job.engines.length} engines`, {
@@ -157,7 +170,7 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
         })
       }
     },
-    [showToasts]
+    [showToasts, queryClient]
   )
 
   const handleEngineProgress = useCallback((progress: EngineProgress) => {
@@ -166,8 +179,10 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
       job.completed = progress.completed
       job.currentEngine = progress.engine_id
       job.status = progress.status === 'completed' ? 'completed' : 'running'
+      // Update React Query cache for reactivity
+      queryClient.setQueryData(['job-progress', progress.job_id], { ...job })
     }
-  }, [])
+  }, [queryClient])
 
   // Debounced invalidation for high-frequency finding events
   const invalidateFindingsDebounced = useMemo(() => {
@@ -185,12 +200,14 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
       const job = stateRef.current.analysisJobs.get(finding.job_id)
       if (job) {
         job.findings += finding.finding_count
+        // Update React Query cache for reactivity (debounced below)
+        queryClient.setQueryData(['job-progress', finding.job_id], { ...job })
       }
 
       // Debounced invalidation to prevent excessive re-renders
       invalidateFindingsDebounced()
     },
-    [invalidateFindingsDebounced]
+    [invalidateFindingsDebounced, queryClient]
   )
 
   const handleEngineComplete = useCallback(
@@ -199,6 +216,8 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
       if (job) {
         job.status = result.status === 'completed' ? 'completed' : 'failed'
         job.completed = job.total
+        // Update React Query cache for reactivity
+        queryClient.setQueryData(['job-progress', result.job_id], { ...job })
 
         // Invalidate all analysis-related queries
         queryClient.invalidateQueries({ queryKey: ['findings', job.caseId] })
@@ -317,4 +336,34 @@ export function useTauriSync(options: UseTauriSyncOptions = {}) {
      */
     isDesktop: isDesktop(),
   }
+}
+
+// ============================================
+// Reactive Hooks (subscribe to progress changes)
+// ============================================
+
+/**
+ * Subscribe to job progress reactively
+ * Re-renders when job progress changes via Tauri events
+ */
+export function useJobProgressSubscription(jobId: string | undefined) {
+  return useQuery<AnalysisProgress | null>({
+    queryKey: ['job-progress', jobId],
+    queryFn: () => null, // Initial value, updated via setQueryData
+    enabled: !!jobId,
+    staleTime: Infinity, // Never refetch, only updated via events
+  })
+}
+
+/**
+ * Subscribe to document progress reactively
+ * Re-renders when document processing status changes
+ */
+export function useDocumentProgressSubscription(documentId: string | undefined) {
+  return useQuery<DocumentProgress | null>({
+    queryKey: ['doc-progress', documentId],
+    queryFn: () => null, // Initial value, updated via setQueryData
+    enabled: !!documentId,
+    staleTime: Infinity, // Never refetch, only updated via events
+  })
 }

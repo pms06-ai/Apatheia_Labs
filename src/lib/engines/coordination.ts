@@ -270,8 +270,18 @@ export async function analyzeCoordination(
     result = await generateJSON<CoordinationAIResponse>('You are a forensic analyst.', prompt)
   }
 
+  const rawSharedLanguage = Array.isArray((result as any).sharedLanguage)
+    ? (result as any).sharedLanguage
+    : []
+  const rawInformationFlow = Array.isArray((result as any).informationFlow)
+    ? (result as any).informationFlow
+    : []
+  const rawIndependenceViolations = Array.isArray((result as any).independenceViolations)
+    ? (result as any).independenceViolations
+    : []
+
   // Process findings
-  const sharedLanguage: SharedLanguageFinding[] = result.sharedLanguage.map((s, idx: number) => ({
+  const sharedLanguage: SharedLanguageFinding[] = rawSharedLanguage.map((s: any, idx: number) => ({
     id: `shared-${idx}`,
     phrase: s.phrase,
     wordCount: s.wordCount,
@@ -286,7 +296,7 @@ export async function analyzeCoordination(
     significance: s.significance,
   }))
 
-  const informationFlow: InformationFlowFinding[] = result.informationFlow.map(
+  const informationFlow: InformationFlowFinding[] = rawInformationFlow.map(
     (f: any, idx: number) => ({
       id: `flow-${idx}`,
       sourceInstitution: f.sourceInstitution,
@@ -299,7 +309,7 @@ export async function analyzeCoordination(
     })
   )
 
-  const independenceViolations: IndependenceViolation[] = result.independenceViolations.map(
+  const independenceViolations: IndependenceViolation[] = rawIndependenceViolations.map(
     (v: any, idx: number) => ({
       id: `violation-${idx}`,
       type: v.type,

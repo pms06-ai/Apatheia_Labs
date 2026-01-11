@@ -50,6 +50,7 @@ jest.mock('@/lib/supabase/server', () => {
 
 describe('Narrative Engine', () => {
   beforeEach(() => {
+    jest.resetModules()
     jest.clearAllMocks()
     // Reset environment
     delete process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -925,26 +926,13 @@ describe('Narrative Engine', () => {
       // Set placeholder URL to trigger mock mode
       process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://placeholder.supabase.co'
 
-      // Need to re-import to pick up the env change
-      jest.resetModules()
-
-      // Re-setup mocks after reset
-      jest.mock('@/lib/ai-client', () => ({
-        generateJSON: (...args: unknown[]) => mockGenerateJSON(...args),
-      }))
-
       const mockChain = {
         select: jest.fn().mockReturnThis(),
         eq: jest.fn().mockReturnThis(),
         order: jest.fn().mockResolvedValue({ data: [], error: null }),
         insert: jest.fn().mockResolvedValue({ data: null, error: null }),
       }
-
-      jest.mock('@/lib/supabase/server', () => ({
-        supabaseAdmin: {
-          from: () => mockChain,
-        },
-      }))
+      mockSupabaseFrom.mockReturnValue(mockChain)
 
       const { analyzeNarrativeEvolution } = await import('@/lib/engines/narrative')
 

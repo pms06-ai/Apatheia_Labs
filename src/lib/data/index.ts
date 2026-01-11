@@ -28,6 +28,7 @@ import type {
   ClaimPropagation,
   AuthorityMarker,
   SAMOutcome,
+  JobProgress as RustJobProgress,
 } from '@/CONTRACT'
 
 // ============================================
@@ -74,15 +75,20 @@ export interface EntityLinkageUpdate {
   reviewedAt: string
 }
 
+/**
+ * Job progress in camelCase (transformed from Rust snake_case)
+ * Maps 1:1 with CONTRACT.ts JobProgress
+ */
 export interface JobProgress {
   jobId: string
+  caseId: string
   status: 'pending' | 'running' | 'completed' | 'cancelled' | 'failed'
-  engines: string[]
-  completedEngines: number
   totalEngines: number
-  currentEngine?: string
-  startedAt?: string
-  completedAt?: string
+  completedEngines: number
+  succeededEngines: number
+  failedEngines: number
+  durationMs: number | null
+  currentEngine: string | null
 }
 
 // ============================================
@@ -289,13 +295,14 @@ async function createTauriDataLayer(): Promise<DataLayer> {
       if (!progress) return null
       return {
         jobId: progress.job_id,
+        caseId: progress.case_id,
         status: progress.status,
-        engines: progress.engines,
-        completedEngines: progress.completed_engines,
         totalEngines: progress.total_engines,
+        completedEngines: progress.completed_engines,
+        succeededEngines: progress.succeeded_engines,
+        failedEngines: progress.failed_engines,
+        durationMs: progress.duration_ms,
         currentEngine: progress.current_engine,
-        startedAt: progress.started_at,
-        completedAt: progress.completed_at,
       }
     },
     
@@ -307,13 +314,14 @@ async function createTauriDataLayer(): Promise<DataLayer> {
       const jobs = await client.listJobs()
       return jobs.map(j => ({
         jobId: j.job_id,
+        caseId: j.case_id,
         status: j.status,
-        engines: j.engines,
-        completedEngines: j.completed_engines,
         totalEngines: j.total_engines,
+        completedEngines: j.completed_engines,
+        succeededEngines: j.succeeded_engines,
+        failedEngines: j.failed_engines,
+        durationMs: j.duration_ms,
         currentEngine: j.current_engine,
-        startedAt: j.started_at,
-        completedAt: j.completed_at,
       }))
     },
 

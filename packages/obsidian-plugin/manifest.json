@@ -1,0 +1,10 @@
+{
+  "id": "phronesis",
+  "name": "Phronesis",
+  "version": "0.1.0",
+  "minAppVersion": "1.5.0",
+  "description": "Forensic document analysis using S.A.M. methodology - detect contradictions, omissions, bias, and institutional failures.",
+  "author": "Apatheia Labs",
+  "authorUrl": "https://apatheia.io",
+  "isDesktopOnly": false
+}

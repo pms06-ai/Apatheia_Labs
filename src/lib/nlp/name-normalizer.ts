@@ -153,7 +153,7 @@ const ORG_SUFFIXES = [
  * Handles optional periods and whitespace
  */
 const TITLE_PATTERN = new RegExp(
-  `^(${TITLES.join('|')})\\.?\\s+`,
+  `^(${TITLES.join('|')})\\b\\.?\\s+`,
   'gi'
 )
 
@@ -162,7 +162,7 @@ const TITLE_PATTERN = new RegExp(
  * Common for academic/professional credentials
  */
 const SUFFIX_PATTERN = new RegExp(
-  `\\s*,?\\s*(${TITLES.join('|')})\\.?$`,
+  `(?:\\s|,)\\s*(${TITLES.join('|')})\\b\\.?$`,
   'gi'
 )
 
@@ -170,7 +170,7 @@ const SUFFIX_PATTERN = new RegExp(
  * Pattern to match name suffixes (Jr., Sr., III, etc.)
  */
 const NAME_SUFFIX_PATTERN = new RegExp(
-  `\\s*,?\\s*(${NAME_SUFFIXES.join('|')})\\.?$`,
+  `(?:\\s|,)\\s*(${NAME_SUFFIXES.join('|')})\\b\\.?$`,
   'gi'
 )
 
@@ -506,9 +506,13 @@ export function normalizeOrganization(
     }
   }
 
-  // Remove common organization suffixes
+  // Remove common organization suffixes (handle multiple trailing suffixes)
   const suffixPattern = new RegExp(`\\s+(${ORG_SUFFIXES.join('|')})\\.?$`, 'i')
-  normalized = normalized.replace(suffixPattern, '').trim()
+  let cleaned = normalized
+  while (suffixPattern.test(cleaned)) {
+    cleaned = cleaned.replace(suffixPattern, '').trim()
+  }
+  normalized = cleaned
 
   return normalized.replace(/\s+/g, ' ').trim()
 }

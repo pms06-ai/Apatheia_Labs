@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Play, FileText, AlertTriangle, Clock, Share2, Filter, Layers } from 'lucide-react'
+import { Play, FileText, AlertTriangle, Clock, Share2, Filter, Layers, Users } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -9,7 +9,10 @@ import { FindingsList } from '@/components/analysis/findings-list'
 import { TimelineView } from '@/components/analysis/timeline-view'
 import { NetworkGraph } from '@/components/analysis/network-graph'
 import { ExportButton } from '@/components/analysis/ExportButton'
+import { EntityLinkagePanel } from '@/components/analysis/entity-linkage-panel'
+import { JobQueuePanel } from '@/components/analysis/JobQueuePanel'
 import { useDocuments, useFindings, useRunEngine } from '@/hooks/use-api'
+import { usePendingLinkages } from '@/hooks/use-entity-resolution'
 import { ENGINE_REGISTRY } from '@/lib/engines/metadata'
 import { useCaseStore } from '@/hooks/use-case-store'
 import { isDesktop } from '@/lib/tauri'
@@ -49,6 +52,8 @@ export default function AnalysisPage() {
   const { data: documents } = useDocuments(caseId)
   const { data: findings, refetch: refetchFindings } = useFindings(caseId)
   const runEngineMutation = useRunEngine()
+  const { data: pendingLinkages } = usePendingLinkages(caseId)
+  const pendingCount = pendingLinkages?.length || 0
 
   const [selectedEngine, setSelectedEngine] = useState<string | null>('omission')
   const [batchMode, setBatchMode] = useState(false)
@@ -442,6 +447,15 @@ export default function AnalysisPage() {
                   <Share2 className="h-3.5 w-3.5" />
                   Network
                 </TabsTrigger>
+                <TabsTrigger value="entities" className="gap-2 data-[state=active]:bg-charcoal-700 data-[state=active]:text-charcoal-100">
+                  <Users className="h-3.5 w-3.5" />
+                  Entities
+                  {pendingCount > 0 && (
+                    <Badge variant="info" className="ml-1 px-1.5 py-0 text-[10px]">
+                      {pendingCount}
+                    </Badge>
+                  )}
+                </TabsTrigger>
               </TabsList>
               </div>
             </div>
@@ -518,6 +532,10 @@ export default function AnalysisPage() {
                   )
                 })()}
               </TabsContent>
+
+              <TabsContent value="entities" className="h-full m-0 p-6">
+                <EntityLinkagePanel caseId={caseId} />
+              </TabsContent>
             </div>
           </Tabs>
         </div>
@@ -526,6 +544,9 @@ export default function AnalysisPage() {
       {/* Right Panel - Context & Export */}
       <div className="w-64 shrink-0 flex flex-col gap-4">
         <h3 className="font-display text-lg text-charcoal-100">Actions & Reports</h3>
+
+        {/* Job Queue Panel - shows when jobs exist */}
+        <JobQueuePanel />
 
         <Card className="p-4 bg-charcoal-800/50 border-charcoal-700">
           <div className="mb-3">

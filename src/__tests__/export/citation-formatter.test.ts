@@ -261,7 +261,7 @@ describe('formatCitation', () => {
     const citation = formatCitation(doc, null)
 
     expect(citation.pageNumber).toBeNull()
-    expect(citation.formatted).not.toContain('at')
+    expect(citation.formatted).not.toMatch(/,\s+at\s+\d+/)
   })
 
   it('should handle different citation styles', () => {

@@ -2,7 +2,16 @@
   "name": "apatheia-labs",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
+    "mcp:dev": "npm run dev -w @apatheia/mcp-server",
+    "mcp:build": "npm run build -w @apatheia/mcp-server",
+    "mcp:start": "npm run start -w @apatheia/mcp-server",
+    "mcp:http": "npm run start:http -w @apatheia/mcp-server",
+    "obsidian:dev": "npm run dev -w obsidian-phronesis",
+    "obsidian:build": "npm run build -w obsidian-phronesis",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

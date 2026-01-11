@@ -1,0 +1,268 @@
+/**
+ * Phronesis Plugin Styles
+ * Forensic Document Analysis for Obsidian
+ */
+
+/* Main Container */
+.phronesis-results {
+  padding: 10px;
+}
+
+/* Header */
+.phronesis-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.phronesis-header h4 {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Status Indicator */
+.phronesis-status {
+  display: flex;
+  align-items: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.phronesis-status-indicator {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.phronesis-status-indicator.connected {
+  background-color: #4caf50;
+}
+
+.phronesis-status-indicator.disconnected {
+  background-color: #f44336;
+}
+
+/* Document Info */
+.phronesis-doc-info {
+  margin-bottom: 15px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Empty State */
+.phronesis-empty {
+  text-align: center;
+  padding: 20px;
+  color: var(--text-muted);
+}
+
+.phronesis-empty p {
+  margin: 5px 0;
+  font-size: 13px;
+}
+
+/* Results List */
+.phronesis-results-list {
+  margin-bottom: 15px;
+}
+
+/* Engine Result Card */
+.phronesis-engine-result {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: var(--background-secondary);
+  border-radius: 5px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.phronesis-engine-result:hover {
+  border-color: var(--interactive-accent);
+}
+
+/* Engine Header */
+.phronesis-engine-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.phronesis-engine-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Summary */
+.phronesis-summary {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.phronesis-summary-item {
+  margin: 3px 0;
+}
+
+/* Severity Colors */
+.phronesis-severity-critical,
+.text-error {
+  color: var(--text-error);
+}
+
+.phronesis-severity-high,
+.text-warning {
+  color: var(--text-warning);
+}
+
+.phronesis-severity-medium {
+  color: var(--text-accent);
+}
+
+.phronesis-severity-low {
+  color: var(--text-muted);
+}
+
+/* Details Toggle Button */
+.phronesis-details-btn {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: var(--background-secondary-alt);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.phronesis-details-btn:hover {
+  background: var(--background-modifier-hover);
+}
+
+/* Details Panel */
+.phronesis-engine-details {
+  margin-top: 10px;
+  display: none;
+}
+
+.phronesis-engine-details.visible {
+  display: block;
+}
+
+.phronesis-engine-details pre {
+  max-height: 200px;
+  overflow: auto;
+  font-size: 11px;
+  padding: 8px;
+  background: var(--background-primary);
+  border-radius: 3px;
+  margin: 0;
+}
+
+.phronesis-engine-details code {
+  font-family: var(--font-monospace);
+}
+
+/* Action Buttons */
+.phronesis-actions {
+  margin-top: 20px;
+  border-top: 1px solid var(--background-modifier-border);
+  padding-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.phronesis-actions button {
+  flex: 1;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* Modal Styles */
+.phronesis-modal pre {
+  max-height: 400px;
+  overflow: auto;
+  padding: 10px;
+  background: var(--background-secondary);
+  border-radius: 5px;
+}
+
+.phronesis-modal-close {
+  margin-top: 10px;
+}
+
+/* Callout Customization */
+.callout[data-callout="phronesis"] {
+  border-left-color: var(--interactive-accent);
+  background-color: var(--background-secondary);
+}
+
+/* Findings List */
+.phronesis-findings {
+  margin-top: 10px;
+}
+
+.phronesis-finding {
+  padding: 8px;
+  margin: 5px 0;
+  border-left: 3px solid var(--text-muted);
+  background: var(--background-primary);
+  border-radius: 0 3px 3px 0;
+}
+
+.phronesis-finding.critical {
+  border-left-color: var(--text-error);
+}
+
+.phronesis-finding.high {
+  border-left-color: var(--text-warning);
+}
+
+.phronesis-finding.medium {
+  border-left-color: var(--text-accent);
+}
+
+/* Engine Icons */
+.phronesis-engine-icon {
+  font-family: var(--font-monospace);
+  font-weight: bold;
+  margin-right: 5px;
+}
+
+/* Loading State */
+.phronesis-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  color: var(--text-muted);
+}
+
+.phronesis-loading::after {
+  content: '';
+  width: 16px;
+  height: 16px;
+  margin-left: 8px;
+  border: 2px solid var(--text-muted);
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: phronesis-spin 1s linear infinite;
+}
+
+@keyframes phronesis-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 400px) {
+  .phronesis-actions {
+    flex-direction: column;
+  }
+
+  .phronesis-actions button {
+    width: 100%;
+  }
+}
