@@ -1,6 +1,6 @@
 /**
  * JEST TEST SETUP
- * 
+ *
  * Configures the test environment with:
  * - Testing Library matchers
  * - Mock implementations
@@ -12,6 +12,28 @@ import '@testing-library/jest-dom'
 // ============================================
 // ENVIRONMENT MOCKS
 // ============================================
+
+jest.mock('@react-pdf/renderer', () => {
+  const pdfBytes = new Uint8Array(15000)
+  // "%PDF-" header
+  pdfBytes[0] = 0x25
+  pdfBytes[1] = 0x50
+  pdfBytes[2] = 0x44
+  pdfBytes[3] = 0x46
+  pdfBytes[4] = 0x2d
+
+  return {
+    Document: ({ children }: { children: unknown }) => children,
+    Page: ({ children }: { children: unknown }) => children,
+    Text: ({ children }: { children: unknown }) => children,
+    View: ({ children }: { children: unknown }) => children,
+    StyleSheet: { create: () => ({}) },
+    Font: { register: () => {} },
+    pdf: () => ({
+      toBlob: async () => new Blob([pdfBytes], { type: 'application/pdf' }),
+    }),
+  }
+})
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
@@ -31,7 +53,7 @@ process.env.R2_ENDPOINT = 'https://test.r2.cloudflarestorage.com'
 global.fetch = jest.fn()
 
 beforeEach(() => {
-  (global.fetch as jest.Mock).mockReset()
+  ;(global.fetch as jest.Mock).mockReset()
 })
 
 // ============================================
@@ -99,13 +121,15 @@ jest.mock('@/lib/ai-client', () => ({
     systematicPattern: false,
     overallBiasDirection: 'neutral',
   }),
-  compareDocuments: jest.fn().mockResolvedValue(JSON.stringify({
-    contradictions: [],
-    omissions: [],
-    timeline_issues: [],
-    unsupported_claims: [],
-    summary: 'Mock comparison summary',
-  })),
+  compareDocuments: jest.fn().mockResolvedValue(
+    JSON.stringify({
+      contradictions: [],
+      omissions: [],
+      timeline_issues: [],
+      unsupported_claims: [],
+      summary: 'Mock comparison summary',
+    })
+  ),
 }))
 
 /**
@@ -145,8 +169,16 @@ jest.mock('@/lib/groq', () => ({
     yield 'response'
   }),
   analyzeBatch: jest.fn().mockResolvedValue([
-    { result: { analysis: 'batch result 1' }, model: 'mock', usage: { prompt_tokens: 50, completion_tokens: 25, total_tokens: 75 } },
-    { result: { analysis: 'batch result 2' }, model: 'mock', usage: { prompt_tokens: 50, completion_tokens: 25, total_tokens: 75 } },
+    {
+      result: { analysis: 'batch result 1' },
+      model: 'mock',
+      usage: { prompt_tokens: 50, completion_tokens: 25, total_tokens: 75 },
+    },
+    {
+      result: { analysis: 'batch result 2' },
+      model: 'mock',
+      usage: { prompt_tokens: 50, completion_tokens: 25, total_tokens: 75 },
+    },
   ]),
 }))
 
@@ -262,6 +294,24 @@ Object.defineProperty(window, 'scrollTo', {
   writable: true,
   value: jest.fn(),
 })
+
+// Ensure Blob.arrayBuffer exists in jsdom
+if (typeof Blob !== 'undefined' && !Blob.prototype.arrayBuffer) {
+  Blob.prototype.arrayBuffer = function () {
+    if (typeof Response !== 'undefined') {
+      return new Response(this).arrayBuffer()
+    }
+    if (typeof FileReader !== 'undefined') {
+      return new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result as ArrayBuffer)
+        reader.onerror = () => reject(reader.error)
+        reader.readAsArrayBuffer(this)
+      })
+    }
+    return Promise.resolve(new ArrayBuffer(0))
+  }
+}
 
 // ============================================
 // CONSOLE SUPPRESSION

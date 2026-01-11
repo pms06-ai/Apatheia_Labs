@@ -17,27 +17,13 @@ import type {
   AuditTrail,
 } from '@/lib/types/export'
 import { DEFAULT_EXPORT_OPTIONS } from '@/lib/types/export'
-import type {
-  Case,
-  Document,
-  Entity,
-  Finding,
-  Contradiction,
-  Severity,
-  Engine,
-} from '@/CONTRACT'
+import type { Case, Document, Entity, Finding, Contradiction, Severity, Engine } from '@/CONTRACT'
 import {
   buildDOCXDocument,
   generateDOCXBlob,
   generateDOCXBuffer,
-  generateDOCX,
 } from '@/lib/export/docx-generator'
 import type { DataLayer } from '@/lib/data'
-
-// Mock the data layer module
-jest.mock('@/lib/data', () => ({
-  getDataLayer: jest.fn(),
-}))
 
 // ============================================
 // TEST FIXTURES
@@ -188,10 +174,7 @@ const createMockMethodology = (): MethodologyStatement => ({
     },
   ],
   confidenceExplanation: 'Confidence scores range from 0% to 100%.',
-  limitations: [
-    'Analysis is limited to text content.',
-    'Findings require human verification.',
-  ],
+  limitations: ['Analysis is limited to text content.', 'Findings require human verification.'],
   version: '1.0.0',
   lastUpdated: '2024-01-15T10:30:00Z',
 })
@@ -378,8 +361,8 @@ describe('buildDOCXDocument', () => {
     const doc = buildDOCXDocument(data)
 
     expect(doc).toBeDefined()
-    // Document should have sections
-    expect(doc).toHaveProperty('sections')
+    // Document should have a wrapper with content
+    expect(doc).toHaveProperty('documentWrapper')
   })
 
   it('should include all enabled sections', () => {
@@ -437,7 +420,7 @@ describe('buildDOCXDocument', () => {
     const data = createMockExportData()
     const options: ExportOptions = {
       ...DEFAULT_EXPORT_OPTIONS,
-      sections: DEFAULT_EXPORT_OPTIONS.sections.map((s) => ({
+      sections: DEFAULT_EXPORT_OPTIONS.sections.map(s => ({
         ...s,
         included: s.id === 'cover' || s.id === 'summary',
       })),
@@ -528,7 +511,9 @@ describe('generateDOCXBlob', () => {
     const blob = await generateDOCXBlob(data)
 
     // docx library generates application/vnd.openxmlformats-officedocument.wordprocessingml.document
-    expect(blob.type).toMatch(/application.*openxmlformats.*wordprocessingml|application\/octet-stream/)
+    expect(blob.type).toMatch(
+      /application.*openxmlformats.*wordprocessingml|application\/octet-stream/
+    )
   })
 
   it('should handle large datasets', async () => {
@@ -716,13 +701,7 @@ describe('Contradictions Section', () => {
 describe('Entities Section', () => {
   it('should handle entities with all types', async () => {
     const data = createMockExportData()
-    const entityTypes = [
-      'person',
-      'organization',
-      'professional',
-      'institution',
-      'court',
-    ] as const
+    const entityTypes = ['person', 'organization', 'professional', 'institution', 'court'] as const
 
     data.entities = entityTypes.map((type, i) => ({
       ...createMockExportEntity(),
@@ -748,7 +727,7 @@ describe('Entities Section', () => {
     data.entities = [
       {
         ...createMockExportEntity(),
-        documentReferences: docs.map((doc) => ({
+        documentReferences: docs.map(doc => ({
           document: doc,
           pageNumbers: [1, 2, 3],
           mentionCount: 5,
@@ -908,7 +887,7 @@ describe('Export Options', () => {
     const data = createMockExportData()
     const options: ExportOptions = {
       ...DEFAULT_EXPORT_OPTIONS,
-      sections: DEFAULT_EXPORT_OPTIONS.sections.map((s) => ({
+      sections: DEFAULT_EXPORT_OPTIONS.sections.map(s => ({
         ...s,
         included: s.id === 'cover',
       })),
@@ -928,7 +907,7 @@ describe('Export Options', () => {
 
     const minimalOptions: ExportOptions = {
       ...DEFAULT_EXPORT_OPTIONS,
-      sections: DEFAULT_EXPORT_OPTIONS.sections.map((s) => ({
+      sections: DEFAULT_EXPORT_OPTIONS.sections.map(s => ({
         ...s,
         included: s.id === 'cover' || s.id === 'summary',
       })),
@@ -950,10 +929,7 @@ describe('Export Options', () => {
 // ============================================
 
 describe('generateDOCX with data fetching', () => {
-  // Import the mocked module
-  const { getDataLayer } = jest.requireMock('@/lib/data') as {
-    getDataLayer: jest.Mock
-  }
+  let getDataLayerMock: jest.Mock
 
   // Helper to create a mock data layer
   const createMockDataLayer = (overrides: Partial<DataLayer> = {}): DataLayer => ({
@@ -988,13 +964,23 @@ describe('generateDOCX with data fetching', () => {
   })
 
   beforeEach(() => {
+    jest.resetModules()
     jest.clearAllMocks()
+    jest.doMock('@/lib/data', () => ({
+      getDataLayer: jest.fn(),
+    }))
+    getDataLayerMock = (
+      jest.requireMock('@/lib/data') as {
+        getDataLayer: jest.Mock
+      }
+    ).getDataLayer
   })
 
   it('should return success with valid blob for existing case', async () => {
     const mockDataLayer = createMockDataLayer()
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123')
 
     expect(result.success).toBe(true)
@@ -1008,8 +994,9 @@ describe('generateDOCX with data fetching', () => {
     const mockDataLayer = createMockDataLayer({
       getCase: jest.fn().mockResolvedValue(null),
     })
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('non-existent-case')
 
     expect(result.success).toBe(false)
@@ -1022,8 +1009,9 @@ describe('generateDOCX with data fetching', () => {
       getFindings: jest.fn().mockResolvedValue([]),
       getContradictions: jest.fn().mockResolvedValue([]),
     })
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123')
 
     expect(result.success).toBe(false)
@@ -1035,8 +1023,9 @@ describe('generateDOCX with data fetching', () => {
     const mockDataLayer = createMockDataLayer({
       getCase: jest.fn().mockRejectedValue(new Error('Database error')),
     })
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123')
 
     expect(result.success).toBe(false)
@@ -1047,8 +1036,9 @@ describe('generateDOCX with data fetching', () => {
 
   it('should fetch all required data from data layer', async () => {
     const mockDataLayer = createMockDataLayer()
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     await generateDOCX('case-123')
 
     expect(mockDataLayer.getCase).toHaveBeenCalledWith('case-123')
@@ -1066,8 +1056,9 @@ describe('generateDOCX with data fetching', () => {
     const mockDataLayer = createMockDataLayer({
       getFindings: jest.fn().mockResolvedValue([criticalFinding, lowFinding]),
     })
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123', { minSeverity: 'high' })
 
     expect(result.success).toBe(true)
@@ -1082,8 +1073,9 @@ describe('generateDOCX with data fetching', () => {
     const mockDataLayer = createMockDataLayer({
       getFindings: jest.fn().mockResolvedValue([contradictionFinding, biasFinding]),
     })
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123', { engines: ['contradiction'] })
 
     expect(result.success).toBe(true)
@@ -1092,15 +1084,16 @@ describe('generateDOCX with data fetching', () => {
   })
 
   it('should apply maxFindings limit when option is set', async () => {
-    const findings = Array(10).fill(null).map((_, i) =>
-      createMockFinding({ id: `finding-${i}` })
-    )
+    const findings = Array(10)
+      .fill(null)
+      .map((_, i) => createMockFinding({ id: `finding-${i}` }))
 
     const mockDataLayer = createMockDataLayer({
       getFindings: jest.fn().mockResolvedValue(findings),
     })
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123', { maxFindings: 3 })
 
     expect(result.success).toBe(true)
@@ -1109,8 +1102,9 @@ describe('generateDOCX with data fetching', () => {
 
   it('should include audit trails when includeAuditTrails option is true', async () => {
     const mockDataLayer = createMockDataLayer()
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123', { includeAuditTrails: true })
 
     expect(result.success).toBe(true)
@@ -1120,8 +1114,9 @@ describe('generateDOCX with data fetching', () => {
 
   it('should generate valid DOCX buffer (Uint8Array compatible)', async () => {
     const mockDataLayer = createMockDataLayer()
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123')
 
     expect(result.success).toBe(true)
@@ -1138,8 +1133,9 @@ describe('generateDOCX with data fetching', () => {
 
   it('should generate filename with case ID and date', async () => {
     const mockDataLayer = createMockDataLayer()
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('my-case-id')
 
     expect(result.filename).toMatch(/evidence-export-my-case-id-\d{4}-\d{2}-\d{2}\.docx/)
@@ -1147,8 +1143,9 @@ describe('generateDOCX with data fetching', () => {
 
   it('should include export data in result for debugging', async () => {
     const mockDataLayer = createMockDataLayer()
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123')
 
     expect(result.success).toBe(true)
@@ -1164,18 +1161,20 @@ describe('generateDOCX with data fetching', () => {
       getFindings: jest.fn().mockResolvedValue([]),
       getContradictions: jest.fn().mockResolvedValue([createMockContradiction()]),
     })
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123')
 
-    // Should fail because we need at least findings OR contradictions, but check is for both empty
-    expect(result.success).toBe(false)
+    expect(result.success).toBe(true)
+    expect(result.data?.contradictions.length).toBe(1)
   })
 
   it('should merge custom options with defaults', async () => {
     const mockDataLayer = createMockDataLayer()
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const customOptions = {
       customTitle: 'My Custom Title',
       authorName: 'Test Author',
@@ -1198,8 +1197,9 @@ describe('generateDOCX with data fetching', () => {
     const mockDataLayer = createMockDataLayer({
       getFindings: jest.fn().mockResolvedValue([findingWithEvidence]),
     })
-    getDataLayer.mockResolvedValue(mockDataLayer)
+    getDataLayerMock.mockResolvedValue(mockDataLayer)
 
+    const { generateDOCX } = await import('@/lib/export/docx-generator')
     const result = await generateDOCX('case-123')
 
     expect(result.success).toBe(true)

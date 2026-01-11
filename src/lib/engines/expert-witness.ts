@@ -1,7 +1,7 @@
 /**
  * Expert Witness Analysis Engine (ἐπιστήμη)
  * Priority 2 - Expertise Boundaries
- * 
+ *
  * Evaluates expert reports for:
  * - FPR Part 25 / PD25B compliance
  * - Scope exceedances
@@ -12,19 +12,18 @@
 import { generateJSON } from '@/lib/ai-client'
 import { supabaseAdmin } from '@/lib/supabase/server'
 
-
 // Expert witness violation types
 export type ExpertViolationType =
-  | 'scope_exceeded'           // Opinion outside instructed scope
-  | 'methodology_violation'    // Failed to follow accepted methodology
-  | 'materials_incomplete'     // Key materials not reviewed
+  | 'scope_exceeded' // Opinion outside instructed scope
+  | 'methodology_violation' // Failed to follow accepted methodology
+  | 'materials_incomplete' // Key materials not reviewed
   | 'opinion_without_evidence' // Conclusion without evidential basis
-  | 'credibility_assessment'   // Improper credibility determination
-  | 'ultimate_issue'           // Trespassing on ultimate issue
-  | 'no_range_given'          // Failed to provide alternative opinions
-  | 'bias_indicators'          // Language suggesting advocacy
-  | 'pd25b_breach'           // Practice Direction 25B guidelines not followed
-  | 'fpr25_breach'           // FPR Part 25 requirements not met
+  | 'credibility_assessment' // Improper credibility determination
+  | 'ultimate_issue' // Trespassing on ultimate issue
+  | 'no_range_given' // Failed to provide alternative opinions
+  | 'bias_indicators' // Language suggesting advocacy
+  | 'pd25b_breach' // Practice Direction 25B guidelines not followed
+  | 'fpr25_breach' // FPR Part 25 requirements not met
 
 export interface ExpertViolation {
   id: string
@@ -70,14 +69,14 @@ const EXPERT_RULES = {
     '9.1': 'Expert must state substance of all material instructions',
     '3.2': 'Expert must have reviewed all relevant materials',
     '5.1': 'Expert has overriding duty to the court',
-    '4.2': 'Expert must not make credibility assessments unless qualified'
+    '4.2': 'Expert must not make credibility assessments unless qualified',
   },
   fpr25: {
     '25.3': 'Duty to help the court on matters within expertise',
     '25.9': 'Report must state qualifications',
     '25.10': 'Report must distinguish facts from opinion',
-    '25.14': 'Must state opinion, basis, and alternatives considered'
-  }
+    '25.14': 'Must state opinion, basis, and alternatives considered',
+  },
 }
 
 const EXPERT_ANALYSIS_PROMPT = `You are a legal expert specializing in expert witness evidence in UK Family Court proceedings.
@@ -125,8 +124,6 @@ For each violation found, return JSON:
 
 Be thorough but fair. Focus on substantive violations that could affect the weight given to the evidence.`
 
-
-
 /**
  * Expert Witness Analysis Engine
  */
@@ -141,8 +138,6 @@ export class ExpertWitnessEngine {
     instructionDocId: string | null,
     caseId: string
   ): Promise<ExpertAnalysisResult> {
-
-
     const { data: reportChunks } = await this.supabase
       .from('document_chunks')
       .select('*')
@@ -165,11 +160,7 @@ export class ExpertWitnessEngine {
     const materialsList = this.extractMaterialsList(reportContent)
 
     // Run main analysis
-    const violations = await this.detectViolations(
-      reportContent,
-      instructionContent,
-      materialsList
-    )
+    const violations = await this.detectViolations(reportContent, instructionContent, materialsList)
 
     // Calculate compliance score
     const complianceScore = this.calculateComplianceScore(violations)
@@ -187,7 +178,7 @@ export class ExpertWitnessEngine {
       violations,
       complianceScore,
       summary,
-      recommendations
+      recommendations,
     }
   }
 
@@ -199,7 +190,7 @@ export class ExpertWitnessEngine {
     instructionContent: string,
     materialsList: string
   ): Promise<ExpertViolation[]> {
-    let response;
+    let response
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
       console.log('[MOCK ENGINE] Using Mock Expert Witness Analysis')
@@ -211,15 +202,17 @@ export class ExpertWitnessEngine {
             type: 'scope_exceeded',
             severity: 'high',
             title: 'Opinion beyond instructed scope',
-            description: 'Expert provides opinion on factual matters not within expertise (credibility of mother)',
+            description:
+              'Expert provides opinion on factual matters not within expertise (credibility of mother)',
             report_section: 'Section 4.2',
             page_reference: 'p12',
             quoted_text: 'I find the mother to be evasive and likely minimizing her alcohol use.',
             rule_violated: 'PD25B 5.1 (Overriding Duty)',
-            explanation: 'Expert is instructed to assess attachment, not fact-find on historical alcohol use or witness credibility.',
+            explanation:
+              'Expert is instructed to assess attachment, not fact-find on historical alcohol use or witness credibility.',
             instructed_scope: 'Assessment of current attachment relationship',
             actual_scope: 'Fact-finding on historical conduct',
-            confidence: 85
+            confidence: 85,
           },
           {
             type: 'methodology_violation',
@@ -230,15 +223,18 @@ export class ExpertWitnessEngine {
             page_reference: 'p3',
             quoted_text: 'I used my own clinical judgment to determine attachment style.',
             rule_violated: 'PD25B 9.1',
-            explanation: 'Failed to use accepted standardized measures (e.g. Strange Situation, mimics) despite accepted practice.',
-            confidence: 95
-          }
-        ]
+            explanation:
+              'Failed to use accepted standardized measures (e.g. Strange Situation, mimics) despite accepted practice.',
+            confidence: 95,
+          },
+        ],
       }
       response = JSON.stringify(mockResult)
     } else {
-      const fullPrompt = EXPERT_ANALYSIS_PROMPT
-        .replace('{instruction_letter}', instructionContent || 'Not provided')
+      const fullPrompt = EXPERT_ANALYSIS_PROMPT.replace(
+        '{instruction_letter}',
+        instructionContent || 'Not provided'
+      )
         .replace('{materials_list}', materialsList || 'Not explicitly stated')
         .replace('{report_content}', reportContent)
 
@@ -264,7 +260,7 @@ export class ExpertWitnessEngine {
         explanation: v.explanation,
         instructedScope: v.instructed_scope,
         actualScope: v.actual_scope,
-        confidence: v.confidence || 75
+        confidence: v.confidence || 75,
       }))
     } catch {
       console.error('Failed to parse expert analysis response')
@@ -281,7 +277,7 @@ export class ExpertWitnessEngine {
       /materials?\s+reviewed:?([\s\S]*?)(?=\n\n|\z)/i,
       /documents?\s+considered:?([\s\S]*?)(?=\n\n|\z)/i,
       /i\s+have\s+(?:read|reviewed|considered):?([\s\S]*?)(?=\n\n|\z)/i,
-      /appendix\s+(?:a|1)[:\s]+([\s\S]*?)(?=appendix|\n\n|\z)/i
+      /appendix\s+(?:a|1)[:\s]+([\s\S]*?)(?=appendix|\n\n|\z)/i,
     ]
 
     for (const pattern of patterns) {
@@ -300,19 +296,34 @@ export class ExpertWitnessEngine {
   private getRuleText(ruleRef: string): string {
     if (!ruleRef) return ''
 
-    // Check PD25B rules
-    for (const [key, text] of Object.entries(EXPERT_RULES.pd25b)) {
-      if (ruleRef.toLowerCase().includes(key)) {
-        return text
+    const normalized = ruleRef.toLowerCase()
+    const hasPd25b = normalized.includes('pd25b')
+    const hasFpr = normalized.includes('fpr')
+
+    const matchRule = (rules: Record<string, string>) => {
+      for (const [key, text] of Object.entries(rules)) {
+        const escaped = key.replace(/\./g, '\\.')
+        const pattern = new RegExp(`\\b${escaped}\\b`)
+        if (pattern.test(normalized)) {
+          return text
+        }
       }
+      return ''
     }
 
-    // Check FPR rules
-    for (const [key, text] of Object.entries(EXPERT_RULES.fpr25)) {
-      if (ruleRef.toLowerCase().includes(key)) {
-        return text
-      }
+    if (hasPd25b) {
+      return matchRule(EXPERT_RULES.pd25b) || ruleRef
     }
+
+    if (hasFpr) {
+      return matchRule(EXPERT_RULES.fpr25) || ruleRef
+    }
+
+    const pdMatch = matchRule(EXPERT_RULES.pd25b)
+    if (pdMatch) return pdMatch
+
+    const fprMatch = matchRule(EXPERT_RULES.fpr25)
+    if (fprMatch) return fprMatch
 
     return ruleRef
   }
@@ -326,10 +337,18 @@ export class ExpertWitnessEngine {
     let penalty = 0
     for (const v of violations) {
       switch (v.severity) {
-        case 'critical': penalty += 25; break
-        case 'high': penalty += 15; break
-        case 'medium': penalty += 8; break
-        case 'low': penalty += 3; break
+        case 'critical':
+          penalty += 25
+          break
+        case 'high':
+          penalty += 15
+          break
+        case 'medium':
+          penalty += 8
+          break
+        case 'low':
+          penalty += 3
+          break
       }
     }
 
@@ -342,8 +361,8 @@ export class ExpertWitnessEngine {
   private generateSummary(violations: ExpertViolation[]) {
     const criticalCount = violations.filter(v => v.severity === 'critical').length
     const scopeExceedances = violations.filter(v => v.type === 'scope_exceeded').length
-    const methodologyIssues = violations.filter(v =>
-      v.type === 'methodology_violation' || v.type === 'opinion_without_evidence'
+    const methodologyIssues = violations.filter(
+      v => v.type === 'methodology_violation' || v.type === 'opinion_without_evidence'
     ).length
 
     let assessment = 'Compliant'
@@ -360,7 +379,7 @@ export class ExpertWitnessEngine {
       criticalCount,
       scopeExceedances,
       methodologyIssues,
-      overallAssessment: assessment
+      overallAssessment: assessment,
     }
   }
 
@@ -418,11 +437,7 @@ export class ExpertWitnessEngine {
   /**
    * Store findings in database
    */
-  private async storeFindings(
-    caseId: string,
-    reportDocId: string,
-    violations: ExpertViolation[]
-  ) {
+  private async storeFindings(caseId: string, reportDocId: string, violations: ExpertViolation[]) {
     const findingRecords = violations.map(v => ({
       case_id: caseId,
       engine: 'expert_witness',
@@ -438,10 +453,10 @@ export class ExpertWitnessEngine {
         ruleViolated: v.ruleViolated,
         ruleText: v.ruleText,
         instructedScope: v.instructedScope,
-        actualScope: v.actualScope
+        actualScope: v.actualScope,
       },
       confidence: v.confidence,
-      regulatory_targets: ['FPR Part 25', 'PD25B', 'Family Court']
+      regulatory_targets: ['FPR Part 25', 'PD25B', 'Family Court'],
     }))
 
     if (findingRecords.length > 0) {

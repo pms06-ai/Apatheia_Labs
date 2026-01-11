@@ -7,21 +7,12 @@
  */
 
 import nlp from 'compromise'
-import {
-  normalizeName,
-  detectRoleReference,
-  generateNameVariants,
-} from './name-normalizer'
+import { normalizeName, detectRoleReference, generateNameVariants } from './name-normalizer'
 
 /**
  * Types of entities that can be extracted
  */
-export type ExtractedEntityType =
-  | 'person'
-  | 'organization'
-  | 'professional'
-  | 'court'
-  | 'place'
+export type ExtractedEntityType = 'person' | 'organization' | 'professional' | 'court' | 'place'
 
 /**
  * Position information for an entity mention in text
@@ -230,10 +221,7 @@ function calculateMentionConfidence(
 /**
  * Determine entity type based on text patterns and Compromise tags
  */
-function determineEntityType(
-  text: string,
-  isOrganization: boolean
-): ExtractedEntityType {
+function determineEntityType(text: string, isOrganization: boolean): ExtractedEntityType {
   const lowerText = text.toLowerCase()
 
   // Check for court patterns
@@ -264,7 +252,7 @@ function determineEntityType(
 function hasProfessionalTitle(text: string): boolean {
   const lowerText = text.toLowerCase()
   return PROFESSIONAL_INDICATORS.some(
-    (indicator) =>
+    indicator =>
       lowerText.startsWith(indicator + ' ') ||
       lowerText.startsWith(indicator + '.') ||
       lowerText.includes(' ' + indicator + ' ')
@@ -325,7 +313,7 @@ function groupMentions(
 
         // Check if any variants match
         const hasMatch =
-          variants.some((v) => groupVariants.includes(v)) ||
+          variants.some(v => groupVariants.includes(v)) ||
           normalized === groupNormalized ||
           variants.includes(groupNormalized) ||
           groupVariants.includes(normalized)
@@ -359,7 +347,7 @@ function selectCanonicalName(mentions: Array<{ text: string }>): string {
   if (mentions.length === 0) return ''
 
   // Score each mention - prefer longer names without titles
-  const scored = mentions.map((m) => {
+  const scored = mentions.map(m => {
     const normalized = normalizeName(m.text)
     const wordCount = normalized.split(/\s+/).length
     const hasTitle = hasProfessionalTitle(m.text)
@@ -380,6 +368,25 @@ function selectCanonicalName(mentions: Array<{ text: string }>): string {
 }
 
 /**
+ * Resolve the primary entity type from mentions.
+ */
+function resolveEntityType(mentions: Array<{ type: ExtractedEntityType }>): ExtractedEntityType {
+  if (mentions.some(m => m.type === 'court')) {
+    return 'court'
+  }
+  if (mentions.some(m => m.type === 'professional')) {
+    return 'professional'
+  }
+  if (mentions.some(m => m.type === 'organization')) {
+    return 'organization'
+  }
+  if (mentions.some(m => m.type === 'place')) {
+    return 'place'
+  }
+  return 'person'
+}
+
+/**
  * Extract entities from text using Compromise NLP
  *
  * @param text - The text to extract entities from
@@ -390,10 +397,7 @@ function selectCanonicalName(mentions: Array<{ text: string }>): string {
  * const result = extractEntities("Dr. John Smith met with SW Jones at the Family Court.");
  * // Returns entities: Dr. John Smith (professional), SW Jones (professional), Family Court (court)
  */
-export function extractEntities(
-  text: string,
-  options: ExtractionOptions = {}
-): ExtractionResult {
+export function extractEntities(text: string, options: ExtractionOptions = {}): ExtractionResult {
   const startTime = Date.now()
   const opts = { ...DEFAULT_EXTRACTION_OPTIONS, ...options }
 
@@ -450,12 +454,7 @@ export function extractEntities(
             text: person,
             type,
             position,
-            context: extractContext(
-              text,
-              position.start,
-              position.end,
-              opts.contextWindow
-            ),
+            context: extractContext(text, position.start, position.end, opts.contextWindow),
             confidence,
           })
         }
@@ -474,23 +473,14 @@ export function extractEntities(
       if (!processedPositions.has(posKey)) {
         processedPositions.add(posKey)
         const type = determineEntityType(org, true)
-        const confidence = calculateMentionConfidence(
-          org,
-          type,
-          hasProfessionalTitle(org)
-        )
+        const confidence = calculateMentionConfidence(org, type, hasProfessionalTitle(org))
 
         if (confidence >= opts.minConfidence!) {
           rawMentions.push({
             text: org,
             type,
             position,
-            context: extractContext(
-              text,
-              position.start,
-              position.end,
-              opts.contextWindow
-            ),
+            context: extractContext(text, position.start, position.end, opts.contextWindow),
             confidence,
           })
         }
@@ -514,12 +504,7 @@ export function extractEntities(
               text: place,
               type: 'place',
               position,
-              context: extractContext(
-                text,
-                position.start,
-                position.end,
-                opts.contextWindow
-              ),
+              context: extractContext(text, position.start, position.end, opts.contextWindow),
               confidence,
             })
           }
@@ -529,7 +514,8 @@ export function extractEntities(
   }
 
   // Look for professional title + name patterns (e.g., "SW Jones", "Dr. Smith")
-  const professionalTitlePattern = /\b(SW|Dr|Professor|Prof|Judge|Hon|Honourable|Honorable|Rev|Father|Sister|Brother|Mr|Mrs|Ms|Miss)\.?\s+([A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+)?)\b/g
+  const professionalTitlePattern =
+    /\b(SW|Dr|Professor|Prof|Judge|Hon|Honourable|Honorable|Rev|Father|Sister|Brother|Mr|Mrs|Ms|Miss)\.?\s+([A-Z][a-zA-Z'-]+(?:\s+[A-Z][a-zA-Z'-]+)?)\b/g
   let titleMatch
   while ((titleMatch = professionalTitlePattern.exec(text)) !== null) {
     const fullMatch = titleMatch[0]
@@ -548,7 +534,12 @@ export function extractEntities(
       let role: string | undefined
       if (title === 'sw') {
         role = 'social_worker'
-      } else if (title === 'judge' || title === 'hon' || title === 'honourable' || title === 'honorable') {
+      } else if (
+        title === 'judge' ||
+        title === 'hon' ||
+        title === 'honourable' ||
+        title === 'honorable'
+      ) {
         role = 'judge'
       } else if (title === 'dr') {
         role = 'doctor'
@@ -556,9 +547,23 @@ export function extractEntities(
         role = 'professor'
       }
 
-      const isProfessional = ['sw', 'dr', 'professor', 'prof', 'judge', 'hon', 'honourable', 'honorable', 'rev'].includes(title)
+      const isProfessional = [
+        'sw',
+        'dr',
+        'professor',
+        'prof',
+        'judge',
+        'hon',
+        'honourable',
+        'honorable',
+        'rev',
+      ].includes(title)
 
-      const confidence = calculateMentionConfidence(fullMatch, isProfessional ? 'professional' : 'person', true)
+      const confidence = calculateMentionConfidence(
+        fullMatch,
+        isProfessional ? 'professional' : 'person',
+        true
+      )
 
       if (confidence >= opts.minConfidence!) {
         rawMentions.push({
@@ -609,12 +614,11 @@ export function extractEntities(
 
   for (const [_groupKey, mentions] of groupedMentions) {
     const canonicalName = selectCanonicalName(mentions)
-    const primaryType = mentions[0].type
-    const aliases = [...new Set(mentions.map((m) => m.text))]
+    const primaryType = resolveEntityType(mentions)
+    const aliases = [...new Set(mentions.map(m => m.text))]
 
     // Calculate overall confidence as weighted average
-    const avgConfidence =
-      mentions.reduce((sum, m) => sum + m.confidence, 0) / mentions.length
+    const avgConfidence = mentions.reduce((sum, m) => sum + m.confidence, 0) / mentions.length
 
     // Detect role from canonical name or aliases
     let role: string | undefined
@@ -645,7 +649,7 @@ export function extractEntities(
       canonicalName,
       type: primaryType,
       role,
-      mentions: mentions.map((m) => ({
+      mentions: mentions.map(m => ({
         text: m.text,
         normalizedText: normalizeName(m.text),
         position: m.position,
@@ -665,11 +669,11 @@ export function extractEntities(
   // Calculate summary
   const summary = {
     totalEntities: entities.length,
-    peopleCount: entities.filter((e) => e.type === 'person').length,
-    organizationCount: entities.filter((e) => e.type === 'organization').length,
-    professionalCount: entities.filter((e) => e.type === 'professional').length,
-    courtCount: entities.filter((e) => e.type === 'court').length,
-    placeCount: entities.filter((e) => e.type === 'place').length,
+    peopleCount: entities.filter(e => e.type === 'person').length,
+    organizationCount: entities.filter(e => e.type === 'organization').length,
+    professionalCount: entities.filter(e => e.type === 'professional').length,
+    courtCount: entities.filter(e => e.type === 'court').length,
+    placeCount: entities.filter(e => e.type === 'place').length,
   }
 
   return {
@@ -732,16 +736,15 @@ export function extractEntitiesFromDocuments(
 
   for (const [_groupKey, mentions] of groupedMentions) {
     const canonicalName = selectCanonicalName(mentions)
-    const primaryType = mentions[0].type
-    const aliases = [...new Set(mentions.map((m) => m.text))]
-    const avgConfidence =
-      mentions.reduce((sum, m) => sum + m.confidence, 0) / mentions.length
+    const primaryType = resolveEntityType(mentions)
+    const aliases = [...new Set(mentions.map(m => m.text))]
+    const avgConfidence = mentions.reduce((sum, m) => sum + m.confidence, 0) / mentions.length
 
     const entity: ExtractedEntity = {
       id: generateEntityId(primaryType, entityIndex++),
       canonicalName,
       type: primaryType,
-      mentions: mentions.map((m) => ({
+      mentions: mentions.map(m => ({
         text: m.text,
         normalizedText: normalizeName(m.text),
         position: m.position,
@@ -763,11 +766,11 @@ export function extractEntitiesFromDocuments(
     entities,
     summary: {
       totalEntities: entities.length,
-      peopleCount: entities.filter((e) => e.type === 'person').length,
-      organizationCount: entities.filter((e) => e.type === 'organization').length,
-      professionalCount: entities.filter((e) => e.type === 'professional').length,
-      courtCount: entities.filter((e) => e.type === 'court').length,
-      placeCount: entities.filter((e) => e.type === 'place').length,
+      peopleCount: entities.filter(e => e.type === 'person').length,
+      organizationCount: entities.filter(e => e.type === 'organization').length,
+      professionalCount: entities.filter(e => e.type === 'professional').length,
+      courtCount: entities.filter(e => e.type === 'court').length,
+      placeCount: entities.filter(e => e.type === 'place').length,
     },
     metadata: {
       textLength: totalTextLength,

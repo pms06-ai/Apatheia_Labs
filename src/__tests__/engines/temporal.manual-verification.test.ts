@@ -17,7 +17,7 @@ import * as chrono from 'chrono-node'
 
 // Mock the AI client to prevent actual API calls
 jest.mock('@/lib/ai-client', () => ({
-  generateJSON: jest.fn()
+  generateJSON: jest.fn(),
 }))
 
 describe('Manual Verification: Temporal Engine with Real Documents', () => {
@@ -72,7 +72,7 @@ Report prepared by: Sarah Johnson, Social Worker
 Date prepared: February 14, 2024
 Approved by: Michael Brown, Team Manager
 Date approved: February 15, 2024
-      `.trim()
+      `.trim(),
     },
 
     // Sample 2: Court Document with Backdating Indicators
@@ -109,7 +109,7 @@ should proceed as planned.
 
 Statement of Truth
 This position statement is dated March 1, 2024.
-      `.trim()
+      `.trim(),
     },
 
     // Sample 3: Case Conference Minutes
@@ -155,7 +155,7 @@ Review conference to be scheduled for May 10, 2024 (three months later).
 
 Minutes prepared by: Conference Administrator
 Date: February 11, 2024
-      `.trim()
+      `.trim(),
     },
 
     // Sample 4: Document with Impossible Sequences
@@ -189,7 +189,7 @@ Review meeting scheduled for February 20, 2024.
 
 Author: Dr. Sarah Williams, Child Psychologist
 Date of Report: January 30, 2024
-      `.trim()
+      `.trim(),
     },
 
     // Sample 5: Document with Cross-Reference Contradictions
@@ -224,8 +224,8 @@ Timeline compliance: Assessment completed within 45 working days.
 
 Reviewer: Michael Chen, Practice Manager
 Date: February 20, 2024
-      `.trim()
-    }
+      `.trim(),
+    },
   }
 
   describe('Verification 1: No Hallucinated Dates', () => {
@@ -252,7 +252,9 @@ Date: February 20, 2024
       // Log verification results
       console.log(`Social Work Assessment: Found ${chronoResults.length} dates in source text`)
       chronoResults.slice(0, 5).forEach(r => {
-        console.log(`  - "${r.text}" at position ${r.index} -> ${format(r.start.date(), 'yyyy-MM-dd')}`)
+        console.log(
+          `  - "${r.text}" at position ${r.index} -> ${format(r.start.date(), 'yyyy-MM-dd')}`
+        )
       })
     })
 
@@ -267,7 +269,9 @@ Date: February 20, 2024
         const actualText = doc.extracted_text.substring(startPos, endPos)
 
         // Verify the extracted text matches what chrono found
-        expect(actualText.toLowerCase()).toContain(result.text.toLowerCase().substring(0, Math.min(5, result.text.length)))
+        expect(actualText.toLowerCase()).toContain(
+          result.text.toLowerCase().substring(0, Math.min(5, result.text.length))
+        )
       }
 
       console.log(`Court Document: Found ${chronoResults.length} dates in source text`)
@@ -305,7 +309,7 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('January 10, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           // HALLUCINATED date (does not exist in document)
           {
@@ -315,10 +319,10 @@ Date: February 20, 2024
             position: 999, // Invalid position
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'estimated' // Low confidence
-          }
+            confidence: 'estimated', // Low confidence
+          },
         ],
-        inconsistencies: []
+        inconsistencies: [],
       })
 
       const documents = [createMockDocument(doc)]
@@ -345,7 +349,11 @@ Date: February 20, 2024
       // For each extracted date, verify position accuracy
       for (const result of chronoResults) {
         const reportedPosition = result.index
-        const actualPosition = doc.extracted_text.indexOf(result.text)
+        const searchStart = Math.max(0, reportedPosition - 5)
+        let actualPosition = doc.extracted_text.indexOf(result.text, searchStart)
+        if (actualPosition === -1) {
+          actualPosition = doc.extracted_text.indexOf(result.text)
+        }
 
         // If chrono finds the date, position should be exact
         if (actualPosition !== -1) {
@@ -372,12 +380,12 @@ Date: February 20, 2024
         position: r.index,
         dateType: 'absolute',
         sourceDocId: doc.id,
-        confidence: 'exact'
+        confidence: 'exact',
       }))
 
       ;(generateJSON as jest.Mock).mockResolvedValue({
         events: validEvents,
-        inconsistencies: []
+        inconsistencies: [],
       })
 
       const documents = [createMockDocument(doc)]
@@ -391,7 +399,9 @@ Date: February 20, 2024
         }
       }
 
-      console.log(`Position tracking: ${result.timeline.filter(e => e.position !== undefined).length} events with positions`)
+      console.log(
+        `Position tracking: ${result.timeline.filter(e => e.position !== undefined).length} events with positions`
+      )
     })
 
     it('should accurately track position for dates in Case Conference Minutes', () => {
@@ -400,20 +410,22 @@ Date: February 20, 2024
         'February 10, 2024',
         'January 5, 2024',
         'January 8, 2024',
-        'January 15, 2024'
+        'January 15, 2024',
       ]
 
       for (const dateStr of testDates) {
         const actualPosition = doc.extracted_text.indexOf(dateStr)
-        const chronoResult = chrono.parse(doc.extracted_text).find(r =>
-          r.text.includes(dateStr.split(',')[0]) // Match month and day
+        const chronoResult = chrono.parse(doc.extracted_text).find(
+          r => r.text.includes(dateStr.split(',')[0]) // Match month and day
         )
 
         if (actualPosition !== -1 && chronoResult) {
           const positionDiff = Math.abs(chronoResult.index - actualPosition)
           // Position should be within tolerance (chrono may parse surrounding words)
           expect(positionDiff).toBeLessThanOrEqual(20)
-          console.log(`  "${dateStr}": actual=${actualPosition}, chrono=${chronoResult.index}, diff=${positionDiff}`)
+          console.log(
+            `  "${dateStr}": actual=${actualPosition}, chrono=${chronoResult.index}, diff=${positionDiff}`
+          )
         }
       }
     })
@@ -440,7 +452,7 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('March 15, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           {
             date: '2024-03-20', // FUTURE DATE - IRH scheduled
@@ -449,16 +461,18 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('March 20, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
-          }
+            confidence: 'exact',
+          },
         ],
-        inconsistencies: []
+        inconsistencies: [],
       })
 
-      const documents = [createMockDocument({
-        ...doc,
-        acquisition_date: '2024-03-01' // Document creation date
-      })]
+      const documents = [
+        createMockDocument({
+          ...doc,
+          acquisition_date: '2024-03-01', // Document creation date
+        }),
+      ]
 
       const result = await parseTemporalEvents(documents, 'test-backdating')
 
@@ -489,7 +503,7 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('February 5, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           {
             date: '2024-02-12', // FUTURE - more observations
@@ -498,7 +512,7 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('February 12, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           {
             date: '2024-02-15', // FUTURE - conclusions based on future observations
@@ -507,23 +521,23 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('February 15, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
-          }
+            confidence: 'exact',
+          },
         ],
-        inconsistencies: []
+        inconsistencies: [],
       })
 
-      const documents = [createMockDocument({
-        ...doc,
-        acquisition_date: '2024-01-30' // Document creation date
-      })]
+      const documents = [
+        createMockDocument({
+          ...doc,
+          acquisition_date: '2024-01-30', // Document creation date
+        }),
+      ]
 
       const result = await parseTemporalEvents(documents, 'test-multiple-backdating')
 
       // Should detect multiple backdating issues
-      const backdatingIssues = result.inconsistencies.filter(
-        inc => inc.type === 'BACKDATING'
-      )
+      const backdatingIssues = result.inconsistencies.filter(inc => inc.type === 'BACKDATING')
 
       expect(backdatingIssues.length).toBeGreaterThanOrEqual(2)
       console.log(`Multiple backdating: Found ${backdatingIssues.length} issues`)
@@ -548,7 +562,7 @@ Date: February 20, 2024
             position: 50,
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           {
             date: '2024-05-10', // Future review date - legitimate scheduling
@@ -557,16 +571,18 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('May 10, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
-          }
+            confidence: 'exact',
+          },
         ],
-        inconsistencies: []
+        inconsistencies: [],
       })
 
-      const documents = [createMockDocument({
-        ...doc,
-        acquisition_date: '2024-02-10'
-      })]
+      const documents = [
+        createMockDocument({
+          ...doc,
+          acquisition_date: '2024-02-10',
+        }),
+      ]
 
       const result = await parseTemporalEvents(documents, 'test-legitimate-future')
 
@@ -577,7 +593,9 @@ Date: February 20, 2024
       // If issues found, they should not be critical (legitimate scheduling)
       if (issues.length > 0) {
         // Scheduling 3 months ahead might be flagged but should be high/medium, not critical
-        console.log(`Scheduling reference: ${issues.length} issues found with severity ${issues[0]?.severity}`)
+        console.log(
+          `Scheduling reference: ${issues.length} issues found with severity ${issues[0]?.severity}`
+        )
       }
     })
   })
@@ -602,7 +620,7 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('January 10, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact' // Explicit full date
+            confidence: 'exact', // Explicit full date
           },
           {
             date: '2024-02-15',
@@ -611,10 +629,10 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('February 15, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact' // Explicit full date
-          }
+            confidence: 'exact', // Explicit full date
+          },
         ],
-        inconsistencies: []
+        inconsistencies: [],
       })
 
       const documents = [createMockDocument(doc)]
@@ -642,7 +660,7 @@ Date: February 20, 2024
             position: 100,
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           {
             date: '', // To be resolved
@@ -652,10 +670,10 @@ Date: February 20, 2024
             dateType: 'relative',
             anchorDate: '2024-01-10',
             sourceDocId: doc.id,
-            confidence: 'inferred' // Relative date = inferred
-          }
+            confidence: 'inferred', // Relative date = inferred
+          },
         ],
-        inconsistencies: []
+        inconsistencies: [],
       })
 
       const documents = [createMockDocument(doc)]
@@ -681,7 +699,7 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('December 1, 2023'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           {
             date: '2024-01-15',
@@ -690,10 +708,10 @@ Date: February 20, 2024
             position: doc.extracted_text.indexOf('January 15'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'estimated' // Year inferred from context
-          }
+            confidence: 'estimated', // Year inferred from context
+          },
         ],
-        inconsistencies: []
+        inconsistencies: [],
       })
 
       const documents = [createMockDocument(doc)]
@@ -719,7 +737,7 @@ Date: February 20, 2024
             position: 50,
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           {
             date: '2024-05-10',
@@ -729,10 +747,10 @@ Date: February 20, 2024
             dateType: 'resolved', // Resolved from relative
             anchorDate: '2024-02-10',
             sourceDocId: doc.id,
-            confidence: 'inferred' // Should be inferred for resolved dates
-          }
+            confidence: 'inferred', // Should be inferred for resolved dates
+          },
         ],
-        inconsistencies: []
+        inconsistencies: [],
       })
 
       const documents = [createMockDocument(doc)]
@@ -778,12 +796,12 @@ Date: February 20, 2024
         position: r.index,
         dateType: 'absolute',
         sourceDocId: doc.id,
-        confidence: 'exact'
+        confidence: 'exact',
       }))
 
       ;(generateJSON as jest.Mock).mockResolvedValue({
         events,
-        inconsistencies: []
+        inconsistencies: [],
       })
 
       const documents = [createMockDocument(doc)]
@@ -832,7 +850,7 @@ Full Integration Results:
             position: doc.extracted_text.indexOf('March 1, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           {
             date: '2024-03-15',
@@ -841,7 +859,7 @@ Full Integration Results:
             position: doc.extracted_text.indexOf('March 15, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
+            confidence: 'exact',
           },
           {
             date: '2024-04-15',
@@ -850,23 +868,23 @@ Full Integration Results:
             position: doc.extracted_text.indexOf('April 15, 2024'),
             dateType: 'absolute',
             sourceDocId: doc.id,
-            confidence: 'exact'
-          }
+            confidence: 'exact',
+          },
         ],
-        inconsistencies: []
+        inconsistencies: [],
       })
 
-      const documents = [createMockDocument({
-        ...doc,
-        acquisition_date: '2024-03-01'
-      })]
+      const documents = [
+        createMockDocument({
+          ...doc,
+          acquisition_date: '2024-03-01',
+        }),
+      ]
 
       const result = await parseTemporalEvents(documents, 'test-court-backdating')
 
       // Should detect backdating
-      const backdatingIssues = result.inconsistencies.filter(
-        inc => inc.type === 'BACKDATING'
-      )
+      const backdatingIssues = result.inconsistencies.filter(inc => inc.type === 'BACKDATING')
 
       expect(backdatingIssues.length).toBeGreaterThan(0)
 
