@@ -1,10 +1,11 @@
 import { getPreferredAIProvider } from './env'
 import { analyze as analyzeGroq, MODELS as GROQ_MODELS } from './groq'
 import { analyze as analyzeAnthropic, MODELS as ANTHROPIC_MODELS } from './anthropic'
+import { analyzeWithClaudeCode } from './claude-code-client'
 import type { AnalysisRequest as GroqAnalysisRequest } from './groq'
 import type { AnalysisRequest as AnthropicAnalysisRequest } from './anthropic'
 
-export type AIProvider = 'anthropic' | 'groq' | 'gemini' | 'openai' | 'mock'
+export type AIProvider = 'anthropic' | 'groq' | 'gemini' | 'openai' | 'claude-code' | 'mock'
 
 interface AnalysisRequest {
   text: string
@@ -42,6 +43,20 @@ export async function analyze(request: AnalysisRequest): Promise<AnalysisRespons
           input_tokens: gResponse.usage.prompt_tokens,
           output_tokens: gResponse.usage.completion_tokens,
         },
+      }
+    }
+
+    case 'claude-code': {
+      // Use Claude Code CLI for analysis
+      const ccResponse = await analyzeWithClaudeCode(
+        request.text,
+        request.task,
+        request.customPrompt
+      )
+      return {
+        result: ccResponse.result,
+        model: ccResponse.model,
+        usage: { input_tokens: 0, output_tokens: 0 }, // CLI doesn't report usage
       }
     }
 

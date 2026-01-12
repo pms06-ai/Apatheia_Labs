@@ -158,8 +158,23 @@ export function hasFeature(feature: 'r2' | 'modal' | 'groq' | 'anthropic' | 'gem
 
 /**
  * Get the preferred AI provider based on available keys
+ *
+ * Priority: PREFERRED_AI_PROVIDER env > claude-code (if available) > anthropic > groq > gemini > openai > mock
  */
-export function getPreferredAIProvider(): 'anthropic' | 'groq' | 'gemini' | 'openai' | 'mock' {
+export function getPreferredAIProvider(): 'anthropic' | 'groq' | 'gemini' | 'openai' | 'claude-code' | 'mock' {
+  // Check for explicit preference
+  const preferred = process.env.PREFERRED_AI_PROVIDER as string | undefined
+  if (preferred === 'claude-code') return 'claude-code'
+  if (preferred === 'anthropic' && hasFeature('anthropic')) return 'anthropic'
+  if (preferred === 'groq' && hasFeature('groq')) return 'groq'
+  if (preferred === 'mock') return 'mock'
+
+  // Auto-detect: prefer claude-code if running in Claude Code context
+  if (process.env.CLAUDE_CODE === '1' || process.env.ANTHROPIC_CONTEXT === 'claude-code') {
+    return 'claude-code'
+  }
+
+  // Fallback to API key detection
   if (hasFeature('anthropic')) return 'anthropic'
   if (hasFeature('groq')) return 'groq'
   if (hasFeature('gemini')) return 'gemini'
