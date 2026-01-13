@@ -18,7 +18,7 @@ import type {
   ARRIVEResult,
   Claim,
   Document,
-  Entity
+  Entity,
 } from '@/CONTRACT'
 
 // Phase execution context
@@ -62,15 +62,16 @@ export const PHASE_TRANSITIONS: Record<SAMPhase, SAMPhase | null> = {
   anchor: 'inherit',
   inherit: 'compound',
   compound: 'arrive',
-  arrive: null // Terminal phase
+  arrive: null, // Terminal phase
 }
 
 // Status mapping for each phase
+// Note: arrive phase uses 'completed' as its complete status (terminal success state)
 export const PHASE_STATUS_MAP: Record<SAMPhase, { running: SAMStatus; complete: SAMStatus }> = {
   anchor: { running: 'anchor_running', complete: 'anchor_complete' },
   inherit: { running: 'inherit_running', complete: 'inherit_complete' },
   compound: { running: 'compound_running', complete: 'compound_complete' },
-  arrive: { running: 'arrive_running', complete: 'arrive_complete' }
+  arrive: { running: 'arrive_running', complete: 'completed' },
 }
 
 // Re-export CONTRACT types for convenience
@@ -85,5 +86,5 @@ export type {
   ANCHORResult,
   INHERITResult,
   COMPOUNDResult,
-  ARRIVEResult
+  ARRIVEResult,
 }

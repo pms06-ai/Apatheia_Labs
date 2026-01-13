@@ -1,7 +1,19 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Key, Shield, Palette, Check, AlertCircle, Loader2, Eye, EyeOff, Terminal, Zap, Code2, FolderOpen } from 'lucide-react'
+import {
+  Key,
+  Shield,
+  Palette,
+  Check,
+  AlertCircle,
+  Loader2,
+  Eye,
+  EyeOff,
+  Terminal,
+  Zap,
+  Code2,
+} from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { isDesktop } from '@/lib/tauri'
@@ -66,7 +78,7 @@ export default function SettingsPage() {
 
     try {
       const { invoke } = await import('@tauri-apps/api/core')
-      
+
       const [settingsResult, hasKey, ccStatus, pyStatus] = await Promise.all([
         invoke<{ success: boolean; settings?: AppSettings; error?: string }>('get_settings'),
         invoke<boolean>('check_api_key'),
@@ -94,16 +106,18 @@ export default function SettingsPage() {
     }
   }
 
-  async function saveSettings(updates: Partial<{
-    anthropic_api_key: string
-    use_claude_code: boolean
-    mock_mode: boolean
-    default_model: string
-    theme: string
-    python_path: string
-    venv_path: string
-    ocr_script_path: string
-  }>) {
+  async function saveSettings(
+    updates: Partial<{
+      anthropic_api_key: string
+      use_claude_code: boolean
+      mock_mode: boolean
+      default_model: string
+      theme: string
+      python_path: string
+      venv_path: string
+      ocr_script_path: string
+    }>
+  ) {
     if (!isDesktop()) return
 
     setSaving(true)
@@ -112,31 +126,34 @@ export default function SettingsPage() {
 
     try {
       const { invoke } = await import('@tauri-apps/api/core')
-      
-      const result = await invoke<{ success: boolean; settings?: AppSettings; error?: string }>('update_settings', {
-        anthropicApiKey: updates.anthropic_api_key,
-        useClaudeCode: updates.use_claude_code,
-        mockMode: updates.mock_mode,
-        defaultModel: updates.default_model,
-        theme: updates.theme,
-        pythonPath: updates.python_path,
-        venvPath: updates.venv_path,
-        ocrScriptPath: updates.ocr_script_path,
-      })
-      
+
+      const result = await invoke<{ success: boolean; settings?: AppSettings; error?: string }>(
+        'update_settings',
+        {
+          anthropicApiKey: updates.anthropic_api_key,
+          useClaudeCode: updates.use_claude_code,
+          mockMode: updates.mock_mode,
+          defaultModel: updates.default_model,
+          theme: updates.theme,
+          pythonPath: updates.python_path,
+          venvPath: updates.venv_path,
+          ocrScriptPath: updates.ocr_script_path,
+        }
+      )
+
       if (result.success && result.settings) {
         setSettings(result.settings)
         setSuccess('Settings saved successfully')
-        
+
         // Check if API key is now configured
         const hasKey = await invoke<boolean>('check_api_key')
         setApiKeyConfigured(hasKey)
-        
+
         // Clear API key input after save
         if (updates.anthropic_api_key) {
           setApiKeyInput('')
         }
-        
+
         setTimeout(() => setSuccess(null), 3000)
       } else {
         setError(result.error || 'Failed to save settings')
@@ -154,7 +171,7 @@ export default function SettingsPage() {
     try {
       const { invoke } = await import('@tauri-apps/api/core')
       const valid = await invoke<boolean>('validate_api_key')
-      
+
       if (valid) {
         setSuccess('API key is valid')
         setTimeout(() => setSuccess(null), 3000)
@@ -216,10 +233,10 @@ export default function SettingsPage() {
 
   if (!isDesktop()) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Card className="p-8 bg-charcoal-800 border-charcoal-700 text-center">
-          <AlertCircle className="h-12 w-12 text-charcoal-500 mx-auto mb-4" />
-          <h2 className="text-xl font-display text-charcoal-200 mb-2">Desktop Only</h2>
+      <div className="flex h-full items-center justify-center">
+        <Card className="border-charcoal-700 bg-charcoal-800 p-8 text-center">
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-charcoal-500" />
+          <h2 className="mb-2 font-display text-xl text-charcoal-200">Desktop Only</h2>
           <p className="text-charcoal-400">
             Settings are only available in the desktop application.
           </p>
@@ -230,49 +247,49 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex h-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-bronze-500" />
       </div>
     )
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-8">
+    <div className="mx-auto max-w-3xl p-8">
       <div className="mb-8">
-        <h1 className="font-display text-3xl text-charcoal-100 tracking-tight">Settings</h1>
+        <h1 className="font-display text-3xl tracking-tight text-charcoal-100">Settings</h1>
         <p className="mt-2 text-charcoal-400">Configure your Phronesis FCIP installation.</p>
       </div>
 
       {/* Status Messages */}
       {error && (
-        <div className="mb-6 p-4 rounded-lg bg-status-critical/10 border border-status-critical/30 flex items-center gap-3">
-          <AlertCircle className="h-5 w-5 text-status-critical shrink-0" />
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-status-critical/30 bg-status-critical/10 p-4">
+          <AlertCircle className="h-5 w-5 shrink-0 text-status-critical" />
           <span className="text-status-critical">{error}</span>
         </div>
       )}
-      
+
       {success && (
-        <div className="mb-6 p-4 rounded-lg bg-status-success/10 border border-status-success/30 flex items-center gap-3">
-          <Check className="h-5 w-5 text-status-success shrink-0" />
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-status-success/30 bg-status-success/10 p-4">
+          <Check className="h-5 w-5 shrink-0 text-status-success" />
           <span className="text-status-success">{success}</span>
         </div>
       )}
 
       <div className="space-y-6">
         {/* Claude Max Integration (Featured) */}
-        <Card className="p-6 bg-gradient-to-br from-bronze-900/20 to-charcoal-800 border-bronze-500/30">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 rounded-lg bg-bronze-500/20">
+        <Card className="border-bronze-500/30 bg-gradient-to-br from-bronze-900/20 to-charcoal-800 p-6">
+          <div className="mb-6 flex items-start gap-4">
+            <div className="rounded-lg bg-bronze-500/20 p-3">
               <Zap className="h-6 w-6 text-bronze-400" />
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-3">
                 <h2 className="font-display text-xl text-charcoal-100">Claude Max Integration</h2>
-                <Badge variant="outline" className="border-bronze-500/50 text-bronze-400 text-xs">
+                <Badge variant="outline" className="border-bronze-500/50 text-xs text-bronze-400">
                   Recommended
                 </Badge>
               </div>
-              <p className="text-sm text-charcoal-400 mt-1">
+              <p className="mt-1 text-sm text-charcoal-400">
                 Use your Claude Max subscription instead of API credits.
               </p>
             </div>
@@ -280,8 +297,8 @@ export default function SettingsPage() {
 
           <div className="space-y-4">
             {/* Claude Code Status */}
-            <div className="p-4 rounded-lg bg-charcoal-900/50 border border-charcoal-700">
-              <div className="flex items-center justify-between mb-3">
+            <div className="rounded-lg border border-charcoal-700 bg-charcoal-900/50 p-4">
+              <div className="mb-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Terminal className="h-4 w-4 text-charcoal-400" />
                   <span className="text-sm font-medium text-charcoal-200">Claude Code CLI</span>
@@ -294,7 +311,7 @@ export default function SettingsPage() {
                   {checkingClaudeCode ? 'Checking...' : 'Recheck'}
                 </button>
               </div>
-              
+
               {claudeCodeStatus?.installed ? (
                 <div className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-status-success" />
@@ -308,7 +325,7 @@ export default function SettingsPage() {
                     <div className="h-2 w-2 rounded-full bg-charcoal-500" />
                     <span className="text-sm text-charcoal-400">Not installed</span>
                   </div>
-                  <div className="p-2 rounded bg-charcoal-800 font-mono text-xs text-charcoal-300">
+                  <div className="rounded bg-charcoal-800 p-2 font-mono text-xs text-charcoal-300">
                     npm install -g @anthropic-ai/claude-code
                   </div>
                   {claudeCodeStatus?.error && (
@@ -320,18 +337,22 @@ export default function SettingsPage() {
 
             {/* Enable Claude Code Toggle */}
             <div className="pt-2">
-              <label className={`flex items-center gap-3 cursor-pointer ${!claudeCodeStatus?.installed ? 'opacity-50' : ''}`}>
+              <label
+                className={`flex cursor-pointer items-center gap-3 ${!claudeCodeStatus?.installed ? 'opacity-50' : ''}`}
+              >
                 <input
                   type="checkbox"
                   checked={settings?.use_claude_code || false}
-                  onChange={(e) => saveSettings({ use_claude_code: e.target.checked })}
+                  onChange={e => saveSettings({ use_claude_code: e.target.checked })}
                   disabled={!claudeCodeStatus?.installed}
-                  className="w-5 h-5 rounded border-charcoal-600 bg-charcoal-800 text-bronze-500 focus:ring-bronze-500/20 disabled:cursor-not-allowed"
+                  className="h-5 w-5 rounded border-charcoal-600 bg-charcoal-800 text-bronze-500 focus:ring-bronze-500/20 disabled:cursor-not-allowed"
                 />
                 <div>
-                  <span className="text-charcoal-200 font-medium">Use Claude Max via Claude Code</span>
+                  <span className="font-medium text-charcoal-200">
+                    Use Claude Max via Claude Code
+                  </span>
                   <p className="text-xs text-charcoal-500">
-                    {claudeCodeStatus?.installed 
+                    {claudeCodeStatus?.installed
                       ? 'Run engines using your Max subscription quota'
                       : 'Install Claude Code first to enable this option'}
                   </p>
@@ -340,10 +361,10 @@ export default function SettingsPage() {
             </div>
 
             {settings?.use_claude_code && claudeCodeStatus?.installed && (
-              <div className="p-3 rounded-lg bg-bronze-500/10 border border-bronze-500/20">
+              <div className="rounded-lg border border-bronze-500/20 bg-bronze-500/10 p-3">
                 <p className="text-sm text-bronze-400">
                   Engines will use your Claude Max subscription. Make sure you are logged in via{' '}
-                  <code className="px-1 py-0.5 rounded bg-charcoal-800 text-xs">claude login</code>
+                  <code className="rounded bg-charcoal-800 px-1 py-0.5 text-xs">claude login</code>
                 </p>
               </div>
             )}
@@ -351,15 +372,17 @@ export default function SettingsPage() {
         </Card>
 
         {/* API Configuration */}
-        <Card className={`p-6 bg-charcoal-800/50 border-charcoal-700 ${settings?.use_claude_code ? 'opacity-60' : ''}`}>
-          <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 rounded-lg bg-bronze-500/10">
+        <Card
+          className={`border-charcoal-700 bg-charcoal-800/50 p-6 ${settings?.use_claude_code ? 'opacity-60' : ''}`}
+        >
+          <div className="mb-6 flex items-start gap-4">
+            <div className="rounded-lg bg-bronze-500/10 p-3">
               <Key className="h-6 w-6 text-bronze-500" />
             </div>
             <div>
               <h2 className="font-display text-xl text-charcoal-100">API Key (Alternative)</h2>
-              <p className="text-sm text-charcoal-400 mt-1">
-                {settings?.use_claude_code 
+              <p className="mt-1 text-sm text-charcoal-400">
+                {settings?.use_claude_code
                   ? 'Disabled while Claude Code is active'
                   : 'Configure your Anthropic API key for pay-per-use access.'}
               </p>
@@ -368,7 +391,7 @@ export default function SettingsPage() {
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-charcoal-300 mb-2">
+              <label className="mb-2 block text-sm font-medium text-charcoal-300">
                 Anthropic API Key
               </label>
               <div className="flex gap-3">
@@ -376,10 +399,10 @@ export default function SettingsPage() {
                   <input
                     type={showApiKey ? 'text' : 'password'}
                     value={apiKeyInput}
-                    onChange={(e) => setApiKeyInput(e.target.value)}
+                    onChange={e => setApiKeyInput(e.target.value)}
                     placeholder={apiKeyConfigured ? '••••••••••••••••' : 'sk-ant-api03-...'}
                     disabled={settings?.use_claude_code}
-                    className="w-full px-4 py-2.5 rounded-lg bg-charcoal-900 border border-charcoal-700 text-charcoal-100 placeholder:text-charcoal-600 focus:outline-none focus:border-bronze-500/50 focus:ring-1 focus:ring-bronze-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full rounded-lg border border-charcoal-700 bg-charcoal-900 px-4 py-2.5 text-charcoal-100 placeholder:text-charcoal-600 focus:border-bronze-500/50 focus:outline-none focus:ring-1 focus:ring-bronze-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                   />
                   <button
                     type="button"
@@ -392,19 +415,19 @@ export default function SettingsPage() {
                 <button
                   onClick={() => saveSettings({ anthropic_api_key: apiKeyInput })}
                   disabled={!apiKeyInput || saving || settings?.use_claude_code}
-                  className="px-4 py-2.5 rounded-lg bg-bronze-600 text-white font-medium hover:bg-bronze-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="rounded-lg bg-bronze-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-bronze-500 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}
                 </button>
               </div>
-              <div className="flex items-center gap-2 mt-2">
+              <div className="mt-2 flex items-center gap-2">
                 {apiKeyConfigured && !settings?.use_claude_code ? (
                   <>
                     <div className="h-2 w-2 rounded-full bg-status-success" />
                     <span className="text-xs text-status-success">API key configured</span>
                     <button
                       onClick={validateApiKey}
-                      className="text-xs text-bronze-500 hover:text-bronze-400 ml-2"
+                      className="ml-2 text-xs text-bronze-500 hover:text-bronze-400"
                     >
                       Validate
                     </button>
@@ -412,23 +435,27 @@ export default function SettingsPage() {
                 ) : !settings?.use_claude_code ? (
                   <>
                     <div className="h-2 w-2 rounded-full bg-charcoal-600" />
-                    <span className="text-xs text-charcoal-500">Not configured - engines will run in mock mode</span>
+                    <span className="text-xs text-charcoal-500">
+                      Not configured - engines will run in mock mode
+                    </span>
                   </>
                 ) : null}
               </div>
             </div>
 
-            <div className="pt-4 border-t border-charcoal-700">
-              <label className="flex items-center gap-3 cursor-pointer">
+            <div className="border-t border-charcoal-700 pt-4">
+              <label className="flex cursor-pointer items-center gap-3">
                 <input
                   type="checkbox"
                   checked={settings?.mock_mode || false}
-                  onChange={(e) => saveSettings({ mock_mode: e.target.checked })}
-                  className="w-5 h-5 rounded border-charcoal-600 bg-charcoal-800 text-bronze-500 focus:ring-bronze-500/20"
+                  onChange={e => saveSettings({ mock_mode: e.target.checked })}
+                  className="h-5 w-5 rounded border-charcoal-600 bg-charcoal-800 text-bronze-500 focus:ring-bronze-500/20"
                 />
                 <div>
-                  <span className="text-charcoal-200 font-medium">Mock Mode</span>
-                  <p className="text-xs text-charcoal-500">Run engines without making API calls (for testing)</p>
+                  <span className="font-medium text-charcoal-200">Mock Mode</span>
+                  <p className="text-xs text-charcoal-500">
+                    Run engines without making API calls (for testing)
+                  </p>
                 </div>
               </label>
             </div>
@@ -436,14 +463,14 @@ export default function SettingsPage() {
         </Card>
 
         {/* Model Selection */}
-        <Card className="p-6 bg-charcoal-800/50 border-charcoal-700">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 rounded-lg bg-bronze-500/10">
+        <Card className="border-charcoal-700 bg-charcoal-800/50 p-6">
+          <div className="mb-6 flex items-start gap-4">
+            <div className="rounded-lg bg-bronze-500/10 p-3">
               <Shield className="h-6 w-6 text-bronze-500" />
             </div>
             <div>
               <h2 className="font-display text-xl text-charcoal-100">Model Selection</h2>
-              <p className="text-sm text-charcoal-400 mt-1">
+              <p className="mt-1 text-sm text-charcoal-400">
                 Choose the default Claude model for analysis.
               </p>
             </div>
@@ -451,26 +478,44 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-3 gap-3">
             {[
-              { id: 'claude-3-haiku-20240307', name: 'Haiku', desc: 'Fast & affordable', badge: 'Speed' },
-              { id: 'claude-3-5-sonnet-20241022', name: 'Sonnet 3.5', desc: 'Best balance', badge: 'Recommended' },
-              { id: 'claude-sonnet-4-20250514', name: 'Sonnet 4', desc: 'Most capable', badge: 'Latest' },
-            ].map((model) => (
+              {
+                id: 'claude-3-haiku-20240307',
+                name: 'Haiku',
+                desc: 'Fast & affordable',
+                badge: 'Speed',
+              },
+              {
+                id: 'claude-3-5-sonnet-20241022',
+                name: 'Sonnet 3.5',
+                desc: 'Best balance',
+                badge: 'Recommended',
+              },
+              {
+                id: 'claude-sonnet-4-20250514',
+                name: 'Sonnet 4',
+                desc: 'Most capable',
+                badge: 'Latest',
+              },
+            ].map(model => (
               <button
                 key={model.id}
                 onClick={() => saveSettings({ default_model: model.id })}
-                className={`p-4 rounded-lg border text-left transition-all ${
+                className={`rounded-lg border p-4 text-left transition-all ${
                   settings?.default_model === model.id
-                    ? 'bg-bronze-500/10 border-bronze-500/50'
-                    : 'bg-charcoal-900 border-charcoal-700 hover:border-charcoal-600'
+                    ? 'border-bronze-500/50 bg-bronze-500/10'
+                    : 'border-charcoal-700 bg-charcoal-900 hover:border-charcoal-600'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="mb-2 flex items-center justify-between">
                   <span className="font-medium text-charcoal-200">{model.name}</span>
-                  <Badge variant="outline" className={`text-xs ${
-                    settings?.default_model === model.id
-                      ? 'border-bronze-500/50 text-bronze-500'
-                      : 'border-charcoal-600 text-charcoal-500'
-                  }`}>
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${
+                      settings?.default_model === model.id
+                        ? 'border-bronze-500/50 text-bronze-500'
+                        : 'border-charcoal-600 text-charcoal-500'
+                    }`}
+                  >
                     {model.badge}
                   </Badge>
                 </div>
@@ -481,14 +526,14 @@ export default function SettingsPage() {
         </Card>
 
         {/* Theme */}
-        <Card className="p-6 bg-charcoal-800/50 border-charcoal-700">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 rounded-lg bg-bronze-500/10">
+        <Card className="border-charcoal-700 bg-charcoal-800/50 p-6">
+          <div className="mb-6 flex items-start gap-4">
+            <div className="rounded-lg bg-bronze-500/10 p-3">
               <Palette className="h-6 w-6 text-bronze-500" />
             </div>
             <div>
               <h2 className="font-display text-xl text-charcoal-100">Appearance</h2>
-              <p className="text-sm text-charcoal-400 mt-1">
+              <p className="mt-1 text-sm text-charcoal-400">
                 Customize the application appearance.
               </p>
             </div>
@@ -499,31 +544,33 @@ export default function SettingsPage() {
               { id: 'dark', name: 'Dark', icon: '🌙' },
               { id: 'light', name: 'Light', icon: '☀️', disabled: true },
               { id: 'system', name: 'System', icon: '💻', disabled: true },
-            ].map((theme) => (
+            ].map(theme => (
               <button
                 key={theme.id}
                 onClick={() => !theme.disabled && saveSettings({ theme: theme.id })}
                 disabled={theme.disabled}
-                className={`flex-1 p-4 rounded-lg border text-center transition-all ${
+                className={`flex-1 rounded-lg border p-4 text-center transition-all ${
                   settings?.theme === theme.id
-                    ? 'bg-bronze-500/10 border-bronze-500/50'
+                    ? 'border-bronze-500/50 bg-bronze-500/10'
                     : theme.disabled
-                    ? 'bg-charcoal-900/50 border-charcoal-700 opacity-50 cursor-not-allowed'
-                    : 'bg-charcoal-900 border-charcoal-700 hover:border-charcoal-600'
+                      ? 'cursor-not-allowed border-charcoal-700 bg-charcoal-900/50 opacity-50'
+                      : 'border-charcoal-700 bg-charcoal-900 hover:border-charcoal-600'
                 }`}
               >
-                <span className="text-2xl mb-2 block">{theme.icon}</span>
+                <span className="mb-2 block text-2xl">{theme.icon}</span>
                 <span className="text-sm font-medium text-charcoal-200">{theme.name}</span>
-                {theme.disabled && <span className="block text-xs text-charcoal-600 mt-1">Coming soon</span>}
+                {theme.disabled && (
+                  <span className="mt-1 block text-xs text-charcoal-600">Coming soon</span>
+                )}
               </button>
             ))}
           </div>
         </Card>
 
         {/* Python Environment */}
-        <Card className="p-6 bg-charcoal-800/50 border-charcoal-700">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="p-3 rounded-lg bg-bronze-500/10">
+        <Card className="border-charcoal-700 bg-charcoal-800/50 p-6">
+          <div className="mb-6 flex items-start gap-4">
+            <div className="rounded-lg bg-bronze-500/10 p-3">
               <Code2 className="h-6 w-6 text-bronze-500" />
             </div>
             <div className="flex-1">
@@ -532,7 +579,7 @@ export default function SettingsPage() {
                 <button
                   onClick={checkPythonStatus}
                   disabled={checkingPython}
-                  className="px-3 py-1.5 rounded-lg text-sm bg-charcoal-700 text-charcoal-200 hover:bg-charcoal-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="rounded-lg bg-charcoal-700 px-3 py-1.5 text-sm text-charcoal-200 transition-colors hover:bg-charcoal-600 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {checkingPython ? (
                     <span className="flex items-center gap-2">
@@ -544,23 +591,27 @@ export default function SettingsPage() {
                   )}
                 </button>
               </div>
-              <p className="text-sm text-charcoal-400 mt-1">
-                Configure Python for OCR processing.
-              </p>
+              <p className="mt-1 text-sm text-charcoal-400">Configure Python for OCR processing.</p>
             </div>
           </div>
 
           {/* Python Status Indicator */}
-          <div className="p-4 rounded-lg bg-charcoal-900/50 border border-charcoal-700 mb-4">
-            <div className="flex items-center justify-between mb-2">
+          <div className="mb-4 rounded-lg border border-charcoal-700 bg-charcoal-900/50 p-4">
+            <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-medium text-charcoal-300">Environment Status</span>
             </div>
             {pythonStatus ? (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <div className={`h-2 w-2 rounded-full ${pythonStatus.available ? 'bg-status-success' : 'bg-status-critical'}`} />
-                  <span className={`text-sm ${pythonStatus.available ? 'text-status-success' : 'text-status-critical'}`}>
-                    {pythonStatus.available ? `Python ${pythonStatus.version}` : 'Python not available'}
+                  <div
+                    className={`h-2 w-2 rounded-full ${pythonStatus.available ? 'bg-status-success' : 'bg-status-critical'}`}
+                  />
+                  <span
+                    className={`text-sm ${pythonStatus.available ? 'text-status-success' : 'text-status-critical'}`}
+                  >
+                    {pythonStatus.available
+                      ? `Python ${pythonStatus.version}`
+                      : 'Python not available'}
                   </span>
                 </div>
                 {pythonStatus.available && (
@@ -569,17 +620,29 @@ export default function SettingsPage() {
                       <span className="font-mono">{pythonStatus.path}</span>
                     </div>
                     <div className="flex gap-4 text-xs">
-                      <span className={pythonStatus.venv_active ? 'text-status-success' : 'text-charcoal-500'}>
+                      <span
+                        className={
+                          pythonStatus.venv_active ? 'text-status-success' : 'text-charcoal-500'
+                        }
+                      >
                         {pythonStatus.venv_active ? '✓ Venv active' : '○ No venv'}
                       </span>
-                      <span className={pythonStatus.ocr_script_found ? 'text-status-success' : 'text-charcoal-500'}>
-                        {pythonStatus.ocr_script_found ? '✓ OCR script found' : '○ OCR script not found'}
+                      <span
+                        className={
+                          pythonStatus.ocr_script_found
+                            ? 'text-status-success'
+                            : 'text-charcoal-500'
+                        }
+                      >
+                        {pythonStatus.ocr_script_found
+                          ? '✓ OCR script found'
+                          : '○ OCR script not found'}
                       </span>
                     </div>
                   </>
                 )}
                 {pythonStatus.error && (
-                  <p className="text-xs text-status-critical mt-1">{pythonStatus.error}</p>
+                  <p className="mt-1 text-xs text-status-critical">{pythonStatus.error}</p>
                 )}
               </div>
             ) : (
@@ -598,7 +661,7 @@ export default function SettingsPage() {
               </div>
               <div className="mt-2 text-xs text-charcoal-400">
                 <a
-                  className="text-bronze-400 hover:text-bronze-300 underline"
+                  className="text-bronze-400 underline hover:text-bronze-300"
                   href="https://www.python.org/downloads/"
                   target="_blank"
                   rel="noreferrer"
@@ -612,61 +675,63 @@ export default function SettingsPage() {
           {/* Python Path Inputs */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-charcoal-300 mb-2">
+              <label className="mb-2 block text-sm font-medium text-charcoal-300">
                 Python Path
-                <span className="text-charcoal-500 font-normal ml-2">(optional)</span>
+                <span className="ml-2 font-normal text-charcoal-500">(optional)</span>
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={pythonPath}
-                  onChange={(e) => setPythonPath(e.target.value)}
+                  onChange={e => setPythonPath(e.target.value)}
                   placeholder="python or /usr/bin/python3"
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-charcoal-900 border border-charcoal-700 text-charcoal-100 placeholder:text-charcoal-600 focus:outline-none focus:border-bronze-500/50 focus:ring-1 focus:ring-bronze-500/20 font-mono text-sm"
+                  className="flex-1 rounded-lg border border-charcoal-700 bg-charcoal-900 px-4 py-2.5 font-mono text-sm text-charcoal-100 placeholder:text-charcoal-600 focus:border-bronze-500/50 focus:outline-none focus:ring-1 focus:ring-bronze-500/20"
                 />
               </div>
-              <p className="text-xs text-charcoal-500 mt-1">Leave empty to use system Python</p>
+              <p className="mt-1 text-xs text-charcoal-500">Leave empty to use system Python</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-charcoal-300 mb-2">
+              <label className="mb-2 block text-sm font-medium text-charcoal-300">
                 Virtual Environment Path
-                <span className="text-charcoal-500 font-normal ml-2">(optional)</span>
+                <span className="ml-2 font-normal text-charcoal-500">(optional)</span>
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={venvPath}
-                  onChange={(e) => setVenvPath(e.target.value)}
+                  onChange={e => setVenvPath(e.target.value)}
                   placeholder="C:\path\to\venv or /path/to/venv"
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-charcoal-900 border border-charcoal-700 text-charcoal-100 placeholder:text-charcoal-600 focus:outline-none focus:border-bronze-500/50 focus:ring-1 focus:ring-bronze-500/20 font-mono text-sm"
+                  className="flex-1 rounded-lg border border-charcoal-700 bg-charcoal-900 px-4 py-2.5 font-mono text-sm text-charcoal-100 placeholder:text-charcoal-600 focus:border-bronze-500/50 focus:outline-none focus:ring-1 focus:ring-bronze-500/20"
                 />
               </div>
-              <p className="text-xs text-charcoal-500 mt-1">If set, will use Python from this venv</p>
+              <p className="mt-1 text-xs text-charcoal-500">
+                If set, will use Python from this venv
+              </p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-charcoal-300 mb-2">
+              <label className="mb-2 block text-sm font-medium text-charcoal-300">
                 OCR Script Path
-                <span className="text-charcoal-500 font-normal ml-2">(optional)</span>
+                <span className="ml-2 font-normal text-charcoal-500">(optional)</span>
               </label>
               <div className="flex gap-2">
                 <input
                   type="text"
                   value={ocrScriptPath}
-                  onChange={(e) => setOcrScriptPath(e.target.value)}
+                  onChange={e => setOcrScriptPath(e.target.value)}
                   placeholder="tools/ocr/process_ocr_v2.py"
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-charcoal-900 border border-charcoal-700 text-charcoal-100 placeholder:text-charcoal-600 focus:outline-none focus:border-bronze-500/50 focus:ring-1 focus:ring-bronze-500/20 font-mono text-sm"
+                  className="flex-1 rounded-lg border border-charcoal-700 bg-charcoal-900 px-4 py-2.5 font-mono text-sm text-charcoal-100 placeholder:text-charcoal-600 focus:border-bronze-500/50 focus:outline-none focus:ring-1 focus:ring-bronze-500/20"
                 />
               </div>
-              <p className="text-xs text-charcoal-500 mt-1">Custom OCR script location</p>
+              <p className="mt-1 text-xs text-charcoal-500">Custom OCR script location</p>
             </div>
 
             <div className="pt-2">
               <button
                 onClick={savePythonSettings}
                 disabled={saving}
-                className="px-4 py-2.5 rounded-lg bg-bronze-600 text-white font-medium hover:bg-bronze-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-lg bg-bronze-600 px-4 py-2.5 font-medium text-white transition-colors hover:bg-bronze-500 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Python Settings'}
               </button>
@@ -675,15 +740,17 @@ export default function SettingsPage() {
         </Card>
 
         {/* Info Card */}
-        <Card className="p-6 bg-gradient-to-br from-charcoal-800 to-charcoal-900 border-charcoal-700">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="h-2 w-2 rounded-full bg-status-success animate-pulse" />
-            <span className="text-xs text-charcoal-400 uppercase tracking-wide">Local-First Architecture</span>
+        <Card className="border-charcoal-700 bg-gradient-to-br from-charcoal-800 to-charcoal-900 p-6">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-status-success" />
+            <span className="text-xs uppercase tracking-wide text-charcoal-400">
+              Local-First Architecture
+            </span>
           </div>
-          <p className="text-sm text-charcoal-300 leading-relaxed">
-            All settings and documents are stored locally on your machine. 
-            API keys are encrypted at rest and never transmitted to any server except the AI provider.
-            Your case data never leaves your device.
+          <p className="text-sm leading-relaxed text-charcoal-300">
+            All settings and documents are stored locally on your machine. API keys are encrypted at
+            rest and never transmitted to any server except the AI provider. Your case data never
+            leaves your device.
           </p>
         </Card>
       </div>

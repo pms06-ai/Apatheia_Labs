@@ -42,6 +42,11 @@ const config = {
         '<rootDir>/src/__tests__/utils.tsx',
     ],
 
+    // Module path ignore (fixes Haste collision with src-tauri/target)
+    modulePathIgnorePatterns: [
+        '<rootDir>/src-tauri/target/',
+    ],
+
     // Coverage configuration
     collectCoverageFrom: [
         'src/**/*.{ts,tsx}',

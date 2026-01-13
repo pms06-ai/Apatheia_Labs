@@ -10,8 +10,13 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  Target, AlertTriangle, ChevronDown, ChevronUp, Link2,
-  AlertOctagon, CircleSlash, Undo2, RotateCcw
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Link2,
+  AlertOctagon,
+  CircleSlash,
+  Undo2,
 } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -51,7 +56,10 @@ const OUTCOME_TYPE_CONFIG: Record<OutcomeType, { icon: string; label: string; co
   media_publication: { icon: '???', label: 'Media Publication', color: 'charcoal-400' },
 }
 
-const HARM_LEVEL_CONFIG: Record<HarmLevel, { Icon: typeof AlertOctagon; color: string; label: string; bgClass: string }> = {
+const HARM_LEVEL_CONFIG: Record<
+  HarmLevel,
+  { Icon: typeof AlertOctagon; color: string; label: string; bgClass: string }
+> = {
   catastrophic: {
     Icon: AlertOctagon,
     color: 'status-critical',
@@ -123,22 +131,21 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
       >
         {/* Severity Indicator Bar */}
         {harmConfig && (
-          <div className={cn(
-            'absolute left-0 top-0 bottom-0 w-1',
-            `bg-${harmConfig.color}`
-          )} />
+          <div className={cn('absolute bottom-0 left-0 top-0 w-1', `bg-${harmConfig.color}`)} />
         )}
 
         <div className="relative p-5 pl-6">
           {/* Header Row */}
-          <div className="flex items-start justify-between gap-4 mb-3">
+          <div className="mb-3 flex items-start justify-between gap-4">
             <div className="flex items-center gap-3">
               {/* Harm Level Icon */}
               {harmConfig && (
-                <div className={cn(
-                  'flex items-center justify-center w-10 h-10 rounded-lg shrink-0',
-                  `bg-${harmConfig.color}/10`
-                )}>
+                <div
+                  className={cn(
+                    'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                    `bg-${harmConfig.color}/10`
+                  )}
+                >
                   <HarmIcon className={cn('h-5 w-5', `text-${harmConfig.color}`)} />
                 </div>
               )}
@@ -146,11 +153,13 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
               <div>
                 {/* Outcome Type */}
                 {outcomeConfig && (
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={cn(
-                      'text-xs font-medium uppercase tracking-wider',
-                      `text-${outcomeConfig.color}`
-                    )}>
+                  <div className="mb-1 flex items-center gap-2">
+                    <span
+                      className={cn(
+                        'text-xs font-medium uppercase tracking-wider',
+                        `text-${outcomeConfig.color}`
+                      )}
+                    >
                       {outcomeConfig.label}
                     </span>
                   </div>
@@ -166,11 +175,15 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
             </div>
 
             {/* Badges */}
-            <div className="flex flex-col items-end gap-2 shrink-0">
+            <div className="flex shrink-0 flex-col items-end gap-2">
               {/* Harm Level Badge */}
               {harmConfig && (
                 <Badge
-                  variant={outcome.harm_level === 'catastrophic' || outcome.harm_level === 'severe' ? 'critical' : 'high'}
+                  variant={
+                    outcome.harm_level === 'catastrophic' || outcome.harm_level === 'severe'
+                      ? 'critical'
+                      : 'high'
+                  }
                   className="shadow-lg"
                 >
                   {harmConfig.label}
@@ -178,10 +191,7 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
               )}
 
               {/* Remediation Status */}
-              <div className={cn(
-                'flex items-center gap-1 text-xs',
-                `text-${remediation.color}`
-              )}>
+              <div className={cn('flex items-center gap-1 text-xs', `text-${remediation.color}`)}>
                 <RemediationIcon className="h-3 w-3" />
                 {remediation.label}
               </div>
@@ -189,13 +199,11 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
           </div>
 
           {/* Description */}
-          <p className="text-sm text-charcoal-200 mb-3">
-            {outcome.outcome_description}
-          </p>
+          <p className="mb-3 text-sm text-charcoal-200">{outcome.outcome_description}</p>
 
           {/* Harm Description */}
           {outcome.harm_description && (
-            <div className="p-3 rounded bg-charcoal-800/50 border border-charcoal-700 text-xs text-charcoal-300 mb-3">
+            <div className="mb-3 rounded border border-charcoal-700 bg-charcoal-800/50 p-3 text-xs text-charcoal-300">
               {outcome.harm_description}
             </div>
           )}
@@ -205,7 +213,9 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
             <div className="flex items-center gap-2 text-xs text-charcoal-400">
               <Link2 className="h-3 w-3" />
               <span>
-                {chain.root_claims.length} root claim{chain.root_claims.length !== 1 ? 's' : ''} via {chain.propagation_path.length} propagation step{chain.propagation_path.length !== 1 ? 's' : ''}
+                {chain.root_claims.length} root claim{chain.root_claims.length !== 1 ? 's' : ''} via{' '}
+                {chain.propagation_path.length} propagation step
+                {chain.propagation_path.length !== 1 ? 's' : ''}
               </span>
               {chain.authority_accumulation > 0 && (
                 <span className="text-bronze-400">
@@ -219,11 +229,11 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
           {outcome.but_for_analysis && (
             <div className="mt-3">
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation()
                   onToggle()
                 }}
-                className="flex items-center gap-1 text-xs text-bronze-400 hover:text-bronze-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-bronze-400 transition-colors hover:text-bronze-300"
               >
                 {isExpanded ? (
                   <ChevronUp className="h-3 w-3" />
@@ -242,7 +252,7 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-2 p-3 rounded bg-charcoal-800/50 border border-charcoal-700 text-xs text-charcoal-300">
+                    <div className="mt-2 rounded border border-charcoal-700 bg-charcoal-800/50 p-3 text-xs text-charcoal-300">
                       {outcome.but_for_analysis}
                     </div>
                   </motion.div>
@@ -255,11 +265,11 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
           {chain && chain.root_claims.length > 0 && (
             <div className="mt-3">
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation()
                   onToggle()
                 }}
-                className="flex items-center gap-1 text-xs text-bronze-400 hover:text-bronze-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-bronze-400 transition-colors hover:text-bronze-300"
               >
                 {isExpanded ? (
                   <ChevronUp className="h-3 w-3" />
@@ -279,14 +289,16 @@ function OutcomeCard({ outcome, chain, index, isExpanded, onToggle, onClick }: O
                     className="overflow-hidden"
                   >
                     <div className="mt-2 space-y-2">
-                      <div className="text-xs text-charcoal-400 uppercase tracking-wider">Root Claims:</div>
+                      <div className="text-xs uppercase tracking-wider text-charcoal-400">
+                        Root Claims:
+                      </div>
                       {chain.root_claims.map((claimId, i) => (
                         <div
                           key={claimId}
-                          className="flex items-center gap-2 p-2 rounded bg-charcoal-800/50 border border-charcoal-700 text-xs"
+                          className="flex items-center gap-2 rounded border border-charcoal-700 bg-charcoal-800/50 p-2 text-xs"
                         >
-                          <span className="text-bronze-400 font-mono">{i + 1}.</span>
-                          <span className="text-charcoal-300 font-mono truncate">{claimId}</span>
+                          <span className="font-mono text-bronze-400">{i + 1}.</span>
+                          <span className="truncate font-mono text-charcoal-300">{claimId}</span>
                         </div>
                       ))}
                     </div>
@@ -333,21 +345,19 @@ export function OutcomeCausation({
   }, [outcomes, filter])
 
   // Sort by harm level
-  const harmOrder: Record<HarmLevel, number> = {
-    catastrophic: 0,
-    severe: 1,
-    moderate: 2,
-    minor: 3,
-  }
-
-  const sorted = useMemo(() =>
-    [...filtered].sort((a, b) => {
+  const sorted = useMemo(() => {
+    const harmOrder: Record<HarmLevel, number> = {
+      catastrophic: 0,
+      severe: 1,
+      moderate: 2,
+      minor: 3,
+    }
+    return [...filtered].sort((a, b) => {
       const aOrder = a.harm_level ? harmOrder[a.harm_level] : 99
       const bOrder = b.harm_level ? harmOrder[b.harm_level] : 99
       return aOrder - bOrder
-    }),
-    [filtered]
-  )
+    })
+  }, [filtered])
 
   const toggleExpanded = (id: string) => {
     setExpandedIds(prev => {
@@ -360,15 +370,17 @@ export function OutcomeCausation({
 
   // Counts
   const catastrophicCount = outcomes.filter(o => o.harm_level === 'catastrophic').length
-  const severeCount = outcomes.filter(o => o.harm_level === 'severe' || o.harm_level === 'catastrophic').length
+  const severeCount = outcomes.filter(
+    o => o.harm_level === 'severe' || o.harm_level === 'catastrophic'
+  ).length
   const irreversibleCount = outcomes.filter(o => !o.remediation_possible).length
 
   return (
     <div className={cn('', className)}>
       {/* Header with Stats */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-ivory-100">Outcome Causation</h3>
+          <h3 className="text-ivory-100 text-sm font-semibold">Outcome Causation</h3>
           <span className="text-xs text-charcoal-500">
             {sorted.length} of {outcomes.length}
           </span>
@@ -379,7 +391,7 @@ export function OutcomeCausation({
           <button
             onClick={() => setFilter('all')}
             className={cn(
-              'text-xs px-3 py-1.5 rounded transition-colors',
+              'rounded px-3 py-1.5 text-xs transition-colors',
               filter === 'all'
                 ? 'bg-bronze-500/20 text-bronze-400'
                 : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -391,7 +403,7 @@ export function OutcomeCausation({
             <button
               onClick={() => setFilter('catastrophic')}
               className={cn(
-                'flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors',
+                'flex items-center gap-1 rounded px-3 py-1.5 text-xs transition-colors',
                 filter === 'catastrophic'
                   ? 'bg-status-critical/20 text-status-critical'
                   : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -405,7 +417,7 @@ export function OutcomeCausation({
             <button
               onClick={() => setFilter('severe')}
               className={cn(
-                'flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors',
+                'flex items-center gap-1 rounded px-3 py-1.5 text-xs transition-colors',
                 filter === 'severe'
                   ? 'bg-status-critical/20 text-status-critical'
                   : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -419,7 +431,7 @@ export function OutcomeCausation({
             <button
               onClick={() => setFilter('irreversible')}
               className={cn(
-                'flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors',
+                'flex items-center gap-1 rounded px-3 py-1.5 text-xs transition-colors',
                 filter === 'irreversible'
                   ? 'bg-status-critical/20 text-status-critical'
                   : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -434,21 +446,27 @@ export function OutcomeCausation({
 
       {/* Summary Stats Bar */}
       {outcomes.length > 0 && (
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          <Card className="p-3 bg-charcoal-800/50 border-charcoal-700 text-center">
-            <div className="text-2xl font-mono font-semibold text-ivory-100">{outcomes.length}</div>
+        <div className="mb-6 grid grid-cols-4 gap-3">
+          <Card className="border-charcoal-700 bg-charcoal-800/50 p-3 text-center">
+            <div className="text-ivory-100 font-mono text-2xl font-semibold">{outcomes.length}</div>
             <div className="text-xs text-charcoal-400">Total Outcomes</div>
           </Card>
-          <Card className="p-3 bg-status-critical-bg/10 border-status-critical/30 text-center">
-            <div className="text-2xl font-mono font-semibold text-status-critical">{catastrophicCount}</div>
+          <Card className="border-status-critical/30 bg-status-critical-bg/10 p-3 text-center">
+            <div className="font-mono text-2xl font-semibold text-status-critical">
+              {catastrophicCount}
+            </div>
             <div className="text-xs text-status-critical">Catastrophic</div>
           </Card>
-          <Card className="p-3 bg-status-high/5 border-status-high/30 text-center">
-            <div className="text-2xl font-mono font-semibold text-status-high">{severeCount - catastrophicCount}</div>
+          <Card className="border-status-high/30 bg-status-high/5 p-3 text-center">
+            <div className="font-mono text-2xl font-semibold text-status-high">
+              {severeCount - catastrophicCount}
+            </div>
             <div className="text-xs text-status-high">Severe</div>
           </Card>
-          <Card className="p-3 bg-status-critical-bg/10 border-status-critical/30 text-center">
-            <div className="text-2xl font-mono font-semibold text-status-critical">{irreversibleCount}</div>
+          <Card className="border-status-critical/30 bg-status-critical-bg/10 p-3 text-center">
+            <div className="font-mono text-2xl font-semibold text-status-critical">
+              {irreversibleCount}
+            </div>
             <div className="text-xs text-status-critical">Irreversible</div>
           </Card>
         </div>
@@ -469,7 +487,7 @@ export function OutcomeCausation({
         ))}
 
         {sorted.length === 0 && (
-          <div className="text-center text-charcoal-500 py-12 italic border-2 border-dashed border-charcoal-800 rounded-lg">
+          <div className="rounded-lg border-2 border-dashed border-charcoal-800 py-12 text-center italic text-charcoal-500">
             {filter !== 'all'
               ? `No ${filter} outcomes found.`
               : 'No outcomes identified. Run ARRIVE phase to populate this view.'}

@@ -52,7 +52,7 @@ const FALSE_PREMISE_LABELS: Record<FalsePremiseType, string> = {
 // Helper Functions
 // ============================================
 
-function getOriginTypeStyle(type: OriginType | null): { borderClass: string; dotClass: string } {
+function _getOriginTypeStyle(type: OriginType | null): { borderClass: string; dotClass: string } {
   if (!type) {
     return { borderClass: 'border-charcoal-600', dotClass: 'bg-charcoal-400' }
   }
@@ -99,7 +99,7 @@ function OriginNode({ origin, index, isExpanded, onToggle, onClick }: OriginNode
       {/* Connector Node */}
       <div
         className={cn(
-          'absolute -left-[29px] top-4 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-bg-tertiary z-10',
+          'absolute -left-[29px] top-4 z-10 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-bg-tertiary',
           isFalsePremise
             ? 'border-status-critical shadow-[0_0_15px_rgba(201,74,74,0.4)]'
             : typeConfig
@@ -115,7 +115,7 @@ function OriginNode({ origin, index, isExpanded, onToggle, onClick }: OriginNode
           className={cn(
             'h-2 w-2 rounded-full',
             isFalsePremise
-              ? 'bg-status-critical animate-pulse'
+              ? 'animate-pulse bg-status-critical'
               : typeConfig
                 ? `bg-${typeConfig.color}`
                 : 'bg-charcoal-400'
@@ -125,24 +125,26 @@ function OriginNode({ origin, index, isExpanded, onToggle, onClick }: OriginNode
 
       <Card
         className={cn(
-          'group relative overflow-hidden transition-all duration-300 border-charcoal-700',
+          'group relative overflow-hidden border-charcoal-700 transition-all duration-300',
           'hover:border-bronze-500/30 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
-          isFalsePremise ? 'bg-status-critical-bg/5 border-status-critical/30' : 'bg-bg-elevated/40',
+          isFalsePremise
+            ? 'border-status-critical/30 bg-status-critical-bg/5'
+            : 'bg-bg-elevated/40',
           onClick && 'cursor-pointer'
         )}
         onClick={() => onClick?.(origin)}
       >
         {/* Hover Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-bronze-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-bronze-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
         <div className="relative p-5">
           {/* Header Row */}
           <div className="flex items-start justify-between gap-4">
-            <div className="space-y-2 flex-1">
+            <div className="flex-1 space-y-2">
               {/* Date & Document */}
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center gap-3">
                 {origin.origin_date && (
-                  <div className="flex items-center gap-2 text-xs font-mono text-bronze-500 bg-bronze-500/10 px-2 py-1 rounded">
+                  <div className="flex items-center gap-2 rounded bg-bronze-500/10 px-2 py-1 font-mono text-xs text-bronze-500">
                     <Calendar className="h-3 w-3" />
                     <time>
                       {new Date(origin.origin_date).toLocaleDateString(undefined, {
@@ -154,7 +156,7 @@ function OriginNode({ origin, index, isExpanded, onToggle, onClick }: OriginNode
                   </div>
                 )}
                 {origin.origin_page && (
-                  <span className="text-xs text-charcoal-400 flex items-center gap-1">
+                  <span className="flex items-center gap-1 text-xs text-charcoal-400">
                     <FileText className="h-3 w-3" />
                     Page {origin.origin_page}
                   </span>
@@ -173,10 +175,10 @@ function OriginNode({ origin, index, isExpanded, onToggle, onClick }: OriginNode
             </div>
 
             {/* Badges Column */}
-            <div className="flex flex-col items-end gap-2 shrink-0">
+            <div className="flex shrink-0 flex-col items-end gap-2">
               {/* False Premise Badge */}
               {isFalsePremise && (
-                <Badge variant="critical" className="shadow-lg flex items-center gap-1">
+                <Badge variant="critical" className="flex items-center gap-1 shadow-lg">
                   <AlertTriangle className="h-3 w-3" />
                   False Premise
                 </Badge>
@@ -184,7 +186,7 @@ function OriginNode({ origin, index, isExpanded, onToggle, onClick }: OriginNode
 
               {/* False Premise Type */}
               {origin.false_premise_type && (
-                <span className="text-[10px] uppercase tracking-wider font-medium px-2 py-0.5 rounded-full bg-status-critical/10 text-status-critical">
+                <span className="rounded-full bg-status-critical/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-status-critical">
                   {FALSE_PREMISE_LABELS[origin.false_premise_type]}
                 </span>
               )}
@@ -193,7 +195,7 @@ function OriginNode({ origin, index, isExpanded, onToggle, onClick }: OriginNode
               {typeConfig && !isFalsePremise && (
                 <span
                   className={cn(
-                    'text-[10px] uppercase tracking-wider font-medium px-2 py-0.5 rounded-full',
+                    'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider',
                     `bg-${typeConfig.color}/10 text-${typeConfig.color}`
                   )}
                 >
@@ -214,11 +216,11 @@ function OriginNode({ origin, index, isExpanded, onToggle, onClick }: OriginNode
           {origin.contradicting_evidence && (
             <div className="mt-3">
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation()
                   onToggle()
                 }}
-                className="flex items-center gap-1 text-xs text-bronze-400 hover:text-bronze-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-bronze-400 transition-colors hover:text-bronze-300"
               >
                 {isExpanded ? (
                   <ChevronUp className="h-3 w-3" />
@@ -237,7 +239,7 @@ function OriginNode({ origin, index, isExpanded, onToggle, onClick }: OriginNode
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-2 p-3 rounded bg-charcoal-800/50 border border-charcoal-700 text-xs text-charcoal-300">
+                    <div className="mt-2 rounded border border-charcoal-700 bg-charcoal-800/50 p-3 text-xs text-charcoal-300">
                       {origin.contradicting_evidence}
                     </div>
                   </motion.div>
@@ -266,7 +268,7 @@ export function OriginTimeline({
 
   // Filter and sort
   const filteredOrigins = origins
-    .filter((o) => !filterFalsePremises || o.is_false_premise)
+    .filter(o => !filterFalsePremises || o.is_false_premise)
     .sort((a, b) => {
       if (!a.origin_date && !b.origin_date) return 0
       if (!a.origin_date) return 1
@@ -275,7 +277,7 @@ export function OriginTimeline({
     })
 
   const toggleExpanded = (id: string) => {
-    setExpandedIds((prev) => {
+    setExpandedIds(prev => {
       const next = new Set(prev)
       if (next.has(id)) {
         next.delete(id)
@@ -286,14 +288,14 @@ export function OriginTimeline({
     })
   }
 
-  const falsePremiseCount = origins.filter((o) => o.is_false_premise).length
+  const falsePremiseCount = origins.filter(o => o.is_false_premise).length
 
   return (
     <div className={cn('', className)}>
       {/* Header with Filter */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-ivory-100">Claim Origins</h3>
+          <h3 className="text-ivory-100 text-sm font-semibold">Claim Origins</h3>
           <span className="text-xs text-charcoal-500">
             {filteredOrigins.length} of {origins.length}
           </span>
@@ -302,7 +304,7 @@ export function OriginTimeline({
         <button
           onClick={() => setFilterFalsePremises(!filterFalsePremises)}
           className={cn(
-            'flex items-center gap-2 text-xs px-3 py-1.5 rounded transition-colors',
+            'flex items-center gap-2 rounded px-3 py-1.5 text-xs transition-colors',
             filterFalsePremises
               ? 'bg-status-critical/20 text-status-critical'
               : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -314,9 +316,9 @@ export function OriginTimeline({
       </div>
 
       {/* Timeline */}
-      <div className="relative space-y-6 pl-8 py-4">
+      <div className="relative space-y-6 py-4 pl-8">
         {/* Gradient Line */}
-        <div className="absolute left-3 top-2 bottom-2 w-px bg-gradient-to-b from-charcoal-700 via-bronze-500/50 to-charcoal-700" />
+        <div className="absolute bottom-2 left-3 top-2 w-px bg-gradient-to-b from-charcoal-700 via-bronze-500/50 to-charcoal-700" />
 
         {filteredOrigins.map((origin, index) => (
           <OriginNode
@@ -330,7 +332,7 @@ export function OriginTimeline({
         ))}
 
         {filteredOrigins.length === 0 && (
-          <div className="text-center text-charcoal-500 py-12 italic border-2 border-dashed border-charcoal-800 rounded-lg ml-4">
+          <div className="ml-4 rounded-lg border-2 border-dashed border-charcoal-800 py-12 text-center italic text-charcoal-500">
             {filterFalsePremises
               ? 'No false premises identified in ANCHOR analysis.'
               : 'No origins found. Run ANCHOR phase to populate this view.'}

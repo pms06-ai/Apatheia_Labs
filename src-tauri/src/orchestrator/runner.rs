@@ -3,15 +3,15 @@
 //! This module handles communication with the Node.js sidecar process
 //! that runs the FCIP analysis engines.
 
+use log::{debug, error, info, warn};
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::process::Stdio;
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::Command;
 use tokio::time::{timeout, Duration};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use serde::{Deserialize, Serialize};
-use log::{info, debug, error, warn};
 
-use super::{EngineId, job::EngineFinding};
+use super::{job::EngineFinding, EngineId};
 
 /// Request sent to the TypeScript engine runner
 #[derive(Debug, Serialize)]
@@ -189,18 +189,18 @@ impl EngineRunner {
             .spawn()
             .map_err(|e| format!("Failed to spawn sidecar: {}. Is Node.js installed?", e))?;
         
+        // Send request to stdin
+        if let Some(mut stdin) = child.stdin.take() {
+            stdin.write_all(request_json.as_bytes()).await
+                .map_err(|e| format!("Failed to write to sidecar stdin: {}", e))?;
+            stdin.write_all(b"\n").await
+                .map_err(|e| format!("Failed to write newline: {}", e))?;
+            // Close stdin to signal end of input
+            drop(stdin);
+        }
+
         // Run sidecar with a safety timeout to avoid hangs
         let result = timeout(Duration::from_secs(180), async {
-            // Send request to stdin
-            // Send request to stdin
-            if let Some(mut stdin) = child.stdin.take() {
-                stdin.write_all(request_json.as_bytes()).await
-                    .map_err(|e| format!("Failed to write to sidecar stdin: {}", e))?;
-                stdin.write_all(b"\n").await
-                    .map_err(|e| format!("Failed to write newline: {}", e))?;
-                // Close stdin to signal end of input - this happens automatically when stdin is dropped at end of scope
-            }
-            
             // Read stderr for logging (sidecar logs to stderr)
             let stderr = child.stderr.take();
             if let Some(stderr) = stderr {

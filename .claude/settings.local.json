@@ -48,7 +48,23 @@
       "Bash(git worktree:*)",
       "Bash(git merge-base:*)",
       "Bash(git merge --no-ff auto-claude/013-engine-test-suite-quality-assurance -m \"$\\(cat <<''EOF''\nfeat: merge comprehensive engine test suite\n\nMerges worktree 013 with complete test coverage for all 5 engines:\n- Omission, Expert Witness, Contradiction, Narrative, Coordination\n- S.A.M. pipeline integration tests\n- Benchmark datasets and accuracy metrics\n- GitHub Actions workflow\n- 80% coverage thresholds\n\n19 files changed, 11,801 insertions\n\n🤖 Generated with [Claude Code]\\(https://claude.com/claude-code\\)\n\nCo-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(npm --version)",
+      "mcp__obsidian-phronesis__read_text_file",
+      "mcp__obsidian-phronesis__list_directory",
+      "mcp__obsidian-phronesis__get_file_info",
+      "mcp__obsidian-phronesis__directory_tree",
+      "Bash(Remove-Item -Path \"src-tauri/tmpclaude-*\" -Recurse -Force -ErrorAction SilentlyContinue)",
+      "Bash(Write-Output \"src-tauri temp files cleaned\")",
+      "Bash(Remove-Item -Path \"src/middleware.ts.disabled\" -Force -ErrorAction SilentlyContinue)",
+      "Bash(Write-Output \"middleware.ts.disabled removed\")",
+      "Bash(Remove-Item -Path \".worktrees\" -Recurse -Force -ErrorAction SilentlyContinue)",
+      "Bash(Write-Output \".worktrees cleaned\")",
+      "mcp__obsidian-phronesis__read_multiple_files",
+      "Bash(cargo clippy:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git rm:*)"
     ]
   }
 }

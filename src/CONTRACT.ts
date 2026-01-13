@@ -101,6 +101,7 @@ export type DriftType =
 
 export type SAMPhase = 'anchor' | 'inherit' | 'compound' | 'arrive'
 
+// Note: arrive phase transitions directly to 'completed' (no arrive_complete state)
 export type SAMStatus =
   | 'pending'
   | 'anchor_running'
@@ -110,8 +111,7 @@ export type SAMStatus =
   | 'compound_running'
   | 'compound_complete'
   | 'arrive_running'
-  | 'arrive_complete'
-  | 'completed'
+  | 'completed' // Terminal success state (after arrive completes)
   | 'failed'
   | 'cancelled'
 

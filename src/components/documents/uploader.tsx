@@ -42,12 +42,12 @@ const DOC_TYPES: Array<{ value: DocType; label: string }> = [
 
 export function DocumentUploader() {
   const { queue, addFiles, updateFile, removeFile } = useFileUploadQueue()
-  const activeCase = useCaseStore((state) => state.activeCase)
+  const activeCase = useCaseStore(state => state.activeCase)
   // Check desktop mode after mount to ensure Tauri globals are available
   const [isDesktopMode, setIsDesktopMode] = useState(false)
   const defaultDocType: DocType = 'other'
   const isDocType = (value: string): value is DocType =>
-    DOC_TYPES.some((type) => type.value === value)
+    DOC_TYPES.some(type => type.value === value)
 
   useEffect(() => {
     setIsDesktopMode(isDesktop())
@@ -57,17 +57,20 @@ export function DocumentUploader() {
   const processMutation = useProcessDocument()
 
   // Web mode: handle dropped files
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    const newFiles = acceptedFiles.map((file) => ({
-      file,
-      filename: file.name,
-      size: file.size,
-      docType: defaultDocType,
-      status: 'pending' as const,
-      progress: 0,
-    }))
-    addFiles(newFiles)
-  }, [])
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      const newFiles = acceptedFiles.map(file => ({
+        file,
+        filename: file.name,
+        size: file.size,
+        docType: defaultDocType,
+        status: 'pending' as const,
+        progress: 0,
+      }))
+      addFiles(newFiles)
+    },
+    [addFiles, defaultDocType]
+  )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -82,7 +85,7 @@ export function DocumentUploader() {
       const files = await pickDocuments()
       if (files.length === 0) return
 
-      const newFiles = files.map((f) => ({
+      const newFiles = files.map(f => ({
         path: f.path,
         filename: f.filename,
         docType: defaultDocType,
@@ -98,7 +101,7 @@ export function DocumentUploader() {
 
   const updateFileType = (index: number, docTypeValue: string) => {
     const nextDocType = isDocType(docTypeValue) ? docTypeValue : defaultDocType
-    updateFile(index, (item) => ({ ...item, docType: nextDocType }))
+    updateFile(index, item => ({ ...item, docType: nextDocType }))
   }
 
   const uploadFile = async (index: number) => {
@@ -109,15 +112,19 @@ export function DocumentUploader() {
 
     const item = queue[index]
 
-    updateFile(index, (file) => ({ ...file, status: 'uploading', progress: 30 }))
+    updateFile(index, file => ({ ...file, status: 'uploading', progress: 30 }))
 
     try {
       if (isDesktopMode && item.path) {
         // Desktop mode: upload from path
-        console.log('[Uploader] Starting desktop upload:', { caseId: activeCase.id, path: item.path, docType: item.docType })
+        console.log('[Uploader] Starting desktop upload:', {
+          caseId: activeCase.id,
+          path: item.path,
+          docType: item.docType,
+        })
         await uploadFromPath(activeCase.id, item.path, item.docType)
 
-        updateFile(index, (file) => ({ ...file, status: 'completed', progress: 100 }))
+        updateFile(index, file => ({ ...file, status: 'completed', progress: 100 }))
       } else if (item.file) {
         console.log('[Uploader] Starting WEB upload (Fallback):', { file: item.file.name })
         // Web mode: upload file blob
@@ -127,17 +134,17 @@ export function DocumentUploader() {
           docType: item.docType,
         })
 
-        updateFile(index, (file) => ({ ...file, status: 'processing', progress: 60 }))
+        updateFile(index, file => ({ ...file, status: 'processing', progress: 60 }))
 
         // Trigger processing
         await processMutation.mutateAsync(result.id)
 
-        updateFile(index, (file) => ({ ...file, status: 'completed', progress: 100 }))
+        updateFile(index, file => ({ ...file, status: 'completed', progress: 100 }))
       }
 
       toast.success(`${item.filename} uploaded and processed`)
     } catch (error) {
-      updateFile(index, (file) => ({ ...file, status: 'error', error: 'Upload failed' }))
+      updateFile(index, file => ({ ...file, status: 'error', error: 'Upload failed' }))
       toast.error(`Failed to upload ${item.filename}: ${(error as Error).message}`)
       console.error('Upload error:', error)
     }
@@ -146,7 +153,7 @@ export function DocumentUploader() {
   const uploadAll = async () => {
     const pendingIndices = queue
       .map((item, index) => (item.status === 'pending' ? index : -1))
-      .filter((i) => i !== -1)
+      .filter(i => i !== -1)
 
     for (const index of pendingIndices) {
       await uploadFile(index)
@@ -156,12 +163,15 @@ export function DocumentUploader() {
   return (
     <div className="space-y-4">
       {!isDesktopMode && (
-        <div className="rounded-md bg-red-900/50 p-4 border border-red-500/50">
+        <div className="rounded-md border border-red-500/50 bg-red-900/50 p-4">
           <div className="flex">
             <div className="ml-3">
               <h3 className="text-sm font-medium text-red-200">Web Mode Detected</h3>
               <div className="mt-2 text-sm text-red-300">
-                <p>File uploads are currently disabled in the web browser. Please launch the Desktop App (Tauri) to upload documents.</p>
+                <p>
+                  File uploads are currently disabled in the web browser. Please launch the Desktop
+                  App (Tauri) to upload documents.
+                </p>
               </div>
             </div>
           </div>
@@ -175,9 +185,7 @@ export function DocumentUploader() {
           className="cursor-pointer rounded-lg border-2 border-dashed border-charcoal-600 p-8 text-center transition hover:border-charcoal-500 hover:bg-charcoal-800/50"
         >
           <FolderOpen className="mx-auto h-10 w-10 text-charcoal-500" />
-          <p className="mt-4 text-sm text-charcoal-300">
-            Click to select documents
-          </p>
+          <p className="mt-4 text-sm text-charcoal-300">Click to select documents</p>
           <p className="mt-1 text-xs text-charcoal-500">
             PDF, DOCX, TXT, MD, JSON, CSV, HTML (max 50MB)
           </p>
@@ -186,21 +194,18 @@ export function DocumentUploader() {
         // Web mode: Dropzone
         <div
           {...getRootProps()}
-          className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition ${isDragActive
-            ? 'border-bronze-500 bg-bronze-500/10'
-            : 'border-charcoal-600 hover:border-charcoal-500 hover:bg-charcoal-800/50'
-            }`}
+          className={`cursor-pointer rounded-lg border-2 border-dashed p-8 text-center transition ${
+            isDragActive
+              ? 'border-bronze-500 bg-bronze-500/10'
+              : 'border-charcoal-600 hover:border-charcoal-500 hover:bg-charcoal-800/50'
+          }`}
         >
           <input {...getInputProps()} />
           <Upload className="mx-auto h-10 w-10 text-charcoal-500" />
           <p className="mt-4 text-sm text-charcoal-300">
-            {isDragActive
-              ? 'Drop files here...'
-              : 'Drag & drop files here, or click to select'}
+            {isDragActive ? 'Drop files here...' : 'Drag & drop files here, or click to select'}
           </p>
-          <p className="mt-1 text-xs text-charcoal-500">
-            PDF, DOCX, TXT, MP3, WAV, MP4 (max 50MB)
-          </p>
+          <p className="mt-1 text-xs text-charcoal-500">PDF, DOCX, TXT, MP3, WAV, MP4 (max 50MB)</p>
         </div>
       )}
 
@@ -213,7 +218,7 @@ export function DocumentUploader() {
             </h3>
             <button
               onClick={uploadAll}
-              disabled={!activeCase || queue.every((f) => f.status !== 'pending')}
+              disabled={!activeCase || queue.every(f => f.status !== 'pending')}
               className="rounded-md bg-bronze-600 px-3 py-1.5 text-xs font-medium text-charcoal-900 transition hover:bg-bronze-500 disabled:opacity-50"
             >
               Upload All
@@ -221,21 +226,14 @@ export function DocumentUploader() {
           </div>
 
           {queue.map((item, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-4 px-4 py-3"
-            >
+            <div key={index} className="flex items-center gap-4 px-4 py-3">
               <FileText className="h-8 w-8 text-charcoal-500" />
 
-              <div className="flex-1 min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="truncate text-sm text-charcoal-200">
-                    {item.filename}
-                  </span>
+                  <span className="truncate text-sm text-charcoal-200">{item.filename}</span>
                   {item.size && (
-                    <span className="text-xs text-charcoal-500">
-                      {formatFileSize(item.size)}
-                    </span>
+                    <span className="text-xs text-charcoal-500">{formatFileSize(item.size)}</span>
                   )}
                 </div>
 
@@ -243,12 +241,13 @@ export function DocumentUploader() {
                 {item.status !== 'pending' && (
                   <div className="mt-2 h-1 overflow-hidden rounded-full bg-charcoal-700">
                     <div
-                      className={`h-full transition-all ${item.status === 'completed'
-                        ? 'bg-status-success'
-                        : item.status === 'error'
-                          ? 'bg-status-critical'
-                          : 'bg-bronze-500'
-                        }`}
+                      className={`h-full transition-all ${
+                        item.status === 'completed'
+                          ? 'bg-status-success'
+                          : item.status === 'error'
+                            ? 'bg-status-critical'
+                            : 'bg-bronze-500'
+                      }`}
                       style={{ width: `${item.progress}%` }}
                     />
                   </div>
@@ -259,10 +258,10 @@ export function DocumentUploader() {
               {item.status === 'pending' && (
                 <select
                   value={item.docType}
-                  onChange={(e) => updateFileType(index, e.target.value)}
+                  onChange={e => updateFileType(index, e.target.value)}
                   className="rounded-md border border-charcoal-600 bg-charcoal-800 px-2 py-1 text-xs text-charcoal-200"
                 >
-                  {DOC_TYPES.map((type) => (
+                  {DOC_TYPES.map(type => (
                     <option key={type.value} value={type.value}>
                       {type.label}
                     </option>
@@ -274,15 +273,9 @@ export function DocumentUploader() {
               {item.status === 'uploading' && (
                 <Loader2 className="h-4 w-4 animate-spin text-bronze-500" />
               )}
-              {item.status === 'processing' && (
-                <Badge variant="info">Processing</Badge>
-              )}
-              {item.status === 'completed' && (
-                <Badge variant="success">Done</Badge>
-              )}
-              {item.status === 'error' && (
-                <Badge variant="critical">Error</Badge>
-              )}
+              {item.status === 'processing' && <Badge variant="info">Processing</Badge>}
+              {item.status === 'completed' && <Badge variant="success">Done</Badge>}
+              {item.status === 'error' && <Badge variant="critical">Error</Badge>}
 
               {/* Actions */}
               {item.status === 'pending' && (

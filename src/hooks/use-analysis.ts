@@ -1,6 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { getDataLayer } from '@/lib/data'
-import type { Finding, Claim, Contradiction, Entity, Engine } from '@/CONTRACT'
 
 // ============================================
 // ENTITIES
@@ -140,7 +139,7 @@ export function useRunEngine() {
       queryClient.invalidateQueries({ queryKey: ['contradictions', variables.caseId] })
       queryClient.invalidateQueries({ queryKey: ['analysis', variables.caseId] })
     },
-    onError: (error) => {
+    onError: error => {
       console.error('[Engine Error]', error)
     },
   })

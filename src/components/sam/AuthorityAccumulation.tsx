@@ -9,10 +9,7 @@
 
 import { useState, useMemo } from 'react'
 import { motion } from 'framer-motion'
-import {
-  Scale, Building2, Briefcase, GraduationCap, Radio, RefreshCw,
-  AlertTriangle, Filter, TrendingUp
-} from 'lucide-react'
+import { Scale, Building2, Briefcase, GraduationCap, AlertTriangle, TrendingUp } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -36,7 +33,10 @@ type FilterType = 'all' | 'laundering' | 'high_weight'
 // Constants
 // ============================================
 
-const AUTHORITY_TYPE_CONFIG: Record<AuthorityType, { Icon: typeof Scale; color: string; label: string }> = {
+const AUTHORITY_TYPE_CONFIG: Record<
+  AuthorityType,
+  { Icon: typeof Scale; color: string; label: string }
+> = {
   court_finding: { Icon: Scale, color: 'bronze-500', label: 'Court Finding' },
   expert_opinion: { Icon: GraduationCap, color: 'status-success', label: 'Expert Opinion' },
   official_report: { Icon: Briefcase, color: 'charcoal-300', label: 'Official Report' },
@@ -75,14 +75,10 @@ interface AuthorityBarProps {
 }
 
 function AuthorityBar({ marker, isLaundering, index, onClick }: AuthorityBarProps) {
-  const typeConfig = marker.authority_type
-    ? AUTHORITY_TYPE_CONFIG[marker.authority_type]
-    : null
+  const typeConfig = marker.authority_type ? AUTHORITY_TYPE_CONFIG[marker.authority_type] : null
   const TypeIcon = typeConfig?.Icon || Building2
   const weightStyle = getWeightClass(marker.authority_weight)
-  const endorsement = marker.endorsement_type
-    ? ENDORSEMENT_LABELS[marker.endorsement_type]
-    : null
+  const endorsement = marker.endorsement_type ? ENDORSEMENT_LABELS[marker.endorsement_type] : null
 
   return (
     <motion.div
@@ -92,52 +88,55 @@ function AuthorityBar({ marker, isLaundering, index, onClick }: AuthorityBarProp
     >
       <Card
         className={cn(
-          'group relative overflow-hidden transition-all duration-300 border-charcoal-700',
+          'group relative overflow-hidden border-charcoal-700 transition-all duration-300',
           'hover:border-bronze-500/30 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
-          isLaundering && 'bg-status-critical-bg/5 border-status-critical/30',
+          isLaundering && 'border-status-critical/30 bg-status-critical-bg/5',
           onClick && 'cursor-pointer'
         )}
         onClick={() => onClick?.(marker)}
       >
         {/* Hover Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-bronze-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-bronze-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
         <div className="relative p-4">
           <div className="flex items-center gap-4">
             {/* Icon */}
-            <div className={cn(
-              'flex items-center justify-center w-10 h-10 rounded-lg shrink-0',
-              typeConfig ? `bg-${typeConfig.color}/10` : 'bg-charcoal-800'
-            )}>
-              <TypeIcon className={cn(
-                'h-5 w-5',
-                typeConfig ? `text-${typeConfig.color}` : 'text-charcoal-400'
-              )} />
+            <div
+              className={cn(
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+                typeConfig ? `bg-${typeConfig.color}/10` : 'bg-charcoal-800'
+              )}
+            >
+              <TypeIcon
+                className={cn(
+                  'h-5 w-5',
+                  typeConfig ? `text-${typeConfig.color}` : 'text-charcoal-400'
+                )}
+              />
             </div>
 
             {/* Content */}
-            <div className="flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
               {/* Type & Endorsement */}
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
+              <div className="mb-1 flex flex-wrap items-center gap-2">
                 {typeConfig && (
-                  <span className={cn(
-                    'text-xs font-medium',
-                    `text-${typeConfig.color}`
-                  )}>
+                  <span className={cn('text-xs font-medium', `text-${typeConfig.color}`)}>
                     {typeConfig.label}
                   </span>
                 )}
                 {endorsement && (
-                  <span className={cn(
-                    'text-[10px] px-2 py-0.5 rounded-full',
-                    `bg-${endorsement.color}/10 text-${endorsement.color}`
-                  )}>
+                  <span
+                    className={cn(
+                      'rounded-full px-2 py-0.5 text-[10px]',
+                      `bg-${endorsement.color}/10 text-${endorsement.color}`
+                    )}
+                  >
                     {endorsement.label}
                   </span>
                 )}
                 {isLaundering && (
                   <Badge variant="critical" className="text-[10px]">
-                    <AlertTriangle className="h-2.5 w-2.5 mr-1" />
+                    <AlertTriangle className="mr-1 h-2.5 w-2.5" />
                     Authority Laundering
                   </Badge>
                 )}
@@ -145,9 +144,7 @@ function AuthorityBar({ marker, isLaundering, index, onClick }: AuthorityBarProp
 
               {/* Laundering Path (if applicable) */}
               {marker.laundering_path && (
-                <p className="text-sm text-charcoal-300 truncate">
-                  {marker.laundering_path}
-                </p>
+                <p className="truncate text-sm text-charcoal-300">{marker.laundering_path}</p>
               )}
 
               {/* Date */}
@@ -159,11 +156,11 @@ function AuthorityBar({ marker, isLaundering, index, onClick }: AuthorityBarProp
             </div>
 
             {/* Weight Visualization */}
-            <div className="flex flex-col items-end gap-1 shrink-0 w-24">
-              <span className={cn('text-lg font-mono font-semibold', weightStyle.text)}>
+            <div className="flex w-24 shrink-0 flex-col items-end gap-1">
+              <span className={cn('font-mono text-lg font-semibold', weightStyle.text)}>
                 {Math.round(marker.authority_weight * 100)}%
               </span>
-              <div className="w-full h-2 bg-charcoal-800 rounded-full overflow-hidden">
+              <div className="h-2 w-full overflow-hidden rounded-full bg-charcoal-800">
                 <motion.div
                   className={cn('h-full rounded-full', weightStyle.bar)}
                   initial={{ width: 0 }}
@@ -189,24 +186,32 @@ function CumulativeScoreCard({ claimId, score, rank }: CumulativeScoreCardProps)
   const weightStyle = getWeightClass(score / 10) // Normalize assuming max ~10
 
   return (
-    <div className={cn(
-      'flex items-center gap-3 p-3 rounded-lg border transition-colors',
-      rank <= 3 ? 'bg-status-critical-bg/10 border-status-critical/30' : 'bg-charcoal-800/50 border-charcoal-700'
-    )}>
-      <div className={cn(
-        'flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold',
-        rank <= 3 ? 'bg-status-critical/20 text-status-critical' : 'bg-charcoal-700 text-charcoal-400'
-      )}>
+    <div
+      className={cn(
+        'flex items-center gap-3 rounded-lg border p-3 transition-colors',
+        rank <= 3
+          ? 'border-status-critical/30 bg-status-critical-bg/10'
+          : 'border-charcoal-700 bg-charcoal-800/50'
+      )}
+    >
+      <div
+        className={cn(
+          'flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold',
+          rank <= 3
+            ? 'bg-status-critical/20 text-status-critical'
+            : 'bg-charcoal-700 text-charcoal-400'
+        )}
+      >
         {rank}
       </div>
-      <div className="flex-1 min-w-0">
-        <span className="text-xs text-charcoal-400 font-mono truncate block">
+      <div className="min-w-0 flex-1">
+        <span className="block truncate font-mono text-xs text-charcoal-400">
           {claimId.slice(0, 12)}...
         </span>
       </div>
       <div className="flex items-center gap-1">
         <TrendingUp className={cn('h-3 w-3', weightStyle.text)} />
-        <span className={cn('text-sm font-mono font-semibold', weightStyle.text)}>
+        <span className={cn('font-mono text-sm font-semibold', weightStyle.text)}>
           {score.toFixed(1)}
         </span>
       </div>
@@ -241,31 +246,32 @@ export function AuthorityAccumulation({
   }, [markers, filter, launderingIds])
 
   // Sort by weight descending
-  const sorted = useMemo(() =>
-    [...filtered].sort((a, b) => b.authority_weight - a.authority_weight),
+  const sorted = useMemo(
+    () => [...filtered].sort((a, b) => b.authority_weight - a.authority_weight),
     [filtered]
   )
 
   // Top cumulative scores
-  const topScores = useMemo(() =>
-    Object.entries(cumulativeScores)
-      .sort(([, a], [, b]) => b - a)
-      .slice(0, 5),
+  const topScores = useMemo(
+    () =>
+      Object.entries(cumulativeScores)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5),
     [cumulativeScores]
   )
 
   // Counts
-  const launderingCount = markers.filter(m =>
-    launderingIds.has(m.id) || m.is_authority_laundering
+  const launderingCount = markers.filter(
+    m => launderingIds.has(m.id) || m.is_authority_laundering
   ).length
   const highWeightCount = markers.filter(m => m.authority_weight >= 0.6).length
 
   return (
     <div className={cn('', className)}>
       {/* Header with Stats */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-ivory-100">Authority Accumulation</h3>
+          <h3 className="text-ivory-100 text-sm font-semibold">Authority Accumulation</h3>
           <span className="text-xs text-charcoal-500">
             {sorted.length} of {markers.length}
           </span>
@@ -276,7 +282,7 @@ export function AuthorityAccumulation({
           <button
             onClick={() => setFilter('all')}
             className={cn(
-              'text-xs px-3 py-1.5 rounded transition-colors',
+              'rounded px-3 py-1.5 text-xs transition-colors',
               filter === 'all'
                 ? 'bg-bronze-500/20 text-bronze-400'
                 : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -287,7 +293,7 @@ export function AuthorityAccumulation({
           <button
             onClick={() => setFilter('high_weight')}
             className={cn(
-              'flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors',
+              'flex items-center gap-1 rounded px-3 py-1.5 text-xs transition-colors',
               filter === 'high_weight'
                 ? 'bg-status-high/20 text-status-high'
                 : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -300,7 +306,7 @@ export function AuthorityAccumulation({
             <button
               onClick={() => setFilter('laundering')}
               className={cn(
-                'flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors',
+                'flex items-center gap-1 rounded px-3 py-1.5 text-xs transition-colors',
                 filter === 'laundering'
                   ? 'bg-status-critical/20 text-status-critical'
                   : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -313,9 +319,9 @@ export function AuthorityAccumulation({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Authority Markers List */}
-        <div className="lg:col-span-2 space-y-3">
+        <div className="space-y-3 lg:col-span-2">
           {sorted.map((marker, index) => (
             <AuthorityBar
               key={marker.id}
@@ -327,7 +333,7 @@ export function AuthorityAccumulation({
           ))}
 
           {sorted.length === 0 && (
-            <div className="text-center text-charcoal-500 py-12 italic border-2 border-dashed border-charcoal-800 rounded-lg">
+            <div className="rounded-lg border-2 border-dashed border-charcoal-800 py-12 text-center italic text-charcoal-500">
               {filter !== 'all'
                 ? `No ${filter.replace('_', ' ')} markers found.`
                 : 'No authority markers found. Run COMPOUND phase to populate this view.'}
@@ -354,15 +360,15 @@ export function AuthorityAccumulation({
               ))}
             </div>
           ) : (
-            <div className="text-center text-charcoal-500 py-8 italic border-2 border-dashed border-charcoal-800 rounded-lg text-xs">
+            <div className="rounded-lg border-2 border-dashed border-charcoal-800 py-8 text-center text-xs italic text-charcoal-500">
               No cumulative scores available.
             </div>
           )}
 
           {/* Summary Stats */}
           {markers.length > 0 && (
-            <Card className="p-4 bg-charcoal-800/50 border-charcoal-700">
-              <div className="text-xs text-charcoal-400 mb-3 uppercase tracking-wider">Summary</div>
+            <Card className="border-charcoal-700 bg-charcoal-800/50 p-4">
+              <div className="mb-3 text-xs uppercase tracking-wider text-charcoal-400">Summary</div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-charcoal-400">Total Markers</span>
@@ -371,12 +377,16 @@ export function AuthorityAccumulation({
                 <div className="flex justify-between">
                   <span className="text-charcoal-400">Avg Weight</span>
                   <span className="text-ivory-100 font-mono">
-                    {(markers.reduce((sum, m) => sum + m.authority_weight, 0) / markers.length * 100).toFixed(0)}%
+                    {(
+                      (markers.reduce((sum, m) => sum + m.authority_weight, 0) / markers.length) *
+                      100
+                    ).toFixed(0)}
+                    %
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-status-critical">Laundering</span>
-                  <span className="text-status-critical font-mono">{launderingCount}</span>
+                  <span className="font-mono text-status-critical">{launderingCount}</span>
                 </div>
               </div>
             </Card>

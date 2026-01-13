@@ -451,14 +451,14 @@ pub async fn run_sam_analysis(
 
     // Create the analysis record
     match sqlx::query(
-        "INSERT INTO sam_analyses (id, case_id, status, metadata, created_at, updated_at)
-         VALUES (?, ?, 'pending', ?, ?, ?)"
+        "INSERT INTO sam_analyses (id, case_id, status, document_ids, focus_claims, metadata, created_at, updated_at)
+         VALUES (?, ?, 'pending', ?, ?, ?, ?, ?)"
     )
     .bind(&analysis_id)
     .bind(&input.case_id)
+    .bind(serde_json::to_string(&input.document_ids).unwrap_or_else(|_| "[]".to_string()))
+    .bind(serde_json::to_string(&input.focus_claims.as_ref().unwrap_or(&vec![])).unwrap_or_else(|_| "[]".to_string()))
     .bind(serde_json::json!({
-        "document_ids": input.document_ids,
-        "focus_claims": input.focus_claims,
         "stop_after_phase": input.stop_after_phase
     }).to_string())
     .bind(&now)

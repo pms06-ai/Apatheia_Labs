@@ -5046,18 +5046,20 @@ function sanitizeFilename(filename) {
 var contradictionEngine = async (config, caseId, documentIds) => {
   const docs = loadDocuments(config, documentIds);
   if (docs.length < 2) {
-    return [{
-      id: v4_default(),
-      engine_id: "contradiction",
-      finding_type: "error",
-      title: "Insufficient documents",
-      description: "Contradiction detection requires at least 2 documents",
-      severity: "info",
-      confidence: 1,
-      document_ids: documentIds,
-      evidence: {},
-      metadata: {}
-    }];
+    return [
+      {
+        id: v4_default(),
+        engine_id: "contradiction",
+        finding_type: "error",
+        title: "Insufficient documents",
+        description: "Contradiction detection requires at least 2 documents",
+        severity: "info",
+        confidence: 1,
+        document_ids: documentIds,
+        evidence: {},
+        metadata: {}
+      }
+    ];
   }
   const docContents = docs.map((doc) => {
     const content = loadDocumentContent(config, doc.id);
@@ -5116,18 +5118,20 @@ Respond in JSON:
 };
 var omissionEngine = async (config, caseId, documentIds) => {
   if (documentIds.length < 2) {
-    return [{
-      id: v4_default(),
-      engine_id: "omission",
-      finding_type: "error",
-      title: "Insufficient documents",
-      description: "Omission detection requires at least 2 documents (source and report)",
-      severity: "info",
-      confidence: 1,
-      document_ids: documentIds,
-      evidence: {},
-      metadata: {}
-    }];
+    return [
+      {
+        id: v4_default(),
+        engine_id: "omission",
+        finding_type: "error",
+        title: "Insufficient documents",
+        description: "Omission detection requires at least 2 documents (source and report)",
+        severity: "info",
+        confidence: 1,
+        document_ids: documentIds,
+        evidence: {},
+        metadata: {}
+      }
+    ];
   }
   const [sourceId, ...reportIds] = documentIds;
   const sourceContent = loadDocumentContent(config, sourceId);
@@ -5226,7 +5230,11 @@ Respond in JSON:
     "professionalRegistration": "..."
   }
 }`;
-  const result = await generateJSON(config, "You are a legal expert on expert witness standards.", prompt);
+  const result = await generateJSON(
+    config,
+    "You are a legal expert on expert witness standards.",
+    prompt
+  );
   return (result.violations || []).map((v, idx) => ({
     id: v4_default(),
     engine_id: "expert_witness",
@@ -5248,7 +5256,9 @@ var narrativeEngine = async (config, caseId, documentIds) => {
   if (docs.length < 2) {
     return [];
   }
-  const sortedDocs = [...docs].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  const sortedDocs = [...docs].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  );
   const docContents = sortedDocs.map((doc) => ({
     id: doc.id,
     name: sanitizeFilename(doc.filename),
@@ -5345,7 +5355,11 @@ Respond in JSON:
   "independenceScore": 0-100,
   "concernLevel": "none|low|moderate|high|severe"
 }`;
-  const result = await generateJSON(config, "You are an analyst detecting institutional coordination.", prompt);
+  const result = await generateJSON(
+    config,
+    "You are an analyst detecting institutional coordination.",
+    prompt
+  );
   return (result.coordinationSignals || []).map((s, idx) => ({
     id: v4_default(),
     engine_id: "coordination",
@@ -5395,7 +5409,11 @@ Respond in JSON:
   ],
   "unresolvedReferences": ["..."]
 }`;
-  const result = await generateJSON(config, "You are an entity resolution specialist.", prompt);
+  const result = await generateJSON(
+    config,
+    "You are an entity resolution specialist.",
+    prompt
+  );
   const database = getWriteDatabase(config);
   const stmt = database.prepare(`
     INSERT OR REPLACE INTO entities (id, case_id, canonical_name, entity_type, aliases, role, institution, professional_registration, credibility_score, metadata, created_at, updated_at)
@@ -5417,21 +5435,23 @@ Respond in JSON:
     }
   });
   insertEntities(result.entities);
-  return [{
-    id: v4_default(),
-    engine_id: "entity_resolution",
-    finding_type: "extraction",
-    title: `Resolved ${result.entities?.length || 0} entities`,
-    description: `Found ${result.entities?.length || 0} unique entities with ${result.unresolvedReferences?.length || 0} unresolved references`,
-    severity: "info",
-    confidence: 0.9,
-    document_ids: documentIds,
-    evidence: {
-      entityCount: result.entities?.length || 0,
-      unresolvedReferences: result.unresolvedReferences
-    },
-    metadata: {}
-  }];
+  return [
+    {
+      id: v4_default(),
+      engine_id: "entity_resolution",
+      finding_type: "extraction",
+      title: `Resolved ${result.entities?.length || 0} entities`,
+      description: `Found ${result.entities?.length || 0} unique entities with ${result.unresolvedReferences?.length || 0} unresolved references`,
+      severity: "info",
+      confidence: 0.9,
+      document_ids: documentIds,
+      evidence: {
+        entityCount: result.entities?.length || 0,
+        unresolvedReferences: result.unresolvedReferences
+      },
+      metadata: {}
+    }
+  ];
 };
 var temporalParserEngine = async (config, caseId, documentIds) => {
   const docs = loadDocuments(config, documentIds);
@@ -5649,6 +5669,184 @@ var accountabilityAuditEngine = async (config, caseId, documentIds) => {
   }
   return findings;
 };
+var linguisticEngine = async (config, caseId, documentIds) => {
+  const docs = loadDocuments(config, documentIds);
+  const docContents = docs.map((doc) => {
+    const content = loadDocumentContent(config, doc.id);
+    return {
+      id: doc.id,
+      name: sanitizeFilename(doc.filename),
+      content: sanitizeForPrompt(content, 5e4)
+    };
+  });
+  const formattedDocs = docContents.map((d) => `=== DOCUMENT: ${d.name} (ID: ${d.id}) ===
+${d.content}`).join("\n\n~~~\n\n");
+  const prompt = `Perform forensic linguistic analysis on these documents.
+Look for:
+1. IDIOLECTAL MATCHES: Shared unique phrasing across independent documents
+2. MODALITY SHIFTS: Changes in certainty/tone (e.g., from 'may be' to 'is' without evidence)
+3. DECEPTIVE INDICATORS: Distancing language, passive voice shifts, or over-detailing
+4. INTER-AGENCY LEAKAGE: Use of terminology that belongs to a different agency/profession
+
+DOCUMENTS:
+${formattedDocs}
+
+Respond in JSON:
+{
+  "findings": [
+    {
+      "type": "idiolect/modality/deception/leakage",
+      "title": "...",
+      "description": "...",
+      "severity": "critical/high/medium/low",
+      "confidence": 0.0-1.0,
+      "document_ids": ["..."],
+      "evidence": { "matching_phrases": [], "shift_details": "..." }
+    }
+  ]
+}`;
+  const result = await generateJSON(config, "You are a forensic linguist.", prompt);
+  return (result.findings || []).map((f) => ({
+    id: v4_default(),
+    engine_id: "linguistic",
+    finding_type: f.type,
+    title: f.title,
+    description: f.description,
+    severity: f.severity,
+    confidence: f.confidence || 0.7,
+    document_ids: f.document_ids,
+    evidence: f.evidence,
+    metadata: {}
+  }));
+};
+var memoryEngine = async (config, caseId, documentIds) => {
+  const docs = loadDocuments(config, documentIds);
+  const docContents = docs.map((doc) => {
+    const content = loadDocumentContent(config, doc.id);
+    return {
+      id: doc.id,
+      date: doc.acquisition_date,
+      content: sanitizeForPrompt(content, 5e4)
+    };
+  });
+  const formattedDocs = docContents.map((d) => `=== DOCUMENT (Date: ${d.date}, ID: ${d.id}) ===
+${d.content}`).join("\n\n~~~\n\n");
+  const prompt = `Analyze memory consistency across these documents over time.
+Identify:
+1. MEMORY CREEP: Recollections becoming more detailed as time passes (often indicates fabrication)
+2. SUDDEN CLARITY: Sharp recall of previously 'forgotten' details after exposure to other evidence
+3. CONTRADICTORY RECALL: Fundamental changes in the core narrative of an event
+4. SELECTIVE AMNESIA: Consistent recall of peripheral details but 'forgetting' key accountability events
+
+DOCUMENTS:
+${formattedDocs}
+
+Respond in JSON:
+{
+  "findings": [
+    {
+      "type": "creep/clarity/contradiction/amnesia",
+      "title": "...",
+      "description": "...",
+      "severity": "high/medium/low",
+      "confidence": 0.0-1.0,
+      "document_ids": ["..."],
+      "evidence": { "evolution": "...", "original_recall": "...", "later_recall": "..." }
+    }
+  ]
+}`;
+  const result = await generateJSON(
+    config,
+    "You are a forensic psychologist and memory expert.",
+    prompt
+  );
+  return (result.findings || []).map((f) => ({
+    id: v4_default(),
+    engine_id: "memory",
+    finding_type: f.type,
+    title: f.title,
+    description: f.description,
+    severity: f.severity,
+    confidence: f.confidence || 0.7,
+    document_ids: f.document_ids,
+    evidence: f.evidence,
+    metadata: {}
+  }));
+};
+var networkEngine = async (config, caseId, documentIds) => {
+  const docs = loadDocuments(config, documentIds);
+  const docContents = docs.map((doc) => {
+    const content = loadDocumentContent(config, doc.id);
+    return {
+      id: doc.id,
+      content: sanitizeForPrompt(content, 3e4)
+    };
+  });
+  const formattedDocs = docContents.map((d) => `=== DOCUMENT (ID: ${d.id}) ===
+${d.content}`).join("\n\n~~~\n\n");
+  const prompt = `Map the institutional and personal network coordination.
+Identify:
+1. HIDDEN COORDINATION: Unofficial communication channels or 'off-the-record' meetings
+2. AGENCY COLLUSION: Multiple agencies adopting identical phrasing or findings without independent verification
+3. ISOLATION TACTICS: Systematic exclusion of specific entities/individuals from the communication loop
+4. CONFLICTS OF INTEREST: Professionals acting across multiple roles/agencies in the same case
+
+DOCUMENTS:
+${formattedDocs}
+
+Respond in JSON:
+{
+  "findings": [
+    {
+      "type": "coordination/collusion/isolation/conflict",
+      "title": "...",
+      "description": "...",
+      "severity": "critical/high/medium",
+      "confidence": 0.0-1.0,
+      "document_ids": ["..."],
+      "evidence": { "entities": [], "pattern": "..." }
+    }
+  ]
+}`;
+  const result = await generateJSON(
+    config,
+    "You are an institutional auditor and network analyst.",
+    prompt
+  );
+  return (result.findings || []).map((f) => ({
+    id: v4_default(),
+    engine_id: "network",
+    finding_type: f.type,
+    title: f.title,
+    description: f.description,
+    severity: f.severity,
+    confidence: f.confidence || 0.65,
+    document_ids: f.document_ids,
+    evidence: f.evidence,
+    metadata: {}
+  }));
+};
+var biasCascadeEngine = async (config, caseId, documentIds) => {
+  const prompt = `Analyze how initial biases in early documents cascade through the case.
+Identify how a 'pre-judgment' in early reports (ANCHOR) is adopted by later agencies (INHERIT) and becomes an 'established fact' (COMPOUND) leading to final decisions (ARRIVE).
+
+Provide findings showing specific bias propagation paths.`;
+  const result = await generateJSON(config, "You are a S.A.M. methodology expert.", prompt);
+  return [
+    {
+      id: v4_default(),
+      engine_id: "bias_cascade",
+      finding_type: "cascade",
+      title: "Bias Cascade Analysis",
+      description: "Analysis of bias propagation through the document chain",
+      severity: "high",
+      confidence: 0.7,
+      document_ids: documentIds,
+      evidence: result,
+      metadata: {}
+    }
+  ];
+};
 var professionalTrackerEngine = async (config, caseId, documentIds) => {
   const findings = [];
   const allDocs = loadDocuments(config, documentIds);
@@ -5695,42 +5893,50 @@ var promptExecutorEngine = async (config, caseId, documentIds, options) => {
   log(`Executing prompt_executor with ${userContent.length} chars of content`);
   const result = await generateJSON(config, systemPrompt, userContent);
   if (result && typeof result === "object" && "_parseError" in result) {
-    throw new Error(`AI response parse error: ${result.error || "Unknown error"}`);
+    throw new Error(
+      `AI response parse error: ${result.error || "Unknown error"}`
+    );
   }
-  return [{
-    id: v4_default(),
-    engine_id: "prompt_executor",
-    finding_type: "ai_response",
-    title: "AI Response",
-    description: "Raw AI response from prompt execution",
-    severity: "info",
-    confidence: 1,
-    document_ids: documentIds,
-    evidence: result,
-    // The actual AI response JSON goes here
-    metadata: { prompt_length: userContent.length }
-  }];
+  return [
+    {
+      id: v4_default(),
+      engine_id: "prompt_executor",
+      finding_type: "ai_response",
+      title: "AI Response",
+      description: "Raw AI response from prompt execution",
+      severity: "info",
+      confidence: 1,
+      document_ids: documentIds,
+      evidence: result,
+      // The actual AI response JSON goes here
+      metadata: { prompt_length: userContent.length }
+    }
+  ];
 };
 var engines = {
   // Canonical engine names
-  "contradiction": contradictionEngine,
-  "omission": omissionEngine,
-  "expert_witness": expertWitnessEngine,
-  "narrative": narrativeEngine,
-  "coordination": coordinationEngine,
-  "entity_resolution": entityResolutionEngine,
-  "temporal_parser": temporalParserEngine,
-  "documentary": documentaryEngine,
-  "argumentation": argumentationEngine,
-  "bias_detection": biasDetectionEngine,
-  "accountability_audit": accountabilityAuditEngine,
-  "professional_tracker": professionalTrackerEngine,
+  contradiction: contradictionEngine,
+  omission: omissionEngine,
+  expert_witness: expertWitnessEngine,
+  narrative: narrativeEngine,
+  coordination: coordinationEngine,
+  entity_resolution: entityResolutionEngine,
+  temporal_parser: temporalParserEngine,
+  documentary: documentaryEngine,
+  argumentation: argumentationEngine,
+  bias_detection: biasDetectionEngine,
+  accountability_audit: accountabilityAuditEngine,
+  professional_tracker: professionalTrackerEngine,
+  linguistic: linguisticEngine,
+  memory: memoryEngine,
+  network: networkEngine,
+  bias_cascade: biasCascadeEngine,
   // Generic prompt executor for S.A.M. and custom prompts
-  "prompt_executor": promptExecutorEngine
+  prompt_executor: promptExecutorEngine
 };
 function normalizeEngineId(engineId) {
   const aliases = {
-    "temporal": "temporal_parser"
+    temporal: "temporal_parser"
     // legacy alias
     // Add other aliases as needed
   };
@@ -5808,18 +6014,22 @@ async function main() {
     pendingRequests++;
     try {
       const request = JSON.parse(line);
-      log(`Received request: engine=${request.engine_id}, case=${request.case_id}, docs=${request.document_ids.length}`);
+      log(
+        `Received request: engine=${request.engine_id}, case=${request.case_id}, docs=${request.document_ids.length}`
+      );
       const response = await executeRequest(config, request);
       console.log(JSON.stringify(response));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       log(`Request parse error: ${errorMessage}`);
-      console.log(JSON.stringify({
-        success: false,
-        engine_id: "unknown",
-        error: `Failed to parse request: ${errorMessage}`,
-        duration_ms: 0
-      }));
+      console.log(
+        JSON.stringify({
+          success: false,
+          engine_id: "unknown",
+          error: `Failed to parse request: ${errorMessage}`,
+          duration_ms: 0
+        })
+      );
     } finally {
       pendingRequests--;
       checkShutdown();

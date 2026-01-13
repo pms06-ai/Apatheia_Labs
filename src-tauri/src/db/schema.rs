@@ -195,6 +195,8 @@ CREATE TABLE IF NOT EXISTS sam_analyses (
     id TEXT PRIMARY KEY,
     case_id TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'pending' CHECK(status IN ('pending', 'anchor_running', 'anchor_complete', 'inherit_running', 'inherit_complete', 'compound_running', 'compound_complete', 'arrive_running', 'completed', 'failed', 'cancelled')),
+    document_ids TEXT DEFAULT '[]',
+    focus_claims TEXT DEFAULT '[]',
     anchor_started_at TEXT,
     anchor_completed_at TEXT,
     inherit_started_at TEXT,
@@ -475,6 +477,8 @@ pub struct SAMAnalysis {
     pub id: String,
     pub case_id: String,
     pub status: String,
+    pub document_ids: String,   // JSON array of document IDs
+    pub focus_claims: String,   // JSON array of claim IDs to focus on
     pub anchor_started_at: Option<String>,
     pub anchor_completed_at: Option<String>,
     pub inherit_started_at: Option<String>,

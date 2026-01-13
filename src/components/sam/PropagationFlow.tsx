@@ -9,10 +9,7 @@
 
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  ArrowRight, FileText, AlertTriangle, CheckCircle2,
-  XCircle, HelpCircle, RefreshCw, ChevronDown, ChevronUp
-} from 'lucide-react'
+import { FileText, CheckCircle2, HelpCircle, RefreshCw, ChevronDown, ChevronUp } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -34,7 +31,10 @@ type FilterType = 'all' | 'unverified' | 'mutated' | 'boundary'
 // Constants
 // ============================================
 
-const PROPAGATION_TYPE_CONFIG: Record<PropagationType, { color: string; label: string; icon: string }> = {
+const PROPAGATION_TYPE_CONFIG: Record<
+  PropagationType,
+  { color: string; label: string; icon: string }
+> = {
   verbatim: { color: 'status-success', label: 'Verbatim', icon: '=' },
   paraphrase: { color: 'bronze-500', label: 'Paraphrase', icon: '~' },
   citation: { color: 'charcoal-400', label: 'Citation', icon: '"' },
@@ -64,7 +64,13 @@ interface PropagationNodeProps {
   onClick?: (prop: ClaimPropagation) => void
 }
 
-function PropagationNode({ propagation, index, isExpanded, onToggle, onClick }: PropagationNodeProps) {
+function PropagationNode({
+  propagation,
+  index,
+  isExpanded,
+  onToggle,
+  onClick,
+}: PropagationNodeProps) {
   const typeConfig = propagation.propagation_type
     ? PROPAGATION_TYPE_CONFIG[propagation.propagation_type]
     : null
@@ -85,27 +91,27 @@ function PropagationNode({ propagation, index, isExpanded, onToggle, onClick }: 
     >
       <Card
         className={cn(
-          'group relative overflow-hidden transition-all duration-300 border-charcoal-700',
+          'group relative overflow-hidden border-charcoal-700 transition-all duration-300',
           'hover:border-bronze-500/30 hover:shadow-[0_4px_20px_rgba(0,0,0,0.4)]',
-          hasMutation && 'bg-status-high/5 border-status-high/30',
-          !isVerified && 'bg-status-critical-bg/5 border-status-critical/30',
+          hasMutation && 'border-status-high/30 bg-status-high/5',
+          !isVerified && 'border-status-critical/30 bg-status-critical-bg/5',
           onClick && 'cursor-pointer'
         )}
         onClick={() => onClick?.(propagation)}
       >
         {/* Hover Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-r from-bronze-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-bronze-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
 
         <div className="relative p-5">
           {/* Flow Visualization */}
-          <div className="flex items-center gap-4 mb-4">
+          <div className="mb-4 flex items-center gap-4">
             {/* Source */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <FileText className="h-4 w-4 text-charcoal-400 shrink-0" />
-                <span className="text-xs text-charcoal-400 uppercase tracking-wider">Source</span>
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex items-center gap-2">
+                <FileText className="h-4 w-4 shrink-0 text-charcoal-400" />
+                <span className="text-xs uppercase tracking-wider text-charcoal-400">Source</span>
               </div>
-              <p className="text-sm text-ivory-100 truncate">
+              <p className="text-ivory-100 truncate text-sm">
                 {propagation.source_document_id
                   ? `Doc ${propagation.source_document_id.slice(0, 8)}...`
                   : 'Unknown Source'}
@@ -116,39 +122,40 @@ function PropagationNode({ propagation, index, isExpanded, onToggle, onClick }: 
                 </span>
               )}
               {propagation.source_institution && (
-                <span className="text-xs text-charcoal-400 block truncate">
+                <span className="block truncate text-xs text-charcoal-400">
                   {propagation.source_institution}
                 </span>
               )}
             </div>
 
             {/* Arrow with Type */}
-            <div className="flex flex-col items-center gap-1 shrink-0">
-              <div className={cn(
-                'flex items-center justify-center w-8 h-8 rounded-full border-2',
-                typeConfig ? `border-${typeConfig.color} bg-${typeConfig.color}/10` : 'border-charcoal-600 bg-charcoal-800'
-              )}>
-                <span className="text-sm font-mono">
-                  {typeConfig?.icon || '→'}
-                </span>
+            <div className="flex shrink-0 flex-col items-center gap-1">
+              <div
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-full border-2',
+                  typeConfig
+                    ? `border-${typeConfig.color} bg-${typeConfig.color}/10`
+                    : 'border-charcoal-600 bg-charcoal-800'
+                )}
+              >
+                <span className="font-mono text-sm">{typeConfig?.icon || '→'}</span>
               </div>
               {typeConfig && (
-                <span className={cn(
-                  'text-[9px] uppercase tracking-wider',
-                  `text-${typeConfig.color}`
-                )}>
+                <span
+                  className={cn('text-[9px] uppercase tracking-wider', `text-${typeConfig.color}`)}
+                >
                   {typeConfig.label}
                 </span>
               )}
             </div>
 
             {/* Target */}
-            <div className="flex-1 min-w-0 text-right">
-              <div className="flex items-center gap-2 mb-1 justify-end">
-                <span className="text-xs text-charcoal-400 uppercase tracking-wider">Target</span>
-                <FileText className="h-4 w-4 text-charcoal-400 shrink-0" />
+            <div className="min-w-0 flex-1 text-right">
+              <div className="mb-1 flex items-center justify-end gap-2">
+                <span className="text-xs uppercase tracking-wider text-charcoal-400">Target</span>
+                <FileText className="h-4 w-4 shrink-0 text-charcoal-400" />
               </div>
-              <p className="text-sm text-ivory-100 truncate">
+              <p className="text-ivory-100 truncate text-sm">
                 {propagation.target_document_id
                   ? `Doc ${propagation.target_document_id.slice(0, 8)}...`
                   : 'Unknown Target'}
@@ -159,7 +166,7 @@ function PropagationNode({ propagation, index, isExpanded, onToggle, onClick }: 
                 </span>
               )}
               {propagation.target_institution && (
-                <span className="text-xs text-charcoal-400 block truncate">
+                <span className="block truncate text-xs text-charcoal-400">
                   {propagation.target_institution}
                 </span>
               )}
@@ -167,7 +174,7 @@ function PropagationNode({ propagation, index, isExpanded, onToggle, onClick }: 
           </div>
 
           {/* Status Badges */}
-          <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               {/* Verification Status */}
               <div className={cn('flex items-center gap-1', verificationColor)}>
@@ -178,14 +185,14 @@ function PropagationNode({ propagation, index, isExpanded, onToggle, onClick }: 
               {/* Mutation Badge */}
               {hasMutation && propagation.mutation_type && (
                 <Badge variant="high" className="text-[10px]">
-                  <RefreshCw className="h-2.5 w-2.5 mr-1" />
+                  <RefreshCw className="mr-1 h-2.5 w-2.5" />
                   {MUTATION_LABELS[propagation.mutation_type]}
                 </Badge>
               )}
 
               {/* Boundary Crossing */}
               {crossedBoundary && (
-                <Badge variant="default" className="text-[10px] bg-bronze-500/20 text-bronze-400">
+                <Badge variant="default" className="bg-bronze-500/20 text-[10px] text-bronze-400">
                   Cross-Institutional
                 </Badge>
               )}
@@ -193,7 +200,7 @@ function PropagationNode({ propagation, index, isExpanded, onToggle, onClick }: 
 
             {/* Verification Outcome */}
             {propagation.verification_outcome && (
-              <span className="text-xs text-charcoal-400 truncate max-w-[150px]">
+              <span className="max-w-[150px] truncate text-xs text-charcoal-400">
                 {propagation.verification_outcome}
               </span>
             )}
@@ -203,11 +210,11 @@ function PropagationNode({ propagation, index, isExpanded, onToggle, onClick }: 
           {(propagation.original_text || propagation.mutated_text) && (
             <div className="mt-3">
               <button
-                onClick={(e) => {
+                onClick={e => {
                   e.stopPropagation()
                   onToggle()
                 }}
-                className="flex items-center gap-1 text-xs text-bronze-400 hover:text-bronze-300 transition-colors"
+                className="flex items-center gap-1 text-xs text-bronze-400 transition-colors hover:text-bronze-300"
               >
                 {isExpanded ? (
                   <ChevronUp className="h-3 w-3" />
@@ -228,14 +235,18 @@ function PropagationNode({ propagation, index, isExpanded, onToggle, onClick }: 
                   >
                     <div className="mt-2 space-y-2">
                       {propagation.original_text && (
-                        <div className="p-3 rounded bg-charcoal-800/50 border border-charcoal-700">
-                          <span className="text-[10px] text-charcoal-400 uppercase tracking-wider block mb-1">Original</span>
+                        <div className="rounded border border-charcoal-700 bg-charcoal-800/50 p-3">
+                          <span className="mb-1 block text-[10px] uppercase tracking-wider text-charcoal-400">
+                            Original
+                          </span>
                           <p className="text-xs text-charcoal-300">{propagation.original_text}</p>
                         </div>
                       )}
                       {propagation.mutated_text && (
-                        <div className="p-3 rounded bg-status-high/5 border border-status-high/20">
-                          <span className="text-[10px] text-status-high uppercase tracking-wider block mb-1">Mutated</span>
+                        <div className="rounded border border-status-high/20 bg-status-high/5 p-3">
+                          <span className="mb-1 block text-[10px] uppercase tracking-wider text-status-high">
+                            Mutated
+                          </span>
                           <p className="text-xs text-charcoal-300">{propagation.mutated_text}</p>
                         </div>
                       )}
@@ -275,12 +286,16 @@ export function PropagationFlow({
   }, [propagations, filter])
 
   // Sort by date
-  const sorted = useMemo(() => [...filtered].sort((a, b) => {
-    if (!a.source_date && !b.source_date) return 0
-    if (!a.source_date) return 1
-    if (!b.source_date) return -1
-    return new Date(a.source_date).getTime() - new Date(b.source_date).getTime()
-  }), [filtered])
+  const sorted = useMemo(
+    () =>
+      [...filtered].sort((a, b) => {
+        if (!a.source_date && !b.source_date) return 0
+        if (!a.source_date) return 1
+        if (!b.source_date) return -1
+        return new Date(a.source_date).getTime() - new Date(b.source_date).getTime()
+      }),
+    [filtered]
+  )
 
   const toggleExpanded = (id: string) => {
     setExpandedIds(prev => {
@@ -299,20 +314,20 @@ export function PropagationFlow({
   return (
     <div className={cn('', className)}>
       {/* Header with Stats & Filter */}
-      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <h3 className="text-sm font-semibold text-ivory-100">Propagation Flow</h3>
+          <h3 className="text-ivory-100 text-sm font-semibold">Propagation Flow</h3>
           <span className="text-xs text-charcoal-500">
             {sorted.length} of {propagations.length}
           </span>
         </div>
 
         {/* Filter Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => setFilter('all')}
             className={cn(
-              'text-xs px-3 py-1.5 rounded transition-colors',
+              'rounded px-3 py-1.5 text-xs transition-colors',
               filter === 'all'
                 ? 'bg-bronze-500/20 text-bronze-400'
                 : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -323,7 +338,7 @@ export function PropagationFlow({
           <button
             onClick={() => setFilter('unverified')}
             className={cn(
-              'flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors',
+              'flex items-center gap-1 rounded px-3 py-1.5 text-xs transition-colors',
               filter === 'unverified'
                 ? 'bg-status-high/20 text-status-high'
                 : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -335,7 +350,7 @@ export function PropagationFlow({
           <button
             onClick={() => setFilter('mutated')}
             className={cn(
-              'flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors',
+              'flex items-center gap-1 rounded px-3 py-1.5 text-xs transition-colors',
               filter === 'mutated'
                 ? 'bg-status-critical/20 text-status-critical'
                 : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -348,7 +363,7 @@ export function PropagationFlow({
             <button
               onClick={() => setFilter('boundary')}
               className={cn(
-                'flex items-center gap-1 text-xs px-3 py-1.5 rounded transition-colors',
+                'flex items-center gap-1 rounded px-3 py-1.5 text-xs transition-colors',
                 filter === 'boundary'
                   ? 'bg-bronze-500/20 text-bronze-400'
                   : 'bg-charcoal-800 text-charcoal-400 hover:text-charcoal-300'
@@ -374,7 +389,7 @@ export function PropagationFlow({
         ))}
 
         {sorted.length === 0 && (
-          <div className="text-center text-charcoal-500 py-12 italic border-2 border-dashed border-charcoal-800 rounded-lg">
+          <div className="rounded-lg border-2 border-dashed border-charcoal-800 py-12 text-center italic text-charcoal-500">
             {filter !== 'all'
               ? `No ${filter} propagations found.`
               : 'No propagations found. Run INHERIT phase to populate this view.'}

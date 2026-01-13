@@ -23,7 +23,6 @@ import {
 import { useDocuments } from '@/hooks/use-api'
 import { useCaseStore } from '@/hooks/use-case-store'
 import {
-  useSAMAnalysis,
   useRunSAMAnalysis,
   useSAMProgress,
   useSAMResults,
@@ -48,7 +47,7 @@ export default function SAMPage() {
   const runMutation = useRunSAMAnalysis()
   const cancelMutation = useCancelSAMAnalysis()
   const resumeMutation = useResumeSAMAnalysis()
-  const { data: progress, isLoading: isLoadingProgress } = useSAMProgress(analysisId)
+  const { data: progress, isLoading: _isLoadingProgress } = useSAMProgress(analysisId)
   const { data: results, isLoading: isLoadingResults } = useSAMResults(
     progress?.status === 'completed' ? analysisId : null
   )
@@ -66,7 +65,7 @@ export default function SAMPage() {
       return
     }
 
-    const docIds = selectedDocs.length > 0 ? selectedDocs : documents?.map((d) => d.id) || []
+    const docIds = selectedDocs.length > 0 ? selectedDocs : documents?.map(d => d.id) || []
 
     if (docIds.length === 0) {
       toast.error('No documents available for analysis')
@@ -80,7 +79,7 @@ export default function SAMPage() {
       })
       setAnalysisId(id)
       toast.success('S.A.M. analysis started')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to start analysis')
     }
   }
@@ -90,7 +89,7 @@ export default function SAMPage() {
     try {
       await cancelMutation.mutateAsync(analysisId)
       toast.success('Analysis cancelled')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to cancel analysis')
     }
   }
@@ -100,20 +99,20 @@ export default function SAMPage() {
     try {
       await resumeMutation.mutateAsync(analysisId)
       toast.success('Analysis resumed')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to resume analysis')
     }
   }
 
   const toggleDocSelection = (docId: string) => {
-    setSelectedDocs((prev) =>
-      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
+    setSelectedDocs(prev =>
+      prev.includes(docId) ? prev.filter(id => id !== docId) : [...prev, docId]
     )
   }
 
   const selectAllDocs = () => {
     if (documents) {
-      setSelectedDocs(documents.map((d) => d.id))
+      setSelectedDocs(documents.map(d => d.id))
     }
   }
 
@@ -124,26 +123,26 @@ export default function SAMPage() {
   // No active case
   if (!caseId) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Card className="p-8 text-center bg-charcoal-900 border-charcoal-800">
-          <AlertCircle className="h-12 w-12 text-charcoal-500 mx-auto mb-4" />
-          <h2 className="text-lg font-semibold text-ivory-100 mb-2">No Case Selected</h2>
-          <p className="text-charcoal-400">Select a case from the sidebar to begin S.A.M. analysis.</p>
+      <div className="flex h-full items-center justify-center">
+        <Card className="border-charcoal-800 bg-charcoal-900 p-8 text-center">
+          <AlertCircle className="mx-auto mb-4 h-12 w-12 text-charcoal-500" />
+          <h2 className="text-ivory-100 mb-2 text-lg font-semibold">No Case Selected</h2>
+          <p className="text-charcoal-400">
+            Select a case from the sidebar to begin S.A.M. analysis.
+          </p>
         </Card>
       </div>
     )
   }
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="border-b border-charcoal-800 p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-display text-ivory-100">
-              S.A.M. Analysis
-            </h1>
-            <p className="text-sm text-charcoal-400 mt-1">
+            <h1 className="text-ivory-100 font-display text-2xl">S.A.M. Analysis</h1>
+            <p className="mt-1 text-sm text-charcoal-400">
               Systematic Adversarial Methodology - Trace false premises to outcomes
             </p>
           </div>
@@ -153,10 +152,7 @@ export default function SAMPage() {
             {progress && (
               <Badge
                 variant={
-                  isComplete ? 'default' :
-                  isFailed ? 'critical' :
-                  isRunning ? 'default' :
-                  'default'
+                  isComplete ? 'default' : isFailed ? 'critical' : isRunning ? 'default' : 'default'
                 }
                 className={cn(
                   isRunning && 'bg-bronze-600/20 text-bronze-400',
@@ -164,7 +160,7 @@ export default function SAMPage() {
                 )}
               >
                 {isRunning && <Spinner size="sm" className="mr-1" />}
-                {isComplete && <CheckCircle2 className="h-3 w-3 mr-1" />}
+                {isComplete && <CheckCircle2 className="mr-1 h-3 w-3" />}
                 {progress.status?.replace('_', ' ').toUpperCase()}
               </Badge>
             )}
@@ -175,17 +171,13 @@ export default function SAMPage() {
                 onClick={handleCancel}
                 disabled={cancelMutation.isPending}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
+                  'flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-all',
                   cancelMutation.isPending
-                    ? 'bg-charcoal-700 text-charcoal-400 cursor-not-allowed'
-                    : 'bg-status-critical/20 text-status-critical hover:bg-status-critical/30 border border-status-critical/30'
+                    ? 'cursor-not-allowed bg-charcoal-700 text-charcoal-400'
+                    : 'border border-status-critical/30 bg-status-critical/20 text-status-critical hover:bg-status-critical/30'
                 )}
               >
-                {cancelMutation.isPending ? (
-                  <Spinner size="sm" />
-                ) : (
-                  <Square className="h-4 w-4" />
-                )}
+                {cancelMutation.isPending ? <Spinner size="sm" /> : <Square className="h-4 w-4" />}
                 {cancelMutation.isPending ? 'Cancelling...' : 'Cancel'}
               </button>
             )}
@@ -196,10 +188,10 @@ export default function SAMPage() {
                 onClick={handleResume}
                 disabled={resumeMutation.isPending}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
+                  'flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-all',
                   resumeMutation.isPending
-                    ? 'bg-charcoal-700 text-charcoal-400 cursor-not-allowed'
-                    : 'bg-bronze-600/20 text-bronze-400 hover:bg-bronze-600/30 border border-bronze-600/30'
+                    ? 'cursor-not-allowed bg-charcoal-700 text-charcoal-400'
+                    : 'border border-bronze-600/30 bg-bronze-600/20 text-bronze-400 hover:bg-bronze-600/30'
                 )}
               >
                 {resumeMutation.isPending ? (
@@ -216,17 +208,13 @@ export default function SAMPage() {
               onClick={handleRun}
               disabled={runMutation.isPending || isRunning}
               className={cn(
-                'flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all',
+                'flex items-center gap-2 rounded-lg px-4 py-2 font-medium transition-all',
                 runMutation.isPending || isRunning
-                  ? 'bg-charcoal-700 text-charcoal-400 cursor-not-allowed'
-                  : 'bg-bronze-600 text-ivory-100 hover:bg-bronze-500'
+                  ? 'cursor-not-allowed bg-charcoal-700 text-charcoal-400'
+                  : 'text-ivory-100 bg-bronze-600 hover:bg-bronze-500'
               )}
             >
-              {runMutation.isPending ? (
-                <Spinner size="sm" />
-              ) : (
-                <Play className="h-4 w-4" />
-              )}
+              {runMutation.isPending ? <Spinner size="sm" /> : <Play className="h-4 w-4" />}
               {runMutation.isPending ? 'Starting...' : isRunning ? 'Running...' : 'Run Analysis'}
             </button>
           </div>
@@ -234,18 +222,15 @@ export default function SAMPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex flex-1 overflow-hidden">
         {/* Left Sidebar - Document Selection & Progress */}
-        <div className="w-80 border-r border-charcoal-800 flex flex-col">
+        <div className="flex w-80 flex-col border-r border-charcoal-800">
           {/* Document Selection */}
-          <div className="p-4 border-b border-charcoal-800">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-sm font-semibold text-ivory-100">Documents</h3>
+          <div className="border-b border-charcoal-800 p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <h3 className="text-ivory-100 text-sm font-semibold">Documents</h3>
               <div className="flex gap-2 text-xs">
-                <button
-                  onClick={selectAllDocs}
-                  className="text-bronze-400 hover:text-bronze-300"
-                >
+                <button onClick={selectAllDocs} className="text-bronze-400 hover:text-bronze-300">
                   All
                 </button>
                 <span className="text-charcoal-600">|</span>
@@ -258,15 +243,15 @@ export default function SAMPage() {
               </div>
             </div>
 
-            <div className="space-y-1 max-h-48 overflow-y-auto">
-              {documents?.map((doc) => (
+            <div className="max-h-48 space-y-1 overflow-y-auto">
+              {documents?.map(doc => (
                 <label
                   key={doc.id}
                   className={cn(
-                    'flex items-center gap-2 p-2 rounded cursor-pointer transition-colors',
+                    'flex cursor-pointer items-center gap-2 rounded p-2 transition-colors',
                     selectedDocs.includes(doc.id)
-                      ? 'bg-bronze-600/20 text-ivory-100'
-                      : 'hover:bg-charcoal-800 text-charcoal-300'
+                      ? 'text-ivory-100 bg-bronze-600/20'
+                      : 'text-charcoal-300 hover:bg-charcoal-800'
                   )}
                 >
                   <input
@@ -276,18 +261,16 @@ export default function SAMPage() {
                     className="rounded border-charcoal-600"
                   />
                   <FileText className="h-3 w-3 shrink-0" />
-                  <span className="text-xs truncate">{doc.filename}</span>
+                  <span className="truncate text-xs">{doc.filename}</span>
                 </label>
               ))}
 
               {(!documents || documents.length === 0) && (
-                <p className="text-xs text-charcoal-500 italic p-2">
-                  No documents in this case
-                </p>
+                <p className="p-2 text-xs italic text-charcoal-500">No documents in this case</p>
               )}
             </div>
 
-            <p className="text-xs text-charcoal-500 mt-2">
+            <p className="mt-2 text-xs text-charcoal-500">
               {selectedDocs.length > 0
                 ? `${selectedDocs.length} selected`
                 : 'All documents will be analyzed'}
@@ -296,16 +279,21 @@ export default function SAMPage() {
 
           {/* Phase Progress */}
           {(progress || analysisId) && (
-            <div className="flex-1 p-4 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto p-4">
               <PhaseProgress
                 currentPhase={progress?.currentPhase ?? null}
                 status={
-                  !progress ? 'pending' :
-                  isComplete ? 'completed' :
-                  isFailed ? 'failed' :
-                  isCancelled ? 'cancelled' :
-                  isRunning ? 'running' :
-                  'pending'
+                  !progress
+                    ? 'pending'
+                    : isComplete
+                      ? 'completed'
+                      : isFailed
+                        ? 'failed'
+                        : isCancelled
+                          ? 'cancelled'
+                          : isRunning
+                            ? 'running'
+                            : 'pending'
                 }
                 phaseTimestamps={{
                   anchorStartedAt: progress?.anchorStartedAt,
@@ -331,11 +319,13 @@ export default function SAMPage() {
 
           {/* Empty State */}
           {!progress && !analysisId && (
-            <div className="flex-1 flex items-center justify-center p-4">
+            <div className="flex flex-1 items-center justify-center p-4">
               <div className="text-center">
-                <div className="text-5xl font-serif text-charcoal-700 mb-2">S</div>
+                <div className="mb-2 font-serif text-5xl text-charcoal-700">S</div>
                 <p className="text-xs text-charcoal-500">
-                  Click Run to start<br />S.A.M. analysis
+                  Click Run to start
+                  <br />
+                  S.A.M. analysis
                 </p>
               </div>
             </div>
@@ -346,7 +336,7 @@ export default function SAMPage() {
         <div className="flex-1 overflow-hidden">
           {/* Loading State */}
           {isLoadingResults && isComplete && (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex h-full items-center justify-center">
               <div className="text-center">
                 <Spinner size="lg" className="mx-auto mb-4" />
                 <p className="text-charcoal-400">Loading results...</p>
@@ -356,13 +346,13 @@ export default function SAMPage() {
 
           {/* Results Tabs */}
           {results && isComplete && (
-            <Tabs defaultValue="origins" className="h-full flex flex-col">
+            <Tabs defaultValue="origins" className="flex h-full flex-col">
               <div className="border-b border-charcoal-800 px-4">
-                <TabsList className="bg-transparent gap-1">
+                <TabsList className="gap-1 bg-transparent">
                   <TabsTrigger value="origins" className="data-[state=active]:bg-charcoal-800">
                     Origins
                     {results.falsePremises && results.falsePremises.length > 0 && (
-                      <Badge variant="critical" className="ml-2 text-[10px] px-1.5">
+                      <Badge variant="critical" className="ml-2 px-1.5 text-[10px]">
                         {results.falsePremises.length}
                       </Badge>
                     )}
@@ -370,7 +360,7 @@ export default function SAMPage() {
                   <TabsTrigger value="propagation" className="data-[state=active]:bg-charcoal-800">
                     Propagation
                     {results.propagations && results.propagations.length > 0 && (
-                      <Badge className="ml-2 text-[10px] px-1.5 bg-charcoal-700">
+                      <Badge className="ml-2 bg-charcoal-700 px-1.5 text-[10px]">
                         {results.propagations.length}
                       </Badge>
                     )}
@@ -384,35 +374,32 @@ export default function SAMPage() {
                 </TabsList>
               </div>
 
-              <TabsContent value="origins" className="flex-1 overflow-y-auto p-6 m-0">
-                <OriginTimeline
-                  origins={results.origins || []}
-                  showFalsePremisesOnly={false}
-                />
+              <TabsContent value="origins" className="m-0 flex-1 overflow-y-auto p-6">
+                <OriginTimeline origins={results.origins || []} showFalsePremisesOnly={false} />
               </TabsContent>
 
-              <TabsContent value="propagation" className="flex-1 overflow-y-auto p-6 m-0">
-                <PropagationFlow
-                  propagations={results.propagations || []}
-                />
+              <TabsContent value="propagation" className="m-0 flex-1 overflow-y-auto p-6">
+                <PropagationFlow propagations={results.propagations || []} />
               </TabsContent>
 
-              <TabsContent value="authority" className="flex-1 overflow-y-auto p-6 m-0">
+              <TabsContent value="authority" className="m-0 flex-1 overflow-y-auto p-6">
                 <AuthorityAccumulation
                   markers={results.authorityMarkers || []}
                   laundering={results.authorityLaundering || []}
                 />
               </TabsContent>
 
-              <TabsContent value="outcomes" className="flex-1 overflow-y-auto p-6 m-0">
+              <TabsContent value="outcomes" className="m-0 flex-1 overflow-y-auto p-6">
                 <OutcomeCausation
                   outcomes={results.outcomes || []}
-                  chains={results.causationChains?.map(c => ({
-                    outcome_id: c.outcomeId,
-                    root_claims: c.rootClaims,
-                    propagation_path: c.propagationPath,
-                    authority_accumulation: c.authorityAccumulation,
-                  })) || []}
+                  chains={
+                    results.causationChains?.map(c => ({
+                      outcome_id: c.outcomeId,
+                      root_claims: c.rootClaims,
+                      propagation_path: c.propagationPath,
+                      authority_accumulation: c.authorityAccumulation,
+                    })) || []
+                  }
                 />
               </TabsContent>
             </Tabs>
@@ -420,17 +407,17 @@ export default function SAMPage() {
 
           {/* Running State */}
           {isRunning && (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex h-full items-center justify-center">
               <div className="text-center">
                 <div className="relative">
                   <Spinner size="lg" className="mx-auto" />
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-2xl font-serif text-bronze-500">
+                    <span className="font-serif text-2xl text-bronze-500">
                       {progress?.currentPhase?.[0]?.toUpperCase() || 'S'}
                     </span>
                   </div>
                 </div>
-                <p className="text-charcoal-400 mt-4">
+                <p className="mt-4 text-charcoal-400">
                   {progress?.currentPhase
                     ? `Running ${progress.currentPhase.toUpperCase()} phase...`
                     : 'Initializing analysis...'}
@@ -441,11 +428,11 @@ export default function SAMPage() {
 
           {/* Error State */}
           {isFailed && (
-            <div className="flex items-center justify-center h-full">
-              <Card className="p-8 text-center bg-status-critical-bg/10 border-status-critical/30 max-w-md">
-                <AlertCircle className="h-12 w-12 text-status-critical mx-auto mb-4" />
-                <h2 className="text-lg font-semibold text-ivory-100 mb-2">Analysis Failed</h2>
-                <p className="text-charcoal-400 text-sm mb-4">
+            <div className="flex h-full items-center justify-center">
+              <Card className="max-w-md border-status-critical/30 bg-status-critical-bg/10 p-8 text-center">
+                <AlertCircle className="mx-auto mb-4 h-12 w-12 text-status-critical" />
+                <h2 className="text-ivory-100 mb-2 text-lg font-semibold">Analysis Failed</h2>
+                <p className="mb-4 text-sm text-charcoal-400">
                   {progress?.errorMessage || 'An error occurred during analysis'}
                 </p>
                 {progress?.errorPhase && (
@@ -457,34 +444,34 @@ export default function SAMPage() {
 
           {/* Empty State - No Analysis Yet */}
           {!analysisId && !progress && (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center max-w-md">
-                <div className="text-6xl font-serif text-charcoal-700 mb-4">S.A.M.</div>
-                <h2 className="text-xl font-semibold text-ivory-100 mb-2">
+            <div className="flex h-full items-center justify-center">
+              <div className="max-w-md text-center">
+                <div className="mb-4 font-serif text-6xl text-charcoal-700">S.A.M.</div>
+                <h2 className="text-ivory-100 mb-2 text-xl font-semibold">
                   Systematic Adversarial Methodology
                 </h2>
-                <p className="text-charcoal-400 text-sm mb-6">
-                  Trace how false premises propagate through institutional documents,
-                  accumulate authority through repetition, and cause harmful outcomes.
+                <p className="mb-6 text-sm text-charcoal-400">
+                  Trace how false premises propagate through institutional documents, accumulate
+                  authority through repetition, and cause harmful outcomes.
                 </p>
                 <div className="flex justify-center gap-4 text-xs text-charcoal-500">
                   <div className="text-center">
-                    <div className="text-lg font-serif text-bronze-500">A</div>
+                    <div className="font-serif text-lg text-bronze-500">A</div>
                     <div>ANCHOR</div>
                   </div>
                   <div className="text-charcoal-700">→</div>
                   <div className="text-center">
-                    <div className="text-lg font-serif text-bronze-500">N</div>
+                    <div className="font-serif text-lg text-bronze-500">N</div>
                     <div>INHERIT</div>
                   </div>
                   <div className="text-charcoal-700">→</div>
                   <div className="text-center">
-                    <div className="text-lg font-serif text-bronze-500">C</div>
+                    <div className="font-serif text-lg text-bronze-500">C</div>
                     <div>COMPOUND</div>
                   </div>
                   <div className="text-charcoal-700">→</div>
                   <div className="text-center">
-                    <div className="text-lg font-serif text-bronze-500">R</div>
+                    <div className="font-serif text-lg text-bronze-500">R</div>
                     <div>ARRIVE</div>
                   </div>
                 </div>
