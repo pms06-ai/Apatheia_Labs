@@ -86,6 +86,16 @@ packages/*/dist/
 .worktrees/
 .auto-claude-status
 .claude_settings.json
+
+# Claude Code temporary working directories
+tmpclaude-*/
+tmpclaude-*-cwd
+
+# Additional editor artifacts
+*.swp
+*.swo
+*~
+
 complexity_assessment.json
 project_index.json
 
