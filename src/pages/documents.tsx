@@ -6,9 +6,7 @@ export default function DocumentsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl text-charcoal-100">Documents</h1>
-        <p className="mt-1 text-sm text-charcoal-400">
-          Upload and manage case documents
-        </p>
+        <p className="mt-1 text-sm text-charcoal-400">Upload and manage case documents</p>
       </div>
 
       <DocumentUploader />

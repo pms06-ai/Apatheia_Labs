@@ -1,5 +1,3 @@
-'use client'
-
 /**
  * S.A.M. Analysis Page
  *

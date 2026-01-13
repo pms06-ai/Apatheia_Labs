@@ -4,7 +4,7 @@
 
 :root {
   --radius: 0.5rem;
-  
+
   /* Brand colors as CSS variables */
   --bronze: 184 134 11;
   --bronze-light: 212 160 23;
@@ -27,7 +27,11 @@ body {
 body {
   background: rgb(15 15 16);
   color: rgb(var(--off-white));
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family:
+    'Inter',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -75,7 +79,8 @@ body {
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(184, 134, 11, 0.2);
   }
   50% {
@@ -92,11 +97,26 @@ body {
 }
 
 /* Delay classes for staggered animations */
-.delay-1 { animation-delay: 0.05s; opacity: 0; }
-.delay-2 { animation-delay: 0.1s; opacity: 0; }
-.delay-3 { animation-delay: 0.15s; opacity: 0; }
-.delay-4 { animation-delay: 0.2s; opacity: 0; }
-.delay-5 { animation-delay: 0.25s; opacity: 0; }
+.delay-1 {
+  animation-delay: 0.05s;
+  opacity: 0;
+}
+.delay-2 {
+  animation-delay: 0.1s;
+  opacity: 0;
+}
+.delay-3 {
+  animation-delay: 0.15s;
+  opacity: 0;
+}
+.delay-4 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+.delay-5 {
+  animation-delay: 0.25s;
+  opacity: 0;
+}
 
 /* Typography */
 .font-display {
@@ -135,13 +155,13 @@ body {
 
 /* Prose styles for document content */
 .prose-forensic {
-  @apply text-charcoal-300 leading-relaxed;
+  @apply leading-relaxed text-charcoal-300;
 }
 
 .prose-forensic h1,
 .prose-forensic h2,
 .prose-forensic h3 {
-  @apply font-display text-charcoal-100 mt-8 mb-4;
+  @apply mb-4 mt-8 font-display text-charcoal-100;
 }
 
 .prose-forensic p {
@@ -153,12 +173,12 @@ body {
 }
 
 .prose-forensic code {
-  @apply bg-charcoal-700 px-1.5 py-0.5 rounded text-bronze-400 text-sm font-mono;
+  @apply rounded bg-charcoal-700 px-1.5 py-0.5 font-mono text-sm text-bronze-400;
 }
 
 /* Badge variants */
 .badge {
-  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wide;
+  @apply inline-flex items-center rounded px-2 py-0.5 text-xs font-semibold uppercase tracking-wide;
 }
 
 .badge-critical {

@@ -53,7 +53,7 @@ process.env.R2_ENDPOINT = 'https://test.r2.cloudflarestorage.com'
 global.fetch = jest.fn()
 
 beforeEach(() => {
-  ;(global.fetch as jest.Mock).mockReset()
+  (global.fetch as jest.Mock).mockReset()
 })
 
 // ============================================
@@ -220,29 +220,33 @@ jest.mock('@/lib/env', () => ({
 }))
 
 // ============================================
-// NEXT.JS MOCKS
+// REACT ROUTER MOCKS
 // ============================================
 
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    refresh: jest.fn(),
-    back: jest.fn(),
-    prefetch: jest.fn(),
-  }),
-  usePathname: () => '/',
-  useSearchParams: () => new URLSearchParams(),
-}))
+const mockNavigate = jest.fn()
 
-jest.mock('next/headers', () => ({
-  cookies: jest.fn(() => ({
-    get: jest.fn(),
-    set: jest.fn(),
-    delete: jest.fn(),
-  })),
-  headers: jest.fn(() => new Headers()),
-}))
+jest.mock('react-router-dom', () => {
+  // React is required dynamically for mocking JSX elements
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const React = require('react')
+  return {
+    ...jest.requireActual('react-router-dom'),
+    useNavigate: () => mockNavigate,
+    useLocation: () => ({
+      pathname: '/',
+      search: '',
+      hash: '',
+      state: null,
+      key: 'default',
+    }),
+    useSearchParams: () => [new URLSearchParams(), jest.fn()],
+    useParams: () => ({}),
+    Link: ({ children, to }: { children: React.ReactNode; to: string }) =>
+      React.createElement('a', { href: to }, children),
+    HashRouter: ({ children }: { children: React.ReactNode }) => children,
+    BrowserRouter: ({ children }: { children: React.ReactNode }) => children,
+  }
+})
 
 // ============================================
 // BROWSER API MOCKS

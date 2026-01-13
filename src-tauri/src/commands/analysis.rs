@@ -1035,3 +1035,133 @@ pub async fn search_documents(
         error: None,
     })
 }
+
+// ============================================
+// Native Contradiction Engine Commands
+// ============================================
+
+use crate::engines::{ContradictionEngine, ContradictionAnalysisResult, ContradictionFinding, ClaimComparisonResult};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct RunContradictionInput {
+    pub case_id: String,
+    pub document_ids: Vec<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ContradictionEngineResult {
+    pub success: bool,
+    pub analysis: Option<ContradictionAnalysisResult>,
+    pub duration_ms: u64,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CompareClaimsInput {
+    pub claim1: String,
+    pub claim2: String,
+    pub context: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct CompareClaimsResult {
+    pub success: bool,
+    pub comparison: Option<ClaimComparisonResult>,
+    pub error: Option<String>,
+}
+
+/// Run native Rust contradiction detection engine
+/// This uses the AI client directly instead of the TypeScript sidecar
+#[tauri::command]
+pub async fn run_contradiction_engine(
+    state: State<'_, AppState>,
+    input: RunContradictionInput,
+) -> Result<ContradictionEngineResult, String> {
+    let start = std::time::Instant::now();
+    let db = state.db.lock().await;
+
+    // Fetch document content
+    let mut documents = Vec::new();
+    for doc_id in &input.document_ids {
+        let row: Option<(String, Option<String>, Option<String>)> = sqlx::query_as(
+            "SELECT filename, doc_type, extracted_text FROM documents WHERE id = ?"
+        )
+        .bind(doc_id)
+        .fetch_optional(db.pool())
+        .await
+        .map_err(|e| format!("Failed to fetch document: {}", e))?;
+
+        if let Some((filename, doc_type, text)) = row {
+            if let Some(content) = text {
+                documents.push(crate::engines::contradiction::DocumentInfo {
+                    id: doc_id.clone(),
+                    name: filename,
+                    doc_type: doc_type.unwrap_or_else(|| "unknown".to_string()),
+                    date: None,
+                    content,
+                });
+            }
+        }
+    }
+
+    if documents.is_empty() {
+        return Ok(ContradictionEngineResult {
+            success: false,
+            analysis: None,
+            duration_ms: start.elapsed().as_millis() as u64,
+            error: Some("No documents with extracted text found".to_string()),
+        });
+    }
+
+    // Create engine and run analysis
+    let mut engine = ContradictionEngine::new(db.pool().clone());
+
+    // Try to initialize AI client, fall back to mock mode if unavailable
+    if engine.try_init_ai().is_err() {
+        log::warn!("AI client not available, running in mock mode");
+    }
+
+    match engine.detect_contradictions(documents, &input.case_id).await {
+        Ok(analysis) => Ok(ContradictionEngineResult {
+            success: true,
+            analysis: Some(analysis),
+            duration_ms: start.elapsed().as_millis() as u64,
+            error: None,
+        }),
+        Err(e) => Ok(ContradictionEngineResult {
+            success: false,
+            analysis: None,
+            duration_ms: start.elapsed().as_millis() as u64,
+            error: Some(e),
+        }),
+    }
+}
+
+/// Compare two specific claims for contradiction
+#[tauri::command]
+pub async fn compare_claims(
+    state: State<'_, AppState>,
+    input: CompareClaimsInput,
+) -> Result<CompareClaimsResult, String> {
+    let db = state.db.lock().await;
+
+    let mut engine = ContradictionEngine::new(db.pool().clone());
+
+    // Try to initialize AI client
+    if engine.try_init_ai().is_err() {
+        log::warn!("AI client not available, running in mock mode");
+    }
+
+    match engine.compare_claims(&input.claim1, &input.claim2, input.context.as_deref()).await {
+        Ok(comparison) => Ok(CompareClaimsResult {
+            success: true,
+            comparison: Some(comparison),
+            error: None,
+        }),
+        Err(e) => Ok(CompareClaimsResult {
+            success: false,
+            comparison: None,
+            error: Some(e),
+        }),
+    }
+}

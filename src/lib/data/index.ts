@@ -1,11 +1,11 @@
 /**
- * Unified Data Layer
- * 
- * Environment-aware data access layer that routes to Tauri IPC (desktop)
- * or provides mock data (web) based on runtime environment.
- * 
- * For Tauri-only builds, this always uses the local SQLite database
- * via the Rust backend.
+ * Unified Data Layer (Tauri-Only)
+ *
+ * Data access layer that routes to Tauri IPC and local SQLite.
+ * This is a desktop-only application - no cloud/web backend.
+ *
+ * When running outside Tauri (e.g., `npm run dev`), provides a mock
+ * layer for UI development that returns empty data.
  */
 
 import { isDesktop } from '@/lib/tauri'
@@ -169,7 +169,7 @@ export interface DataLayer {
   // Analysis
   getAnalysis(caseId: string): Promise<AnalysisResult>
   runEngine(input: RunEngineInput): Promise<EngineResult>
-  
+
   // Orchestrator (job-based analysis)
   submitAnalysis(input: SubmitAnalysisInput): Promise<string>
   getJobProgress(jobId: string): Promise<JobProgress | null>
@@ -196,7 +196,7 @@ async function createTauriDataLayer(): Promise<DataLayer> {
   const tauri = await import('@/lib/tauri/commands')
   const { getTauriClient } = await import('@/lib/tauri/client')
   const client = getTauriClient()
-  
+
   return {
     // Cases
     async getCases() {
@@ -263,7 +263,7 @@ async function createTauriDataLayer(): Promise<DataLayer> {
         omissions: analysis.omissions || [],
       }
     },
-    
+
     async runEngine(input: RunEngineInput) {
       const result = await tauri.runEngine({
         case_id: input.caseId,
@@ -289,7 +289,7 @@ async function createTauriDataLayer(): Promise<DataLayer> {
         options: input.options,
       })
     },
-    
+
     async getJobProgress(jobId: string) {
       const progress = await client.getJobProgress(jobId)
       if (!progress) return null
@@ -305,11 +305,11 @@ async function createTauriDataLayer(): Promise<DataLayer> {
         currentEngine: progress.current_engine,
       }
     },
-    
+
     async cancelJob(jobId: string) {
       return client.cancelJob(jobId)
     },
-    
+
     async listJobs() {
       const jobs = await client.listJobs()
       return jobs.map(j => ({
@@ -425,32 +425,78 @@ async function createTauriDataLayer(): Promise<DataLayer> {
 
 function createMockDataLayer(): DataLayer {
   console.warn('[DataLayer] Running in mock mode - no persistence')
-  
+
   return {
-    async getCases() { return [] },
-    async getCase() { return null },
-    async createCase() { throw new Error('Mock mode - use Tauri desktop app') },
-    async deleteCase() { throw new Error('Mock mode - use Tauri desktop app') },
-    async getDocuments() { return [] },
-    async getDocument() { return null },
-    async uploadDocument() { throw new Error('Mock mode - use Tauri desktop app') },
-    async deleteDocument() { throw new Error('Mock mode - use Tauri desktop app') },
-    async getEntities() { return [] },
-    async getFindings() { return [] },
-    async getClaims() { return [] },
-    async getContradictions() { return [] },
-    async getAnalysis() { return { findings: [], entities: [], claims: [], contradictions: [], omissions: [] } },
-    async runEngine() { throw new Error('Mock mode - use Tauri desktop app') },
-    async submitAnalysis() { throw new Error('Mock mode - use Tauri desktop app') },
-    async getJobProgress() { return null },
-    async cancelJob() { throw new Error('Mock mode - use Tauri desktop app') },
-    async listJobs() { return [] },
+    async getCases() {
+      return []
+    },
+    async getCase() {
+      return null
+    },
+    async createCase() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
+    async deleteCase() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
+    async getDocuments() {
+      return []
+    },
+    async getDocument() {
+      return null
+    },
+    async uploadDocument() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
+    async deleteDocument() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
+    async getEntities() {
+      return []
+    },
+    async getFindings() {
+      return []
+    },
+    async getClaims() {
+      return []
+    },
+    async getContradictions() {
+      return []
+    },
+    async getAnalysis() {
+      return { findings: [], entities: [], claims: [], contradictions: [], omissions: [] }
+    },
+    async runEngine() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
+    async submitAnalysis() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
+    async getJobProgress() {
+      return null
+    },
+    async cancelJob() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
+    async listJobs() {
+      return []
+    },
     // S.A.M.
-    async runSAMAnalysis() { throw new Error('Mock mode - use Tauri desktop app') },
-    async getSAMProgress() { return null },
-    async getSAMResults() { return null },
-    async cancelSAMAnalysis() { throw new Error('Mock mode - use Tauri desktop app') },
-    async resumeSAMAnalysis() { throw new Error('Mock mode - use Tauri desktop app') },
+    async runSAMAnalysis() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
+    async getSAMProgress() {
+      return null
+    },
+    async getSAMResults() {
+      return null
+    },
+    async cancelSAMAnalysis() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
+    async resumeSAMAnalysis() {
+      throw new Error('Mock mode - use Tauri desktop app')
+    },
     // Entity Resolution - use localStorage in mock mode too
     async updateEntityLinkage(input: UpdateEntityLinkageInput) {
       const update: EntityLinkageUpdate = {
@@ -490,9 +536,11 @@ let _dataLayer: DataLayer | null = null
 let _wasDesktop: boolean | null = null
 
 /**
- * Get the data layer singleton
- * Automatically routes to Tauri (desktop) or mock (web)
- * Re-creates data layer if environment changes (e.g., Tauri globals become available)
+ * Get the data layer singleton.
+ *
+ * This is a Tauri-only application. When running outside Tauri (e.g., Next.js dev server),
+ * returns a mock layer that returns empty data for reads and throws for writes.
+ * For full functionality, run via `npm run tauri dev`.
  */
 export async function getDataLayer(): Promise<DataLayer> {
   const currentlyDesktop = isDesktop()

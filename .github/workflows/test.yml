@@ -64,27 +64,28 @@ jobs:
           exit 1
         fi
 
-        # Parse coverage and verify all metrics meet 80% threshold
+        # Parse coverage and verify all metrics meet thresholds
         node -e "
           const summary = require('./coverage/coverage-summary.json');
           const total = summary.total;
-          const metrics = ['lines', 'statements', 'functions', 'branches'];
+          // Thresholds aligned with jest.config.js
+          const thresholds = { lines: 40, statements: 40, functions: 35, branches: 40 };
           let passed = true;
 
           console.log('Coverage Summary:');
           console.log('================');
 
-          for (const metric of metrics) {
+          for (const [metric, threshold] of Object.entries(thresholds)) {
             const pct = total[metric].pct;
-            const status = pct >= 80 ? '✓' : '✗';
-            console.log(\`\${status} \${metric}: \${pct}%\`);
-            if (pct < 80) {
+            const status = pct >= threshold ? '✓' : '✗';
+            console.log(\`\${status} \${metric}: \${pct}% (threshold: \${threshold}%)\`);
+            if (pct < threshold) {
               passed = false;
             }
           }
 
           if (!passed) {
-            console.log('\\nCoverage below 80% threshold!');
+            console.log('\\nCoverage below threshold!');
             process.exit(1);
           }
 

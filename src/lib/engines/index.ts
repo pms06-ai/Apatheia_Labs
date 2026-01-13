@@ -52,12 +52,16 @@ import { memoryEngine, type MemoryAnalysisResult } from './memory'
 import { linguisticEngine, type LinguisticAnalysisResult } from './linguistic'
 import { biasCascadeEngine, type BiasCascadeResult } from './bias-cascade'
 
-import { supabaseAdmin } from '@/lib/supabase/server'
+import { getDataLayer } from '@/lib/data'
 import { type EngineId } from './metadata'
+import type { Document } from '@/CONTRACT'
 
-async function fetchDocs(caseId: string, ids: string[]) {
-  const { data } = await supabaseAdmin.from('documents').select('*').in('id', ids)
-  return data || []
+async function fetchDocs(caseId: string, ids: string[]): Promise<Document[]> {
+  const dataLayer = await getDataLayer()
+  const allDocs = await dataLayer.getDocuments(caseId)
+  // Filter to only requested IDs
+  const idSet = new Set(ids)
+  return allDocs.filter(doc => idSet.has(doc.id))
 }
 
 // Re-export Metadata for convenience in server files
@@ -142,8 +146,7 @@ export async function runEngine(params: EngineRunParams): Promise<EngineRunResul
       }
 
       case 'argumentation': {
-        const docs = await fetchDocs(caseId, documentIds)
-        result = await argumentationEngine.analyzeCase(docs, caseId)
+        result = await argumentationEngine.analyzeCase(documentIds, caseId)
         break
       }
 
@@ -175,8 +178,7 @@ export async function runEngine(params: EngineRunParams): Promise<EngineRunResul
       }
 
       case 'professional_tracker': {
-        const docs = await fetchDocs(caseId, documentIds)
-        result = await professionalTrackerEngine.trackProfessionals(docs, caseId)
+        result = await professionalTrackerEngine.trackProfessionals(documentIds, caseId)
         break
       }
 

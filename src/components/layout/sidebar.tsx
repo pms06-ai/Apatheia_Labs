@@ -1,20 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import Image from 'next/image'
-import { usePathname } from 'next/navigation'
-import {
-  FileText,
-  AlertTriangle,
-  Settings,
-  Home,
-  ChevronDown,
-  Plus,
-  Search
-} from 'lucide-react'
+import { Link, useLocation } from 'react-router-dom'
+import { FileText, AlertTriangle, Settings, Home, ChevronDown, Plus, Search } from 'lucide-react'
 import { useCaseStore } from '@/hooks/use-case-store'
-import { getDataLayer, isDesktop } from '@/lib/data'
+import { getDataLayer } from '@/lib/data'
 import type { Case } from '@/CONTRACT'
 
 const navigation = [
@@ -25,15 +15,39 @@ const navigation = [
 ]
 
 const engines = [
-  { id: 'omission', name: 'Omission Detection', icon: 'Ο', priority: 1, href: '/analysis?engine=omission' },
+  {
+    id: 'omission',
+    name: 'Omission Detection',
+    icon: 'Ο',
+    priority: 1,
+    href: '/analysis?engine=omission',
+  },
   { id: 'expert', name: 'Expert Witness', icon: 'Ξ', priority: 2, href: '/analysis?engine=expert' },
-  { id: 'documentary', name: 'Documentary', icon: 'Δ', priority: 3, href: '/analysis?engine=documentary' },
-  { id: 'narrative', name: 'Narrative Evolution', icon: 'Μ', priority: 4, href: '/analysis?engine=narrative' },
-  { id: 'coordination', name: 'Cross-Institutional', icon: 'Σ', priority: 5, href: '/analysis?engine=coordination' },
+  {
+    id: 'documentary',
+    name: 'Documentary',
+    icon: 'Δ',
+    priority: 3,
+    href: '/analysis?engine=documentary',
+  },
+  {
+    id: 'narrative',
+    name: 'Narrative Evolution',
+    icon: 'Μ',
+    priority: 4,
+    href: '/analysis?engine=narrative',
+  },
+  {
+    id: 'coordination',
+    name: 'Cross-Institutional',
+    icon: 'Σ',
+    priority: 5,
+    href: '/analysis?engine=coordination',
+  },
 ]
 
 export function Sidebar() {
-  const pathname = usePathname()
+  const { pathname } = useLocation()
   const { activeCase, setActiveCase } = useCaseStore()
   const [isCaseSelectorOpen, setIsCaseSelectorOpen] = useState(false)
   const [cases, setCases] = useState<Case[]>([])
@@ -70,33 +84,25 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="flex w-64 flex-col border-r border-charcoal-600/30 bg-bg-secondary h-screen sticky top-0 relative overflow-hidden">
+    <aside className="relative sticky top-0 flex h-screen w-64 flex-col overflow-hidden border-r border-charcoal-600/30 bg-bg-secondary">
       {/* Background Detail */}
-      <div className="absolute top-0 right-0 w-[1px] h-full bg-gradient-to-b from-transparent via-bronze-500/20 to-transparent opacity-50" />
+      <div className="absolute right-0 top-0 h-full w-[1px] bg-gradient-to-b from-transparent via-bronze-500/20 to-transparent opacity-50" />
 
       {/* Logo/Brand Header */}
       <Link
-        href="/"
-        className="flex items-center gap-3 p-4 border-b border-charcoal-600/30 hover:bg-charcoal-800/50 transition-colors"
+        to="/"
+        className="flex items-center gap-3 border-b border-charcoal-600/30 p-4 transition-colors hover:bg-charcoal-800/50"
       >
-        <Image
-          src="/logo.svg"
-          alt="Apatheia Labs"
-          width={40}
-          height={40}
-          className="h-10 w-10"
-        />
+        <img src="/logo.svg" alt="Apatheia Labs" width={40} height={40} className="h-10 w-10" />
         <div>
-          <div className="font-display text-lg text-charcoal-100 tracking-wide">APATHEIA</div>
-          <div className="text-[10px] text-charcoal-500 uppercase tracking-[0.2em]">Labs</div>
+          <div className="font-display text-lg tracking-wide text-charcoal-100">APATHEIA</div>
+          <div className="text-[10px] uppercase tracking-[0.2em] text-charcoal-500">Labs</div>
         </div>
       </Link>
 
       {/* Case Selector */}
       <div className="border-b border-charcoal-600/30 p-4">
-        <div className="text-xs uppercase tracking-wider text-charcoal-500 mb-2">
-          Active Case
-        </div>
+        <div className="mb-2 text-xs uppercase tracking-wider text-charcoal-500">Active Case</div>
 
         <div className="relative">
           <button
@@ -108,33 +114,38 @@ export function Sidebar() {
                 <div className="h-5 w-24 animate-pulse rounded bg-charcoal-700" />
               ) : activeCase ? (
                 <>
-                  <div className="font-medium text-charcoal-100 truncate">{activeCase.reference}</div>
-                  <div className="text-xs text-charcoal-400 truncate">{activeCase.name}</div>
+                  <div className="truncate font-medium text-charcoal-100">
+                    {activeCase.reference}
+                  </div>
+                  <div className="truncate text-xs text-charcoal-400">{activeCase.name}</div>
                 </>
               ) : (
-                <div className="font-medium text-charcoal-400 italic">Select Case...</div>
+                <div className="font-medium italic text-charcoal-400">Select Case...</div>
               )}
             </div>
-            <ChevronDown className={`h-4 w-4 text-charcoal-500 transition-transform ${isCaseSelectorOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`h-4 w-4 text-charcoal-500 transition-transform ${isCaseSelectorOpen ? 'rotate-180' : ''}`}
+            />
           </button>
 
           {/* Dropdown Menu */}
           {isCaseSelectorOpen && (
-            <div className="absolute top-full left-0 right-0 z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-charcoal-600 bg-bg-tertiary shadow-xl">
+            <div className="absolute left-0 right-0 top-full z-50 mt-1 max-h-60 overflow-y-auto rounded-lg border border-charcoal-600 bg-bg-tertiary shadow-xl">
               {cases.length > 0 ? (
-                cases.map((c) => (
+                cases.map(c => (
                   <button
                     key={c.id}
                     onClick={() => handleCaseSelect(c)}
-                    className={`w-full p-3 text-left transition hover:bg-charcoal-700 ${activeCase?.id === c.id ? 'bg-bronze-900/20 border-l-2 border-bronze-500' : ''
-                      }`}
+                    className={`w-full p-3 text-left transition hover:bg-charcoal-700 ${
+                      activeCase?.id === c.id ? 'border-l-2 border-bronze-500 bg-bronze-900/20' : ''
+                    }`}
                   >
                     <div className="font-medium text-charcoal-100">{c.reference}</div>
                     <div className="text-xs text-charcoal-400">{c.name}</div>
                   </button>
                 ))
               ) : (
-                <div className="p-3 text-sm text-charcoal-500 text-center">No cases found</div>
+                <div className="p-3 text-center text-sm text-charcoal-500">No cases found</div>
               )}
               <button
                 className="flex w-full items-center gap-2 border-t border-charcoal-600/50 p-3 text-sm text-bronze-400 hover:bg-charcoal-700 hover:text-bronze-300"
@@ -152,25 +163,28 @@ export function Sidebar() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 p-3 overflow-y-auto">
+      <nav className="flex-1 space-y-1 overflow-y-auto p-3">
         <div className="mb-2 px-3 text-xs uppercase tracking-wider text-charcoal-500">
           Navigation
         </div>
-        {navigation.map((item) => {
-          const isActive = pathname === item.href || (item.href.includes('?') && pathname.startsWith(item.href.split('?')[0]))
+        {navigation.map(item => {
+          const isActive =
+            pathname === item.href ||
+            (item.href.includes('?') && pathname.startsWith(item.href.split('?')[0]))
           return (
             <Link
               key={item.name}
-              href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${isActive
-                ? 'bg-bronze-600/20 text-bronze-400'
-                : 'text-charcoal-300 hover:bg-charcoal-700 hover:text-charcoal-100'
-                }`}
+              to={item.href}
+              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+                isActive
+                  ? 'bg-bronze-600/20 text-bronze-400'
+                  : 'text-charcoal-300 hover:bg-charcoal-700 hover:text-charcoal-100'
+              }`}
             >
               <item.icon className="h-4 w-4" />
               {item.name}
               {isActive && (
-                <div className="absolute left-0 h-4 w-0.5 bg-bronze-500 rounded-r shadow-[0_0_10px_rgba(184,134,11,0.5)]" />
+                <div className="absolute left-0 h-4 w-0.5 rounded-r bg-bronze-500 shadow-[0_0_10px_rgba(184,134,11,0.5)]" />
               )}
             </Link>
           )
@@ -180,16 +194,18 @@ export function Sidebar() {
         <div className="mb-2 mt-6 px-3 text-xs uppercase tracking-wider text-charcoal-500">
           Analysis Engines
         </div>
-        {engines.map((engine) => {
-          const isActive = pathname + (typeof window !== 'undefined' ? window.location.search : '') === engine.href
+        {engines.map(engine => {
+          const isActive =
+            pathname + (typeof window !== 'undefined' ? window.location.search : '') === engine.href
           return (
             <Link
               key={engine.id}
-              href={engine.href}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${isActive
-                ? 'bg-bronze-600/20 text-bronze-400'
-                : 'text-charcoal-300 hover:bg-charcoal-700 hover:text-charcoal-100'
-                }`}
+              to={engine.href}
+              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-sm transition ${
+                isActive
+                  ? 'bg-bronze-600/20 text-bronze-400'
+                  : 'text-charcoal-300 hover:bg-charcoal-700 hover:text-charcoal-100'
+              }`}
             >
               <span className="flex h-6 w-6 items-center justify-center rounded-full border border-charcoal-600 font-serif text-xs">
                 {engine.icon}
@@ -206,7 +222,7 @@ export function Sidebar() {
       {/* Footer */}
       <div className="border-t border-charcoal-600/30 p-4">
         <Link
-          href="/settings"
+          to="/settings"
           className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-charcoal-400 transition hover:bg-charcoal-700 hover:text-charcoal-100"
         >
           <Settings className="h-4 w-4" />

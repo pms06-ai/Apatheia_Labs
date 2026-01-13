@@ -64,7 +64,8 @@
       "Bash(cargo clippy:*)",
       "Bash(git reset:*)",
       "Bash(git checkout:*)",
-      "Bash(git rm:*)"
+      "Bash(git rm:*)",
+      "Bash(grep:*)"
     ]
   }
 }

@@ -1,13 +1,13 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { Search, Loader2, FileText, AlertCircle, X } from 'lucide-react'
 import { useSearch } from '@/hooks/use-search'
 import { useActiveCase } from '@/hooks/use-case-store'
 
 export function Header() {
-  const router = useRouter()
+  const navigate = useNavigate()
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -183,7 +183,7 @@ export function Header() {
                         onClick={() => {
                           // Navigate to document with chunk highlight
                           const docId = result.document_name || result.id
-                          router.push(`/documents/${docId}?chunk=${result.id}`)
+                          navigate(`/documents/${docId}?chunk=${result.id}`)
                           setQuery('')
                           setIsOpen(false)
                         }}

@@ -686,6 +686,113 @@ export interface EngineResult {
 }
 
 // ============================================
+// NATIVE RUST ENGINE TYPES
+// ============================================
+
+/**
+ * Rust: src-tauri/src/engines/contradiction.rs::ContradictionType
+ */
+export type NativeContradictionType =
+  | 'direct'
+  | 'implicit'
+  | 'temporal'
+  | 'quantitative'
+  | 'attributional'
+
+/**
+ * Rust: src-tauri/src/engines/contradiction.rs::Severity
+ */
+export type NativeSeverity = 'critical' | 'high' | 'medium' | 'low'
+
+/**
+ * Rust: src-tauri/src/engines/contradiction.rs::ClaimReference
+ */
+export interface ClaimReference {
+  document_id: string
+  document_name: string
+  text: string
+  date?: string | null
+  author?: string | null
+  page_ref?: number | null
+}
+
+/**
+ * Rust: src-tauri/src/engines/contradiction.rs::ContradictionFinding
+ */
+export interface NativeContradictionFinding {
+  id: string
+  type: NativeContradictionType
+  severity: NativeSeverity
+  claim1: ClaimReference
+  claim2: ClaimReference
+  explanation: string
+  implication: string
+  suggested_resolution?: string | null
+}
+
+/**
+ * Rust: src-tauri/src/engines/contradiction.rs::ClaimCluster
+ */
+export interface ClaimCluster {
+  topic: string
+  claims: Array<{ doc_id: string; text: string; stance: string }>
+  consensus: boolean
+}
+
+/**
+ * Rust: src-tauri/src/engines/contradiction.rs::CredibilityImpact
+ */
+export type CredibilityImpact = 'severe' | 'moderate' | 'minor' | 'none'
+
+/**
+ * Rust: src-tauri/src/engines/contradiction.rs::AnalysisSummary
+ */
+export interface ContradictionSummary {
+  total_contradictions: number
+  critical_count: number
+  most_contradicted_topics: string[]
+  credibility_impact: CredibilityImpact
+}
+
+/**
+ * Rust: src-tauri/src/engines/contradiction.rs::ContradictionAnalysisResult
+ */
+export interface NativeContradictionAnalysisResult {
+  contradictions: NativeContradictionFinding[]
+  claim_clusters: ClaimCluster[]
+  summary: ContradictionSummary
+}
+
+/**
+ * Rust: src-tauri/src/commands/analysis.rs::ContradictionEngineResult
+ */
+export interface ContradictionEngineResult {
+  success: boolean
+  analysis?: NativeContradictionAnalysisResult | null
+  duration_ms: number
+  error?: string | null
+}
+
+/**
+ * Rust: src-tauri/src/engines/contradiction.rs::ClaimComparisonResult
+ */
+export interface ClaimComparisonResult {
+  contradicts: boolean
+  contradiction_type?: NativeContradictionType | null
+  explanation: string
+  severity?: NativeSeverity | null
+}
+
+/**
+ * Rust: src-tauri/src/commands/analysis.rs::CompareClaimsResult
+ */
+export interface CompareClaimsResponse {
+  success: boolean
+  comparison?: ClaimComparisonResult | null
+  error?: string | null
+}
+
+// ============================================
 // UI TYPES
 // ============================================
 

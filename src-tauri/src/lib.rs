@@ -2,8 +2,10 @@
 //! 
 //! Local-first forensic case intelligence platform.
 
+pub mod ai;
 pub mod commands;
 pub mod db;
+pub mod engines;
 pub mod orchestrator;
 pub mod processing;
 pub mod sam;
@@ -164,6 +166,9 @@ pub fn run() {
             commands::save_export_file,
             // Search commands
             commands::search_documents,
+            // Native engine commands
+            commands::run_contradiction_engine,
+            commands::compare_claims,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

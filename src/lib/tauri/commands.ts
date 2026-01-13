@@ -539,3 +539,37 @@ export async function listJobs(): Promise<JobProgress[]> {
   }
   return getTauriClient().listJobs()
 }
+
+// ============================================
+// Native Contradiction Engine Commands
+// ============================================
+
+import type { ContradictionEngineResult, CompareClaimsResponse } from '@/CONTRACT'
+
+/**
+ * Run native Rust contradiction detection engine
+ * Uses direct AI client instead of TypeScript sidecar
+ */
+export async function runContradictionEngine(
+  caseId: string,
+  documentIds: string[]
+): Promise<ContradictionEngineResult> {
+  if (!isDesktop()) {
+    throw new Error('Native engine only available in desktop mode')
+  }
+  return getTauriClient().runContradictionEngine(caseId, documentIds)
+}
+
+/**
+ * Compare two specific claims for contradiction
+ */
+export async function compareClaims(
+  claim1: string,
+  claim2: string,
+  context?: string
+): Promise<CompareClaimsResponse> {
+  if (!isDesktop()) {
+    throw new Error('Claim comparison only available in desktop mode')
+  }
+  return getTauriClient().compareClaims(claim1, claim2, context)
+}

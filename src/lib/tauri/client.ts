@@ -23,6 +23,8 @@ import type {
   AuthorityMarker,
   SAMOutcome,
   RustAnalysisResult,
+  ContradictionEngineResult,
+  CompareClaimsResponse,
 } from '@/CONTRACT'
 
 // ============================================
@@ -595,6 +597,36 @@ export class TauriClient {
       analysis_id: analysisId,
     })
     if (!result.success) throw new Error(result.error || 'Failed to resume S.A.M. analysis')
+  }
+
+  // ==========================================
+  // Native Contradiction Engine Operations
+  // ==========================================
+
+  async runContradictionEngine(
+    caseId: string,
+    documentIds: string[]
+  ): Promise<ContradictionEngineResult> {
+    return this.call<ContradictionEngineResult>('run_contradiction_engine', {
+      input: {
+        case_id: caseId,
+        document_ids: documentIds,
+      },
+    })
+  }
+
+  async compareClaims(
+    claim1: string,
+    claim2: string,
+    context?: string
+  ): Promise<CompareClaimsResponse> {
+    return this.call<CompareClaimsResponse>('compare_claims', {
+      input: {
+        claim1,
+        claim2,
+        context,
+      },
+    })
   }
 }
 
