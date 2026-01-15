@@ -1,8 +1,7 @@
 import * as React from 'react'
 import { cn } from '@/lib/utils'
 
-export interface InputProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
+export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   /** Label text displayed above the input */
   label?: string
   /** Error message displayed below the input */
@@ -21,15 +20,13 @@ const sizeStyles = {
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, helperText, size = 'md', id, ...props }, ref) => {
-    const generatedId = React.useId()    const inputId = id || generatedId
+    const generatedId = React.useId()
+    const inputId = id || generatedId
 
     return (
       <div className="w-full">
         {label && (
-          <label
-            htmlFor={inputId}
-            className="mb-1.5 block text-sm font-medium text-charcoal-200"
-          >
+          <label htmlFor={inputId} className="mb-1.5 block text-sm font-medium text-charcoal-200">
             {label}
           </label>
         )}
@@ -55,11 +52,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           {...props}
         />
         {error && (
-          <p
-            id={`${inputId}-error`}
-            className="mt-1.5 text-sm text-red-400"
-            role="alert"
-          >
+          <p id={`${inputId}-error`} className="mt-1.5 text-sm text-red-400" role="alert">
             {error}
           </p>
         )}

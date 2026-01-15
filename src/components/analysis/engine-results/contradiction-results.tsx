@@ -39,19 +39,14 @@ function ContradictionCard({ contradiction }: { contradiction: NativeContradicti
         className="flex cursor-pointer items-start gap-3 p-4"
         onClick={() => setExpanded(!expanded)}
       >
-        <div
-          className={cn(
-            'mt-1 transition-transform duration-200',
-            expanded && 'rotate-90'
-          )}
-        >
+        <div className={cn('mt-1 transition-transform duration-200', expanded && 'rotate-90')}>
           <ChevronRight className="h-4 w-4 text-charcoal-400" />
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-status-critical" />
-              <span className="text-xs font-mono uppercase tracking-wide text-charcoal-400">
+              <span className="font-mono text-xs uppercase tracking-wide text-charcoal-400">
                 {contradiction.type.replace('_', ' ')}
               </span>
             </div>
@@ -64,7 +59,7 @@ function ContradictionCard({ contradiction }: { contradiction: NativeContradicti
       </div>
 
       {expanded && (
-        <div className="border-t border-charcoal-700/50 p-4 space-y-4">
+        <div className="space-y-4 border-t border-charcoal-700/50 p-4">
           {/* Claim Comparison */}
           <div className="grid gap-4 md:grid-cols-2">
             <div className="rounded-lg border border-charcoal-700 bg-charcoal-900/50 p-3">
@@ -75,13 +70,14 @@ function ContradictionCard({ contradiction }: { contradiction: NativeContradicti
                   <span className="text-bronze-500">p.{contradiction.claim1.page_ref}</span>
                 )}
               </div>
-              <p className="text-sm text-charcoal-200 italic">
+              <p className="text-sm italic text-charcoal-200">
                 &ldquo;{contradiction.claim1.text}&rdquo;
               </p>
               {contradiction.claim1.author && (
                 <p className="mt-2 text-xs text-charcoal-500">
                   - {contradiction.claim1.author}
-                  {contradiction.claim1.date && `, ${new Date(contradiction.claim1.date).toLocaleDateString()}`}
+                  {contradiction.claim1.date &&
+                    `, ${new Date(contradiction.claim1.date).toLocaleDateString()}`}
                 </p>
               )}
             </div>
@@ -94,13 +90,14 @@ function ContradictionCard({ contradiction }: { contradiction: NativeContradicti
                   <span className="text-bronze-500">p.{contradiction.claim2.page_ref}</span>
                 )}
               </div>
-              <p className="text-sm text-charcoal-200 italic">
+              <p className="text-sm italic text-charcoal-200">
                 &ldquo;{contradiction.claim2.text}&rdquo;
               </p>
               {contradiction.claim2.author && (
                 <p className="mt-2 text-xs text-charcoal-500">
                   - {contradiction.claim2.author}
-                  {contradiction.claim2.date && `, ${new Date(contradiction.claim2.date).toLocaleDateString()}`}
+                  {contradiction.claim2.date &&
+                    `, ${new Date(contradiction.claim2.date).toLocaleDateString()}`}
                 </p>
               )}
             </div>
@@ -145,12 +142,7 @@ function ClaimClusterCard({ cluster }: { cluster: ClaimCluster }) {
         className="flex cursor-pointer items-center gap-3 p-3"
         onClick={() => setExpanded(!expanded)}
       >
-        <div
-          className={cn(
-            'transition-transform duration-200',
-            expanded && 'rotate-90'
-          )}
-        >
+        <div className={cn('transition-transform duration-200', expanded && 'rotate-90')}>
           <ChevronRight className="h-4 w-4 text-charcoal-400" />
         </div>
         <Layers className="h-4 w-4 text-bronze-500" />
@@ -162,7 +154,7 @@ function ClaimClusterCard({ cluster }: { cluster: ClaimCluster }) {
       </div>
 
       {expanded && (
-        <div className="border-t border-charcoal-700/50 p-3 space-y-2">
+        <div className="space-y-2 border-t border-charcoal-700/50 p-3">
           {cluster.claims.map((claim, idx) => (
             <div
               key={idx}
@@ -231,7 +223,9 @@ function SimilarityHeatmap({ clusters }: { clusters: ClaimCluster[] }) {
               <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-charcoal-700">
                 <div
                   className="absolute inset-y-0 left-0 bg-gradient-to-r from-status-success to-status-success/80"
-                  style={{ width: `${((item.total - item.opposes) / Math.max(item.total, 1)) * 100}%` }}
+                  style={{
+                    width: `${((item.total - item.opposes) / Math.max(item.total, 1)) * 100}%`,
+                  }}
                 />
                 <div
                   className="absolute inset-y-0 right-0 bg-gradient-to-l from-status-critical to-status-critical/80"
@@ -258,25 +252,24 @@ function SimilarityHeatmap({ clusters }: { clusters: ClaimCluster[] }) {
 }
 
 export function ContradictionResults({ result }: ContradictionResultsProps) {
+  // Sort contradictions by severity - must be before early return
+  const sortedContradictions = useMemo(() => {
+    if (!result.success || !result.analysis) return []
+    return [...result.analysis.contradictions].sort(
+      (a, b) => severityWeight[b.severity] - severityWeight[a.severity]
+    )
+  }, [result])
+
   if (!result.success || !result.analysis) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
         <AlertCircle className="h-12 w-12 text-charcoal-500" />
-        <p className="text-charcoal-400">
-          {result.error || 'No contradiction analysis available'}
-        </p>
+        <p className="text-charcoal-400">{result.error || 'No contradiction analysis available'}</p>
       </div>
     )
   }
 
   const { contradictions, claim_clusters, summary, is_mock } = result.analysis
-
-  // Sort contradictions by severity
-  const sortedContradictions = useMemo(() => {
-    return [...contradictions].sort(
-      (a, b) => severityWeight[b.severity] - severityWeight[a.severity]
-    )
-  }, [contradictions])
 
   return (
     <div className="space-y-6 p-6">

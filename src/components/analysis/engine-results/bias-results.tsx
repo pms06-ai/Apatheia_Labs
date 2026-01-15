@@ -53,10 +53,12 @@ function FramingRatioGauge({ ratio }: { ratio: FramingRatio }) {
       <CardContent className="p-4">
         <div className="mb-3 flex items-center justify-between">
           <span className="text-sm font-medium text-charcoal-200">{ratio.metric}</span>
-          <span className={cn(
-            'font-mono text-lg font-bold',
-            ratio.is_significant ? 'text-status-critical' : 'text-charcoal-300'
-          )}>
+          <span
+            className={cn(
+              'font-mono text-lg font-bold',
+              ratio.is_significant ? 'text-status-critical' : 'text-charcoal-300'
+            )}
+          >
             {ratio.ratio_display}
           </span>
         </div>
@@ -91,12 +93,18 @@ function FramingRatioGauge({ ratio }: { ratio: FramingRatio }) {
           <div className="mt-3 flex items-center justify-center gap-4 border-t border-charcoal-700/50 pt-3 text-xs">
             {ratio.z_score != null && (
               <span className="font-mono text-charcoal-400">
-                z = <span className={ratio.is_significant ? 'text-bronze-500' : ''}>{ratio.z_score.toFixed(2)}</span>
+                z ={' '}
+                <span className={ratio.is_significant ? 'text-bronze-500' : ''}>
+                  {ratio.z_score.toFixed(2)}
+                </span>
               </span>
             )}
             {ratio.p_value != null && (
               <span className="font-mono text-charcoal-400">
-                p = <span className={ratio.is_significant ? 'text-bronze-500' : ''}>{ratio.p_value.toExponential(2)}</span>
+                p ={' '}
+                <span className={ratio.is_significant ? 'text-bronze-500' : ''}>
+                  {ratio.p_value.toExponential(2)}
+                </span>
               </span>
             )}
             {ratio.is_significant && (
@@ -136,7 +144,9 @@ function BiasStatisticsChart({ stats }: { stats: BiasStatistics }) {
             title={`Prosecution: ${stats.items_favoring_prosecution}`}
           >
             {prosecutionPercent > 10 && (
-              <span className="text-xs font-bold text-white">{stats.items_favoring_prosecution}</span>
+              <span className="text-xs font-bold text-white">
+                {stats.items_favoring_prosecution}
+              </span>
             )}
           </div>
           <div
@@ -191,13 +201,18 @@ function BiasStatisticsChart({ stats }: { stats: BiasStatistics }) {
                 }}
               />
             </div>
-            <span className={cn(
-              'font-mono text-sm font-bold',
-              stats.overall_bias_score > 0.3 ? 'text-status-critical' :
-              stats.overall_bias_score < -0.3 ? 'text-status-success' :
-              'text-charcoal-300'
-            )}>
-              {stats.overall_bias_score > 0 ? '+' : ''}{stats.overall_bias_score.toFixed(2)}
+            <span
+              className={cn(
+                'font-mono text-sm font-bold',
+                stats.overall_bias_score > 0.3
+                  ? 'text-status-critical'
+                  : stats.overall_bias_score < -0.3
+                    ? 'text-status-success'
+                    : 'text-charcoal-300'
+              )}
+            >
+              {stats.overall_bias_score > 0 ? '+' : ''}
+              {stats.overall_bias_score.toFixed(2)}
             </span>
           </div>
         </div>
@@ -224,19 +239,14 @@ function BiasFindingCard({ finding }: { finding: NativeBiasFinding }) {
         className="flex cursor-pointer items-start gap-3 p-4"
         onClick={() => setExpanded(!expanded)}
       >
-        <div
-          className={cn(
-            'mt-1 transition-transform duration-200',
-            expanded && 'rotate-90'
-          )}
-        >
+        <div className={cn('mt-1 transition-transform duration-200', expanded && 'rotate-90')}>
           <ChevronRight className="h-4 w-4 text-charcoal-400" />
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
               <Scale className="h-4 w-4 text-bronze-500" />
-              <span className="text-xs font-mono uppercase tracking-wide text-charcoal-400">
+              <span className="font-mono text-xs uppercase tracking-wide text-charcoal-400">
                 {finding.bias_type.replace(/_/g, ' ')}
               </span>
             </div>
@@ -244,9 +254,7 @@ function BiasFindingCard({ finding }: { finding: NativeBiasFinding }) {
               <span className={cn('text-xs font-medium', directionColors[finding.direction])}>
                 {directionLabels[finding.direction]}
               </span>
-              <Badge variant={severityVariant[finding.severity]}>
-                {finding.severity}
-              </Badge>
+              <Badge variant={severityVariant[finding.severity]}>{finding.severity}</Badge>
             </div>
           </div>
           <p className="text-sm text-charcoal-200">{finding.description}</p>
@@ -254,23 +262,19 @@ function BiasFindingCard({ finding }: { finding: NativeBiasFinding }) {
       </div>
 
       {expanded && (
-        <div className="border-t border-charcoal-700/50 p-4 space-y-4">
+        <div className="space-y-4 border-t border-charcoal-700/50 p-4">
           {/* Evidence */}
           <div className="rounded-lg border border-charcoal-700 bg-charcoal-900/50 p-3">
             <div className="mb-2 flex items-center gap-2 text-xs text-charcoal-400">
               <FileText className="h-3 w-3" />
               <span className="truncate">{finding.document_name}</span>
-              {finding.page_ref && (
-                <span className="text-bronze-500">p.{finding.page_ref}</span>
-              )}
+              {finding.page_ref && <span className="text-bronze-500">p.{finding.page_ref}</span>}
             </div>
-            <p className="text-sm text-charcoal-300 italic">{finding.evidence}</p>
+            <p className="text-sm italic text-charcoal-300">{finding.evidence}</p>
           </div>
 
           {/* Framing Ratio if present */}
-          {finding.framing_ratio && (
-            <FramingRatioGauge ratio={finding.framing_ratio} />
-          )}
+          {finding.framing_ratio && <FramingRatioGauge ratio={finding.framing_ratio} />}
 
           {/* Regulatory Relevance */}
           {finding.regulatory_relevance && (
@@ -288,32 +292,30 @@ function BiasFindingCard({ finding }: { finding: NativeBiasFinding }) {
 }
 
 export function BiasResults({ result }: BiasResultsProps) {
+  // Sort findings by severity - must be before early return
+  const sortedFindings = useMemo(() => {
+    if (!result.success || !result.analysis) return []
+    const severityWeight: Record<NativeSeverity, number> = {
+      critical: 4,
+      high: 3,
+      medium: 2,
+      low: 1,
+    }
+    return [...result.analysis.findings].sort(
+      (a, b) => severityWeight[b.severity] - severityWeight[a.severity]
+    )
+  }, [result])
+
   if (!result.success || !result.analysis) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
         <AlertTriangle className="h-12 w-12 text-charcoal-500" />
-        <p className="text-charcoal-400">
-          {result.error || 'No bias analysis available'}
-        </p>
+        <p className="text-charcoal-400">{result.error || 'No bias analysis available'}</p>
       </div>
     )
   }
 
   const { findings, framing_ratios, summary, is_mock } = result.analysis
-
-  // Sort findings by severity
-  const severityWeight: Record<NativeSeverity, number> = {
-    critical: 4,
-    high: 3,
-    medium: 2,
-    low: 1,
-  }
-
-  const sortedFindings = useMemo(() => {
-    return [...findings].sort(
-      (a, b) => severityWeight[b.severity] - severityWeight[a.severity]
-    )
-  }, [findings])
 
   return (
     <div className="space-y-6 p-6">
@@ -327,9 +329,7 @@ export function BiasResults({ result }: BiasResultsProps) {
       {/* Summary Stats */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="border-charcoal-700 bg-charcoal-800/50 p-4">
-          <div className="text-xs uppercase tracking-wide text-charcoal-400">
-            Total Findings
-          </div>
+          <div className="text-xs uppercase tracking-wide text-charcoal-400">Total Findings</div>
           <div className="mt-1 font-display text-3xl text-charcoal-100">
             {summary.total_findings}
           </div>
@@ -344,7 +344,7 @@ export function BiasResults({ result }: BiasResultsProps) {
           <div className="text-xs uppercase tracking-wide text-charcoal-400">
             Regulatory Assessment
           </div>
-          <p className="mt-1 text-sm text-charcoal-200 line-clamp-2">
+          <p className="mt-1 line-clamp-2 text-sm text-charcoal-200">
             {summary.regulatory_assessment}
           </p>
         </Card>
@@ -362,9 +362,7 @@ export function BiasResults({ result }: BiasResultsProps) {
       )}
 
       {/* Statistics Chart */}
-      {summary.statistics && (
-        <BiasStatisticsChart stats={summary.statistics} />
-      )}
+      {summary.statistics && <BiasStatisticsChart stats={summary.statistics} />}
 
       {/* All Framing Ratios */}
       {framing_ratios.length > 1 && (

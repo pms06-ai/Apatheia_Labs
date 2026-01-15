@@ -105,19 +105,14 @@ function TimelineEventCard({
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-start gap-3 p-4">
-          <div
-            className={cn(
-              'transition-transform duration-200',
-              expanded && 'rotate-90'
-            )}
-          >
+          <div className={cn('transition-transform duration-200', expanded && 'rotate-90')}>
             <ChevronRight className="h-4 w-4 text-charcoal-400" />
           </div>
 
           <div className="min-w-0 flex-1 space-y-2">
             {/* Date and Type */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 rounded bg-bronze-500/10 px-2 py-1 text-xs font-mono text-bronze-500">
+              <div className="flex items-center gap-2 rounded bg-bronze-500/10 px-2 py-1 font-mono text-xs text-bronze-500">
                 <Calendar className="h-3 w-3" />
                 <time>
                   {new Date(event.date).toLocaleDateString(undefined, {
@@ -151,7 +146,7 @@ function TimelineEventCard({
         </div>
 
         {expanded && (
-          <div className="border-t border-charcoal-700/50 p-4 space-y-3">
+          <div className="space-y-3 border-t border-charcoal-700/50 p-4">
             {/* Significance */}
             <div className="rounded-lg border border-bronze-600/20 bg-bronze-900/10 p-3">
               <div className="mb-1 text-xs font-medium uppercase tracking-wide text-bronze-500">
@@ -191,12 +186,7 @@ function GapCard({ gap }: { gap: TimelineGap }) {
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-start gap-3 p-4">
-        <div
-          className={cn(
-            'transition-transform duration-200',
-            expanded && 'rotate-90'
-          )}
-        >
+        <div className={cn('transition-transform duration-200', expanded && 'rotate-90')}>
           <ChevronRight className="h-4 w-4 text-status-high" />
         </div>
         <Hourglass className="h-5 w-5 shrink-0 text-status-high" />
@@ -206,7 +196,8 @@ function GapCard({ gap }: { gap: TimelineGap }) {
               {gap.duration_days} day gap
             </span>
             <span className="text-xs text-charcoal-400">
-              {new Date(gap.start_date).toLocaleDateString()} - {new Date(gap.end_date).toLocaleDateString()}
+              {new Date(gap.start_date).toLocaleDateString()} -{' '}
+              {new Date(gap.end_date).toLocaleDateString()}
             </span>
           </div>
           <p className="mt-1 text-sm text-charcoal-300">{gap.significance}</p>
@@ -214,7 +205,7 @@ function GapCard({ gap }: { gap: TimelineGap }) {
       </div>
 
       {expanded && (
-        <div className="border-t border-status-high/20 p-4 space-y-3">
+        <div className="space-y-3 border-t border-status-high/20 p-4">
           {/* Context */}
           <div className="grid gap-3 md:grid-cols-2">
             {gap.preceding_event && (
@@ -261,23 +252,16 @@ function AnomalyCard({ anomaly }: { anomaly: NativeTemporalAnomaly }) {
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-start gap-3 p-4">
-        <div
-          className={cn(
-            'transition-transform duration-200',
-            expanded && 'rotate-90'
-          )}
-        >
+        <div className={cn('transition-transform duration-200', expanded && 'rotate-90')}>
           <ChevronRight className="h-4 w-4 text-status-critical" />
         </div>
         <AlertTriangle className="h-5 w-5 shrink-0 text-status-critical" />
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-mono uppercase tracking-wide text-status-critical">
+            <span className="font-mono text-xs uppercase tracking-wide text-status-critical">
               {anomaly.anomaly_type.replace(/_/g, ' ')}
             </span>
-            <Badge variant={severityVariant[anomaly.severity]}>
-              {anomaly.severity}
-            </Badge>
+            <Badge variant={severityVariant[anomaly.severity]}>{anomaly.severity}</Badge>
           </div>
           <p className="mt-1 text-sm text-charcoal-200">{anomaly.description}</p>
           <span className="mt-1 text-xs text-charcoal-500">{anomaly.date_range}</span>
@@ -285,7 +269,7 @@ function AnomalyCard({ anomaly }: { anomaly: NativeTemporalAnomaly }) {
       </div>
 
       {expanded && (
-        <div className="border-t border-status-critical/20 p-4 space-y-3">
+        <div className="space-y-3 border-t border-status-critical/20 p-4">
           {/* Evidence */}
           <div className="rounded-lg border border-charcoal-700 bg-charcoal-900/50 p-3">
             <div className="mb-1 text-xs font-medium uppercase tracking-wide text-charcoal-400">
@@ -326,30 +310,30 @@ function AnomalyCard({ anomaly }: { anomaly: NativeTemporalAnomaly }) {
 export function TemporalResults({ result }: TemporalResultsProps) {
   const [view, setView] = useState<'timeline' | 'gaps' | 'anomalies'>('timeline')
 
+  // Sort events by date - must be before early return
+  const sortedEvents = useMemo(() => {
+    if (!result.success || !result.analysis) return []
+    return [...result.analysis.events].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    )
+  }, [result])
+
+  // Get anomaly event IDs for highlighting - must be before early return
+  const anomalyEventIds = useMemo(() => {
+    if (!result.success || !result.analysis) return new Set<string>()
+    return new Set(result.analysis.anomalies.flatMap(a => a.affected_events))
+  }, [result])
+
   if (!result.success || !result.analysis) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
         <Clock className="h-12 w-12 text-charcoal-500" />
-        <p className="text-charcoal-400">
-          {result.error || 'No temporal analysis available'}
-        </p>
+        <p className="text-charcoal-400">{result.error || 'No temporal analysis available'}</p>
       </div>
     )
   }
 
   const { events, gaps, anomalies, summary, is_mock } = result.analysis
-
-  // Sort events by date
-  const sortedEvents = useMemo(() => {
-    return [...events].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    )
-  }, [events])
-
-  // Get anomaly event IDs for highlighting
-  const anomalyEventIds = useMemo(() => {
-    return new Set(anomalies.flatMap(a => a.affected_events))
-  }, [anomalies])
 
   return (
     <div className="space-y-6 p-6">
@@ -364,9 +348,7 @@ export function TemporalResults({ result }: TemporalResultsProps) {
       <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-6">
         <Card className="border-charcoal-700 bg-charcoal-800/50 p-4">
           <div className="text-xs uppercase tracking-wide text-charcoal-400">Total Events</div>
-          <div className="mt-1 font-display text-3xl text-charcoal-100">
-            {summary.total_events}
-          </div>
+          <div className="mt-1 font-display text-3xl text-charcoal-100">{summary.total_events}</div>
         </Card>
         <Card className="border-charcoal-700 bg-charcoal-800/50 p-4">
           <div className="text-xs uppercase tracking-wide text-charcoal-400">Duration</div>
@@ -376,9 +358,7 @@ export function TemporalResults({ result }: TemporalResultsProps) {
         </Card>
         <Card className="border-charcoal-700 bg-charcoal-800/50 p-4">
           <div className="text-xs uppercase tracking-wide text-charcoal-400">Gaps Found</div>
-          <div className="mt-1 font-display text-3xl text-status-high">
-            {summary.gaps_found}
-          </div>
+          <div className="mt-1 font-display text-3xl text-status-high">{summary.gaps_found}</div>
         </Card>
         <Card className="border-charcoal-700 bg-charcoal-800/50 p-4">
           <div className="text-xs uppercase tracking-wide text-charcoal-400">Anomalies</div>
@@ -415,7 +395,11 @@ export function TemporalResults({ result }: TemporalResultsProps) {
           <div>
             <span className="text-charcoal-400">Quietest: </span>
             {summary.quietest_periods.map((period, idx) => (
-              <Badge key={idx} variant="outline" className="ml-1 border-charcoal-600 text-charcoal-500">
+              <Badge
+                key={idx}
+                variant="outline"
+                className="ml-1 border-charcoal-600 text-charcoal-500"
+              >
                 {period}
               </Badge>
             ))}

@@ -106,9 +106,7 @@ function EntityCard({ entity }: { entity: NativeResolvedEntity }) {
           {/* Name and Type */}
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h4 className="font-display text-lg text-charcoal-100">
-                {entity.canonical_name}
-              </h4>
+              <h4 className="font-display text-lg text-charcoal-100">{entity.canonical_name}</h4>
               <div className="flex flex-wrap items-center gap-2 text-xs text-charcoal-400">
                 <Badge variant="outline" className="text-xs">
                   {entity.entity_type.replace(/_/g, ' ')}
@@ -119,15 +117,8 @@ function EntityCard({ entity }: { entity: NativeResolvedEntity }) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-charcoal-500">
-                {entity.mention_count} mentions
-              </span>
-              <div
-                className={cn(
-                  'transition-transform duration-200',
-                  expanded && 'rotate-90'
-                )}
-              >
+              <span className="text-xs text-charcoal-500">{entity.mention_count} mentions</span>
+              <div className={cn('transition-transform duration-200', expanded && 'rotate-90')}>
                 <ChevronRight className="h-4 w-4 text-charcoal-400" />
               </div>
             </div>
@@ -163,7 +154,7 @@ function EntityCard({ entity }: { entity: NativeResolvedEntity }) {
       </div>
 
       {expanded && (
-        <div className="border-t border-charcoal-700/50 p-4 space-y-4">
+        <div className="space-y-4 border-t border-charcoal-700/50 p-4">
           {/* Description */}
           {entity.description && (
             <div className="rounded-lg border border-charcoal-700 bg-charcoal-900/50 p-3">
@@ -287,47 +278,48 @@ export function EntityResults({ result }: EntityResultsProps) {
   const [filter, setFilter] = useState<NativeEntityType | 'all'>('all')
   const [searchQuery, setSearchQuery] = useState('')
 
-  if (!result.success || !result.analysis) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-        <Users className="h-12 w-12 text-charcoal-500" />
-        <p className="text-charcoal-400">
-          {result.error || 'No entity analysis available'}
-        </p>
-      </div>
-    )
-  }
-
-  const { entities, summary, is_mock } = result.analysis
-
-  // Filter and search entities
+  // Filter and search entities - must be before early return
   const filteredEntities = useMemo(() => {
-    let result = entities
+    if (!result.success || !result.analysis) return []
+    let filtered = result.analysis.entities
 
     // Filter by type
     if (filter !== 'all') {
-      result = result.filter(e => e.entity_type === filter)
+      filtered = filtered.filter(e => e.entity_type === filter)
     }
 
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase()
-      result = result.filter(e =>
-        e.canonical_name.toLowerCase().includes(query) ||
-        e.aliases.some(a => a.name.toLowerCase().includes(query)) ||
-        e.description?.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        e =>
+          e.canonical_name.toLowerCase().includes(query) ||
+          e.aliases.some(a => a.name.toLowerCase().includes(query)) ||
+          e.description?.toLowerCase().includes(query)
       )
     }
 
     // Sort by mention count
-    return result.sort((a, b) => b.mention_count - a.mention_count)
-  }, [entities, filter, searchQuery])
+    return filtered.sort((a, b) => b.mention_count - a.mention_count)
+  }, [result, filter, searchQuery])
 
-  // Get unique entity types for filter
+  // Get unique entity types for filter - must be before early return
   const entityTypes = useMemo(() => {
-    const types = new Set(entities.map(e => e.entity_type))
+    if (!result.success || !result.analysis) return [] as NativeEntityType[]
+    const types = new Set(result.analysis.entities.map(e => e.entity_type))
     return Array.from(types)
-  }, [entities])
+  }, [result])
+
+  if (!result.success || !result.analysis) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+        <Users className="h-12 w-12 text-charcoal-500" />
+        <p className="text-charcoal-400">{result.error || 'No entity analysis available'}</p>
+      </div>
+    )
+  }
+
+  const { entities, summary, is_mock } = result.analysis
 
   return (
     <div className="space-y-6 p-6">
@@ -401,7 +393,7 @@ export function EntityResults({ result }: EntityResultsProps) {
       {/* Search and Filter */}
       <div className="flex flex-wrap items-center gap-4">
         {/* Search */}
-        <div className="relative flex-1 min-w-[200px]">
+        <div className="relative min-w-[200px] flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-charcoal-500" />
           <input
             type="text"
@@ -445,13 +437,9 @@ export function EntityResults({ result }: EntityResultsProps) {
       {/* Entities List */}
       <div className="space-y-3">
         {filteredEntities.length === 0 ? (
-          <div className="py-12 text-center text-charcoal-500">
-            No entities match your filter
-          </div>
+          <div className="py-12 text-center text-charcoal-500">No entities match your filter</div>
         ) : (
-          filteredEntities.map(entity => (
-            <EntityCard key={entity.id} entity={entity} />
-          ))
+          filteredEntities.map(entity => <EntityCard key={entity.id} entity={entity} />)
         )}
       </div>
 

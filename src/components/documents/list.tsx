@@ -31,6 +31,10 @@ export function DocumentsList() {
   const caseId = activeCase?.id || ''
   const { data: documents, isLoading, error, refetch } = useDocuments(caseId)
 
+  // Move hooks before early returns to comply with Rules of Hooks
+  const renderDocument = useCallback((doc: Document) => <DocumentRow doc={doc} />, [])
+  const getItemKey = useCallback((doc: Document) => doc.id, [])
+
   if (!caseId) {
     return (
       <EmptyState
@@ -67,13 +71,6 @@ export function DocumentsList() {
       />
     )
   }
-
-  const renderDocument = useCallback(
-    (doc: Document) => <DocumentRow doc={doc} />,
-    []
-  )
-
-  const getItemKey = useCallback((doc: Document) => doc.id, [])
 
   // Use virtualization for large lists to improve performance
   const documentGrid =

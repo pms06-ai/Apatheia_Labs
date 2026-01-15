@@ -83,18 +83,13 @@ function OmissionCard({ omission }: { omission: NativeOmissionFinding }) {
         className="flex cursor-pointer items-start gap-3 p-4"
         onClick={() => setExpanded(!expanded)}
       >
-        <div
-          className={cn(
-            'mt-1 transition-transform duration-200',
-            expanded && 'rotate-90'
-          )}
-        >
+        <div className={cn('mt-1 transition-transform duration-200', expanded && 'rotate-90')}>
           <ChevronRight className="h-4 w-4 text-charcoal-400" />
         </div>
         <div className="min-w-0 flex-1 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <EyeOff className="h-4 w-4 text-status-high" />
-            <span className="text-xs font-mono uppercase tracking-wide text-charcoal-400">
+            <span className="font-mono text-xs uppercase tracking-wide text-charcoal-400">
               {omissionTypeLabels[omission.type]}
             </span>
             <span
@@ -108,16 +103,14 @@ function OmissionCard({ omission }: { omission: NativeOmissionFinding }) {
               </span>
               {biasDirectionLabels[omission.bias_direction]}
             </span>
-            <Badge variant={severityVariant[omission.severity]}>
-              {omission.severity}
-            </Badge>
+            <Badge variant={severityVariant[omission.severity]}>{omission.severity}</Badge>
           </div>
           <p className="text-sm text-charcoal-200">{omission.significance}</p>
         </div>
       </div>
 
       {expanded && (
-        <div className="border-t border-charcoal-700/50 p-4 space-y-4">
+        <div className="space-y-4 border-t border-charcoal-700/50 p-4">
           {/* Source to Report Comparison */}
           <div className="grid gap-4 md:grid-cols-2">
             {/* Source */}
@@ -132,10 +125,12 @@ function OmissionCard({ omission }: { omission: NativeOmissionFinding }) {
                   <span className="ml-1 text-bronze-500">p.{omission.source.page_ref}</span>
                 )}
                 {omission.source.date && (
-                  <span className="ml-2">{new Date(omission.source.date).toLocaleDateString()}</span>
+                  <span className="ml-2">
+                    {new Date(omission.source.date).toLocaleDateString()}
+                  </span>
                 )}
               </div>
-              <p className="text-sm text-charcoal-200 italic">
+              <p className="text-sm italic text-charcoal-200">
                 &ldquo;{omission.source.text}&rdquo;
               </p>
             </div>
@@ -152,15 +147,20 @@ function OmissionCard({ omission }: { omission: NativeOmissionFinding }) {
                   <span className="ml-2">by {omission.report.author}</span>
                 )}
                 {omission.report.date && (
-                  <span className="ml-2">{new Date(omission.report.date).toLocaleDateString()}</span>
+                  <span className="ml-2">
+                    {new Date(omission.report.date).toLocaleDateString()}
+                  </span>
                 )}
               </div>
               {omission.report.substitute_text ? (
                 <p className="text-sm text-charcoal-300">
-                  Substitute text: <span className="italic">&ldquo;{omission.report.substitute_text}&rdquo;</span>
+                  Substitute text:{' '}
+                  <span className="italic">&ldquo;{omission.report.substitute_text}&rdquo;</span>
                 </p>
               ) : (
-                <p className="text-sm text-charcoal-500 italic">No substitute text - content simply omitted</p>
+                <p className="text-sm italic text-charcoal-500">
+                  No substitute text - content simply omitted
+                </p>
               )}
             </div>
           </div>
@@ -170,7 +170,7 @@ function OmissionCard({ omission }: { omission: NativeOmissionFinding }) {
             <div className="mb-1 text-xs font-medium uppercase tracking-wide text-status-high">
               Omitted Content
             </div>
-            <p className="text-sm text-charcoal-200 italic">
+            <p className="text-sm italic text-charcoal-200">
               &ldquo;{omission.omitted_content}&rdquo;
             </p>
           </div>
@@ -191,7 +191,8 @@ function OmissionCard({ omission }: { omission: NativeOmissionFinding }) {
 function BiasIndicator({ analysis }: { analysis: BiasAnalysis }) {
   if (!analysis) return null
 
-  const { prosecution_favoring, defense_favoring, bias_score, is_significant, assessment } = analysis
+  const { prosecution_favoring, defense_favoring, bias_score, is_significant, assessment } =
+    analysis
 
   // Calculate visual representation
   const total = prosecution_favoring + defense_favoring
@@ -246,12 +247,15 @@ function BiasIndicator({ analysis }: { analysis: BiasAnalysis }) {
             <span
               className={cn(
                 'font-mono text-xl font-bold',
-                bias_score > 0.5 ? 'text-status-critical' :
-                bias_score < -0.5 ? 'text-status-success' :
-                'text-charcoal-300'
+                bias_score > 0.5
+                  ? 'text-status-critical'
+                  : bias_score < -0.5
+                    ? 'text-status-success'
+                    : 'text-charcoal-300'
               )}
             >
-              {bias_score > 0 ? '+' : ''}{bias_score.toFixed(2)}
+              {bias_score > 0 ? '+' : ''}
+              {bias_score.toFixed(2)}
             </span>
           </div>
         </div>
@@ -278,27 +282,16 @@ function BiasIndicator({ analysis }: { analysis: BiasAnalysis }) {
 export function OmissionResults({ result }: OmissionResultsProps) {
   const [groupBy, setGroupBy] = useState<'type' | 'direction'>('type')
 
-  if (!result.success || !result.analysis) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
-        <EyeOff className="h-12 w-12 text-charcoal-500" />
-        <p className="text-charcoal-400">
-          {result.error || 'No omission analysis available'}
-        </p>
-      </div>
-    )
-  }
-
-  const { omissions, summary, is_mock } = result.analysis
-
-  // Group omissions
+  // Group omissions - must be before early return
   const groupedOmissions = useMemo(() => {
+    if (!result.success || !result.analysis) return {} as Record<string, NativeOmissionFinding[]>
     const groups: Record<string, NativeOmissionFinding[]> = {}
 
-    omissions.forEach(omission => {
-      const key = groupBy === 'type'
-        ? omissionTypeLabels[omission.type]
-        : biasDirectionLabels[omission.bias_direction]
+    result.analysis.omissions.forEach(omission => {
+      const key =
+        groupBy === 'type'
+          ? omissionTypeLabels[omission.type]
+          : biasDirectionLabels[omission.bias_direction]
 
       if (!groups[key]) {
         groups[key] = []
@@ -312,7 +305,18 @@ export function OmissionResults({ result }: OmissionResultsProps) {
     })
 
     return groups
-  }, [omissions, groupBy])
+  }, [result, groupBy])
+
+  if (!result.success || !result.analysis) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 py-12 text-center">
+        <EyeOff className="h-12 w-12 text-charcoal-500" />
+        <p className="text-charcoal-400">{result.error || 'No omission analysis available'}</p>
+      </div>
+    )
+  }
+
+  const { omissions, summary, is_mock } = result.analysis
 
   return (
     <div className="space-y-6 p-6">
@@ -326,9 +330,7 @@ export function OmissionResults({ result }: OmissionResultsProps) {
       {/* Summary Stats */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="border-charcoal-700 bg-charcoal-800/50 p-4">
-          <div className="text-xs uppercase tracking-wide text-charcoal-400">
-            Total Omissions
-          </div>
+          <div className="text-xs uppercase tracking-wide text-charcoal-400">Total Omissions</div>
           <div className="mt-1 font-display text-3xl text-charcoal-100">
             {summary.total_omissions}
           </div>
@@ -340,17 +342,13 @@ export function OmissionResults({ result }: OmissionResultsProps) {
           </div>
         </Card>
         <Card className="border-charcoal-700 bg-charcoal-800/50 p-4">
-          <div className="text-xs uppercase tracking-wide text-charcoal-400">
-            Pro-Prosecution
-          </div>
+          <div className="text-xs uppercase tracking-wide text-charcoal-400">Pro-Prosecution</div>
           <div className="mt-1 font-display text-3xl text-status-critical">
             {summary.bias_analysis.prosecution_favoring}
           </div>
         </Card>
         <Card className="border-charcoal-700 bg-charcoal-800/50 p-4">
-          <div className="text-xs uppercase tracking-wide text-charcoal-400">
-            Pro-Defense
-          </div>
+          <div className="text-xs uppercase tracking-wide text-charcoal-400">Pro-Defense</div>
           <div className="mt-1 font-display text-3xl text-status-success">
             {summary.bias_analysis.defense_favoring}
           </div>
