@@ -9,7 +9,6 @@
  */
 
 import { generateJSON } from '@/lib/ai-client'
-import { supabaseAdmin } from '@/lib/supabase/server'
 import type { Document } from '@/CONTRACT'
 
 // AI Response Types
@@ -134,27 +133,54 @@ Respond in JSON:
 }`
 
 /**
+ * Main omission detection function with pre-loaded content (for use with Rust backend)
+ */
+export async function detectOmissionsWithContent(
+  sourceDocId: string,
+  sourceContent: string,
+  reportDocId: string,
+  reportContent: string,
+  caseId: string
+): Promise<OmissionAnalysisResult> {
+  return runOmissionAnalysis(sourceDocId, sourceContent, reportDocId, reportContent, caseId)
+}
+
+/**
  * Main omission detection function
+ * Note: Document content fetching is now handled by Rust backend
  */
 export async function detectOmissions(
   sourceDoc: Document,
   reportDoc: Document,
   caseId: string
 ): Promise<OmissionAnalysisResult> {
-  // Get document content from chunks
-  const [sourceChunks, reportChunks] = await Promise.all([
-    getDocumentChunks(sourceDoc.id),
-    getDocumentChunks(reportDoc.id),
-  ])
+  console.warn(
+    '[OmissionEngine] Document content fetching now handled by Rust backend. Using empty content.'
+  )
 
-  const sourceContent = sourceChunks.map((c: { content: string }) => c.content).join('\n\n')
-  const reportContent = reportChunks.map((c: { content: string }) => c.content).join('\n\n')
+  // Return analysis with empty content - use detectOmissionsWithContent with pre-loaded content
+  return runOmissionAnalysis(sourceDoc.id, '', reportDoc.id, '', caseId)
+}
 
+/**
+ * Internal function to run the actual analysis
+ */
+async function runOmissionAnalysis(
+  sourceDocId: string,
+  sourceContent: string,
+  reportDocId: string,
+  reportContent: string,
+  caseId: string
+): Promise<OmissionAnalysisResult> {
   // Perform analysis
   let result
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
-    console.log('[MOCK ENGINE] Using Mock Omission Detection')
+  // Check if we have actual content to analyze
+  const hasContent =
+    sourceContent && sourceContent.length > 0 && reportContent && reportContent.length > 0
+
+  if (!hasContent) {
+    console.log('[OmissionEngine] No content provided, using mock analysis')
     // Simulate API latency
     await new Promise(resolve => setTimeout(resolve, 1500))
 
@@ -206,11 +232,11 @@ export async function detectOmissions(
 
   // Process and validate findings
   const findings: OmissionFinding[] = result.omissions.map((o, idx: number) => ({
-    id: `omission-${sourceDoc.id.slice(0, 8)}-${idx}`,
+    id: `omission-${sourceDocId.slice(0, 8)}-${idx}`,
     type: o.type,
     severity: o.severity,
-    sourceDocId: sourceDoc.id,
-    reportDocId: reportDoc.id,
+    sourceDocId: sourceDocId,
+    reportDocId: reportDocId,
     sourceContent: o.sourceContent,
     reportContent: o.reportContent,
     omittedContent: o.omittedContent,
@@ -273,27 +299,21 @@ export async function analyzeSelectiveQuote(
 
 /**
  * Compare disclosure list against documents to find undisclosed items
+ * Now works with pre-loaded document data from Rust backend
  */
-export async function findUndisclosedDocuments(
+export function findUndisclosedDocumentsFromList(
   disclosureList: string[],
-  availableDocIds: string[],
-  caseId: string
-): Promise<{
+  documents: Array<{ id: string; filename: string; page_count?: number }>
+): {
   disclosed: string[]
   undisclosed: string[]
   partiallyDisclosed: { docId: string; missingPages: number[] }[]
-}> {
-  // Get metadata for all available documents
-  const { data: docs } = await supabaseAdmin
-    .from('documents')
-    .select('id, filename, page_count, metadata')
-    .in('id', availableDocIds)
-
+} {
   const disclosed: string[] = []
   const undisclosed: string[] = []
   const partiallyDisclosed: { docId: string; missingPages: number[] }[] = []
 
-  for (const doc of docs || []) {
+  for (const doc of documents) {
     const isInDisclosure = disclosureList.some(
       item =>
         item.toLowerCase().includes(doc.filename.toLowerCase()) ||
@@ -311,54 +331,84 @@ export async function findUndisclosedDocuments(
 }
 
 /**
- * Batch analyze all reports against their sources
+ * Compare disclosure list against documents to find undisclosed items
+ * Note: Document fetching is now handled by Rust backend
  */
-export async function runFullOmissionAnalysis(
+export async function findUndisclosedDocuments(
+  disclosureList: string[],
+  availableDocIds: string[],
+  caseId: string
+): Promise<{
+  disclosed: string[]
+  undisclosed: string[]
+  partiallyDisclosed: { docId: string; missingPages: number[] }[]
+}> {
+  console.warn(
+    '[OmissionEngine] findUndisclosedDocuments: Document fetching now handled by Rust backend.'
+  )
+
+  // Return empty result - use findUndisclosedDocumentsFromList with pre-loaded data
+  return { disclosed: [], undisclosed: [], partiallyDisclosed: [] }
+}
+
+/**
+ * Batch analyze all reports against their sources with pre-loaded content
+ * (for use with Rust backend)
+ */
+export async function runFullOmissionAnalysisWithContent(
   caseId: string,
-  reportDocIds: string[],
-  sourceDocIds: string[]
+  reports: Array<Document & { content: string }>,
+  sources: Array<Document & { content: string }>
 ): Promise<OmissionAnalysisResult[]> {
   const results: OmissionAnalysisResult[] = []
-
-  // Get all documents
-  const { data: reports } = await supabaseAdmin.from('documents').select('*').in('id', reportDocIds)
-
-  const { data: sources } = await supabaseAdmin.from('documents').select('*').in('id', sourceDocIds)
-
-  if (!reports || !sources) return results
 
   // For each report, compare against relevant sources
   for (const report of reports) {
     // Determine which sources this report should reference
-    const relevantSources = sources.filter((s: Document) => shouldCompare(report, s))
+    const relevantSources = sources.filter(s => shouldCompare(report, s))
 
     for (const source of relevantSources) {
       try {
-        const result = await detectOmissions(source, report, caseId)
+        const result = await detectOmissionsWithContent(
+          source.id,
+          source.content,
+          report.id,
+          report.content,
+          caseId
+        )
         results.push(result)
-
-        // Store findings in database
-        await storeFindingsInDatabase(caseId, result.findings)
       } catch (error) {
         console.error(`Error analyzing ${source.id} vs ${report.id}:`, error)
       }
     }
   }
 
+  // Prepare all findings for storage (Rust backend handles actual persistence)
+  const allFindings = results.flatMap(r => r.findings)
+  const preparedFindings = prepareOmissionFindings(caseId, allFindings)
+  console.log('[OmissionEngine] Prepared findings for storage:', preparedFindings.length)
+
   return results
 }
 
-// Helper functions
+/**
+ * Batch analyze all reports against their sources
+ * Note: Document fetching is now handled by Rust backend
+ */
+export async function runFullOmissionAnalysis(
+  caseId: string,
+  reportDocIds: string[],
+  sourceDocIds: string[]
+): Promise<OmissionAnalysisResult[]> {
+  console.warn(
+    '[OmissionEngine] runFullOmissionAnalysis: Document fetching now handled by Rust backend.'
+  )
 
-async function getDocumentChunks(docId: string) {
-  const { data } = await supabaseAdmin
-    .from('document_chunks')
-    .select('content, chunk_index, page_number')
-    .eq('document_id', docId)
-    .order('chunk_index')
-
-  return data || []
+  // Return empty results - use runFullOmissionAnalysisWithContent with pre-loaded content
+  return []
 }
+
+// Helper functions
 
 function calculateBiasScore(findings: OmissionFinding[]): number {
   let score = 0
@@ -442,8 +492,23 @@ function shouldCompare(report: Document, source: Document): boolean {
   return true
 }
 
-async function storeFindingsInDatabase(caseId: string, findings: OmissionFinding[]) {
-  const dbFindings = findings.map(f => ({
+/**
+ * Prepare findings for storage (Rust backend handles actual persistence)
+ */
+function prepareOmissionFindings(
+  caseId: string,
+  findings: OmissionFinding[]
+): Array<{
+  case_id: string
+  engine: string
+  title: string
+  description: string
+  severity: string
+  confidence: number
+  document_ids: string[]
+  evidence: Record<string, unknown>
+}> {
+  return findings.map(f => ({
     case_id: caseId,
     engine: 'omission',
     title: `${f.type.replace('_', ' ')} detected`,
@@ -459,17 +524,15 @@ async function storeFindingsInDatabase(caseId: string, findings: OmissionFinding
       biasDirection: f.biasDirection,
     },
   }))
-
-  const { error } = await supabaseAdmin.from('findings').insert(dbFindings)
-
-  if (error) {
-    console.error('Error storing omission findings:', error)
-  }
 }
 
 export const omissionEngine = {
   detectOmissions,
+  detectOmissionsWithContent,
   analyzeSelectiveQuote,
   findUndisclosedDocuments,
+  findUndisclosedDocumentsFromList,
   runFullOmissionAnalysis,
+  runFullOmissionAnalysisWithContent,
+  prepareOmissionFindings,
 }

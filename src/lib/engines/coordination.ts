@@ -9,7 +9,6 @@
  */
 
 import { generateJSON } from '@/lib/ai-client'
-import { supabaseAdmin } from '@/lib/supabase/server'
 import type { Document } from '@/CONTRACT'
 
 // AI Response Types
@@ -184,30 +183,80 @@ Respond in JSON:
 }`
 
 /**
+ * Analyze coordination patterns across documents with pre-loaded content
+ * (for use with Rust backend)
+ */
+export async function analyzeCoordinationWithContent(
+  documentsWithContent: Array<{
+    id: string
+    filename: string
+    doc_type?: string
+    created_at?: string
+    content: string
+  }>,
+  caseId: string
+): Promise<CoordinationAnalysisResult> {
+  // Classify documents by institution
+  const classifiedDocs = classifyByInstitutionSync(documentsWithContent)
+
+  // Format for prompt
+  const docContents = documentsWithContent.map(doc => {
+    const institution = classifiedDocs.get(doc.id) || 'unknown'
+    return {
+      id: doc.id,
+      name: doc.filename,
+      institution,
+      date: doc.created_at || '',
+      content: doc.content.slice(0, 30000),
+    }
+  })
+
+  return runCoordinationAnalysis(docContents, caseId)
+}
+
+/**
  * Analyze coordination patterns across documents
+ * Note: Document content fetching is now handled by Rust backend
  */
 export async function analyzeCoordination(
   documents: Document[],
   caseId: string
 ): Promise<CoordinationAnalysisResult> {
-  // Classify documents by institution
-  const classifiedDocs = await classifyByInstitution(documents)
-
-  // Get content and format for prompt
-  const docContents = await Promise.all(
-    documents.map(async doc => {
-      const content = await getDocumentContent(doc.id)
-      const institution = classifiedDocs.get(doc.id) || 'unknown'
-      return {
-        id: doc.id,
-        name: doc.filename,
-        institution,
-        date: doc.created_at,
-        content: content.slice(0, 30000),
-      }
-    })
+  console.warn(
+    '[CoordinationEngine] Document content fetching now handled by Rust backend. Using mock data.'
   )
 
+  // Classify documents by institution
+  const classifiedDocs = classifyByInstitutionSync(documents)
+
+  // Return mock content since we can't fetch from supabase
+  const docContents = documents.map(doc => {
+    const institution = classifiedDocs.get(doc.id) || 'unknown'
+    return {
+      id: doc.id,
+      name: doc.filename,
+      institution,
+      date: doc.created_at || '',
+      content: '', // Empty - Rust backend should provide content
+    }
+  })
+
+  return runCoordinationAnalysis(docContents, caseId)
+}
+
+/**
+ * Internal function to run the actual analysis
+ */
+async function runCoordinationAnalysis(
+  docContents: Array<{
+    id: string
+    name: string
+    institution: string
+    date: string
+    content: string
+  }>,
+  caseId: string
+): Promise<CoordinationAnalysisResult> {
   const formattedDocs = docContents
     .map(d => `=== ${d.name} ===\nInstitution: ${d.institution}\nDate: ${d.date}\n\n${d.content}`)
     .join('\n\n---\n\n')
@@ -216,9 +265,12 @@ export async function analyzeCoordination(
 
   let result: CoordinationAIResponse
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
-    console.log('[MOCK ENGINE] Using Mock Coordination Analysis')
-    await new Promise(resolve => setTimeout(resolve, 2000))
+  // Check if we have actual content to analyze
+  const hasContent = docContents.some(d => d.content && d.content.length > 0)
+
+  if (!hasContent) {
+    console.log('[CoordinationEngine] No content provided, using mock analysis')
+    await new Promise(resolve => setTimeout(resolve, 500))
 
     result = {
       sharedLanguage: [
@@ -227,13 +279,13 @@ export async function analyzeCoordination(
           wordCount: 8,
           documents: [
             {
-              documentId: documents[0]?.id || 'doc1',
+              documentId: docContents[0]?.id || 'doc1',
               institution: 'social_services',
               date: '2023-01-15',
               context: 'Initial assessment conclusion',
             },
             {
-              documentId: documents[1]?.id || 'doc2',
+              documentId: docContents[1]?.id || 'doc2',
               institution: 'police',
               date: '2023-01-16',
               context: 'Police referral form',
@@ -343,32 +395,30 @@ export async function analyzeCoordination(
     },
   }
 
-  // Store findings
-  await storeCoordinationFindings(caseId, analysisResult)
+  // Prepare findings (Rust backend handles actual persistence)
+  const findings = prepareCoordinationFindings(caseId, analysisResult)
+  console.log('[CoordinationEngine] Prepared findings for storage:', findings.length)
 
   return analysisResult
 }
 
 /**
- * Detect shared language between two specific documents
+ * Detect shared language between two specific documents with pre-loaded content
  */
-export async function compareDocumentsForSharing(
-  doc1: Document,
-  doc2: Document
+export async function compareDocumentsForSharingWithContent(
+  doc1: { filename: string; content: string },
+  doc2: { filename: string; content: string }
 ): Promise<{
   sharedPhrases: { phrase: string; significance: number }[]
   similarity: number
 }> {
-  const content1 = await getDocumentContent(doc1.id)
-  const content2 = await getDocumentContent(doc2.id)
-
   const prompt = `Compare these two documents for shared language:
 
 DOCUMENT 1 (${doc1.filename}):
-${content1.slice(0, 20000)}
+${doc1.content.slice(0, 20000)}
 
 DOCUMENT 2 (${doc2.filename}):
-${content2.slice(0, 20000)}
+${doc2.content.slice(0, 20000)}
 
 Find:
 1. Phrases of 5+ words that appear in both
@@ -387,6 +437,45 @@ Respond in JSON:
 }
 
 /**
+ * Detect shared language between two specific documents
+ * Note: Document content fetching is now handled by Rust backend
+ */
+export async function compareDocumentsForSharing(
+  doc1: Document,
+  doc2: Document
+): Promise<{
+  sharedPhrases: { phrase: string; significance: number }[]
+  similarity: number
+}> {
+  console.warn('[CoordinationEngine] Document content fetching now handled by Rust backend.')
+
+  // Return empty result - use compareDocumentsForSharingWithContent with pre-loaded content
+  const prompt = `Compare these two documents for shared language:
+
+DOCUMENT 1 (${doc1.filename}):
+[Content not loaded - use compareDocumentsForSharingWithContent]
+
+DOCUMENT 2 (${doc2.filename}):
+[Content not loaded - use compareDocumentsForSharingWithContent]
+
+Find:
+1. Phrases of 5+ words that appear in both
+2. Unusual terminology shared between them
+3. Structural similarities
+
+Rate overall similarity 0-100.
+
+Respond in JSON:
+{
+  "sharedPhrases": [{ "phrase": "...", "significance": 0-100 }],
+  "similarity": 0-100
+}`
+
+  // Return empty result since we can't fetch content
+  return { sharedPhrases: [], similarity: 0 }
+}
+
+/**
  * Build communication timeline between institutions
  */
 export async function buildCommunicationTimeline(
@@ -402,7 +491,7 @@ export async function buildCommunicationTimeline(
   }[]
   gaps: { from: string; to: string; duration: number }[]
 }> {
-  const classifiedDocs = await classifyByInstitution(documents)
+  const classifiedDocs = classifyByInstitutionSync(documents)
 
   const events = []
   const sortedDocs = [...documents].sort(
@@ -442,17 +531,12 @@ export async function buildCommunicationTimeline(
 
 // Helper functions
 
-async function getDocumentContent(docId: string): Promise<string> {
-  const { data } = await supabaseAdmin
-    .from('document_chunks')
-    .select('content, chunk_index')
-    .eq('document_id', docId)
-    .order('chunk_index')
-
-  return (data || []).map((c: any) => c.content).join('\n\n')
-}
-
-async function classifyByInstitution(documents: Document[]): Promise<Map<string, string>> {
+/**
+ * Synchronous classification by institution (doesn't need DB access)
+ */
+function classifyByInstitutionSync(
+  documents: Array<{ id: string; filename: string; doc_type?: string | null }>
+): Map<string, string> {
   const classification = new Map<string, string>()
 
   for (const doc of documents) {
@@ -578,10 +662,32 @@ function determineDocType(
   return 'report'
 }
 
-async function storeCoordinationFindings(caseId: string, result: CoordinationAnalysisResult) {
-  const findings = []
+/**
+ * Prepare coordination findings for storage (Rust backend handles actual persistence)
+ */
+function prepareCoordinationFindings(
+  caseId: string,
+  result: CoordinationAnalysisResult
+): Array<{
+  case_id: string
+  engine: string
+  title: string
+  description: string
+  severity: string
+  document_ids?: string[]
+  evidence: Record<string, unknown>
+}> {
+  const findings: Array<{
+    case_id: string
+    engine: string
+    title: string
+    description: string
+    severity: string
+    document_ids?: string[]
+    evidence: Record<string, unknown>
+  }> = []
 
-  // Store independence violations
+  // Prepare independence violations
   for (const violation of result.independenceViolations) {
     findings.push({
       case_id: caseId,
@@ -597,7 +703,7 @@ async function storeCoordinationFindings(caseId: string, result: CoordinationAna
     })
   }
 
-  // Store significant shared language
+  // Prepare significant shared language
   for (const shared of result.sharedLanguage.filter(s => s.probability !== 'coincidence')) {
     findings.push({
       case_id: caseId,
@@ -614,7 +720,7 @@ async function storeCoordinationFindings(caseId: string, result: CoordinationAna
     })
   }
 
-  // Store pre-disclosure flows
+  // Prepare pre-disclosure flows
   for (const flow of result.informationFlow.filter(f => f.predatesDisclosure)) {
     findings.push({
       case_id: caseId,
@@ -631,13 +737,14 @@ async function storeCoordinationFindings(caseId: string, result: CoordinationAna
     })
   }
 
-  if (findings.length > 0) {
-    await supabaseAdmin.from('findings').insert(findings)
-  }
+  return findings
 }
 
 export const coordinationEngine = {
   analyzeCoordination,
+  analyzeCoordinationWithContent,
   compareDocumentsForSharing,
+  compareDocumentsForSharingWithContent,
   buildCommunicationTimeline,
+  prepareCoordinationFindings,
 }

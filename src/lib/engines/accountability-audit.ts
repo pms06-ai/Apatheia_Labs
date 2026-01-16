@@ -9,7 +9,6 @@
  */
 
 import { generateJSON } from '@/lib/ai-client'
-import { supabaseAdmin } from '@/lib/supabase/server'
 import type { Document } from '@/CONTRACT'
 
 // Statutory framework types
@@ -727,6 +726,7 @@ export class AccountabilityAuditEngine {
 
   /**
    * Analyze a document for duty breaches
+   * Note: Document fetching is now handled by Rust backend
    */
   async analyzeDocument(
     documentId: string,
@@ -734,22 +734,25 @@ export class AccountabilityAuditEngine {
     institution: string,
     institutionType: InstitutionType
   ): Promise<DutyBreach[]> {
-    // Check for mock mode
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
-      return this.getMockBreaches(institution, institutionType)
-    }
+    console.warn(
+      '[AccountabilityAuditEngine] Document fetching now handled by Rust backend. Using mock data.'
+    )
+    return this.getMockBreaches(institution, institutionType)
+  }
 
-    // Get document content
-    const { data: doc, error: docError } = await supabaseAdmin
-      .from('documents')
-      .select('*')
-      .eq('id', documentId)
-      .single()
-
-    if (docError || !doc) {
-      throw new Error(`Document not found: ${documentId}`)
-    }
-
+  /**
+   * Analyze document content for duty breaches (for use with Rust backend)
+   */
+  async analyzeDocumentContent(
+    documentId: string,
+    documentName: string,
+    content: string,
+    documentType: string,
+    documentDate: string,
+    caseId: string,
+    institution: string,
+    institutionType: InstitutionType
+  ): Promise<DutyBreach[]> {
     // Get applicable duties
     const applicableDuties = this.getApplicableDuties(institutionType)
     const dutiesContext = applicableDuties
@@ -760,10 +763,10 @@ export class AccountabilityAuditEngine {
       .join('\n\n')
 
     // Analyze with AI
-    const prompt = DUTY_ANALYSIS_PROMPT.replace('{document_content}', doc.content || '')
-      .replace('{document_type}', doc.type || 'unknown')
+    const prompt = DUTY_ANALYSIS_PROMPT.replace('{document_content}', content || '')
+      .replace('{document_type}', documentType || 'unknown')
       .replace('{institution}', institution)
-      .replace('{document_date}', doc.date || 'unknown')
+      .replace('{document_date}', documentDate || 'unknown')
       .replace('{applicable_duties}', dutiesContext)
 
     const result = await generateJSON<{
@@ -817,7 +820,7 @@ export class AccountabilityAuditEngine {
         evidence: [
           {
             documentId,
-            documentName: doc.name || 'Unknown',
+            documentName: documentName || 'Unknown',
             pageReference: b.evidence.pageReference,
             quotedText: b.evidence.quotedText,
             dateOfAction: b.evidence.dateOfAction,
@@ -1092,19 +1095,39 @@ export class AccountabilityAuditEngine {
   }
 
   /**
-   * Store audit findings to database
+   * Prepare audit findings for storage (Rust backend handles actual persistence)
    */
-  private async storeFindings(caseId: string, result: AccountabilityAuditResult): Promise<void> {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
-      console.log('Mock mode: Would store accountability audit findings')
-      return
-    }
+  prepareFindings(
+    caseId: string,
+    result: AccountabilityAuditResult
+  ): Array<{
+    case_id: string
+    engine: string
+    title: string
+    description: string
+    severity: string
+    document_ids: string[]
+    evidence: Record<string, unknown>
+    confidence: number
+    created_at: string
+  }> {
+    const findings: Array<{
+      case_id: string
+      engine: string
+      title: string
+      description: string
+      severity: string
+      document_ids: string[]
+      evidence: Record<string, unknown>
+      confidence: number
+      created_at: string
+    }> = []
 
-    // Store each critical/high breach as a finding
+    // Prepare each critical/high breach as a finding
     for (const breach of result.allBreaches.filter(
       b => b.severity === 'critical' || b.severity === 'high'
     )) {
-      const finding = {
+      findings.push({
         case_id: caseId,
         engine: 'accountability_audit',
         title: `${breach.duty.section} Breach - ${breach.duty.title}`,
@@ -1120,14 +1143,12 @@ export class AccountabilityAuditEngine {
         },
         confidence: breach.severity === 'critical' ? 95 : 85,
         created_at: new Date().toISOString(),
-      }
-
-      await supabaseAdmin.from('findings').insert(finding)
+      })
     }
 
-    // Store summary finding if systemic pattern detected
+    // Prepare summary finding if systemic pattern detected
     if (result.summary.systemicPattern) {
-      const summaryFinding = {
+      findings.push({
         case_id: caseId,
         engine: 'accountability_audit',
         title: 'Systemic Institutional Failure Pattern Detected',
@@ -1141,10 +1162,21 @@ export class AccountabilityAuditEngine {
         },
         confidence: 90,
         created_at: new Date().toISOString(),
-      }
-
-      await supabaseAdmin.from('findings').insert(summaryFinding)
+      })
     }
+
+    console.log('[AccountabilityAuditEngine] Prepared findings for storage:', findings.length)
+    return findings
+  }
+
+  /**
+   * @deprecated Use prepareFindings instead - Rust backend handles persistence
+   */
+  private async storeFindings(caseId: string, result: AccountabilityAuditResult): Promise<void> {
+    const findings = this.prepareFindings(caseId, result)
+    console.log(
+      '[AccountabilityAuditEngine] storeFindings called - persistence handled by Rust backend'
+    )
   }
 
   /**

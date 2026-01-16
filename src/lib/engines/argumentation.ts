@@ -8,7 +8,6 @@
  * Apatheia Labs - Phronesis Platform
  */
 
-import { createClient } from '@/lib/supabase/client'
 import Anthropic from '@anthropic-ai/sdk'
 
 // ============================================================================
@@ -516,12 +515,9 @@ Return JSON array with:
 // ============================================================================
 
 export class ArgumentationEngine {
-  private supabase
   private anthropic: Anthropic | null = null
 
   constructor() {
-    this.supabase = createClient()
-
     if (typeof window !== 'undefined') {
       const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
       if (apiKey && apiKey !== 'placeholder') {
@@ -535,27 +531,30 @@ export class ArgumentationEngine {
 
   /**
    * Extract arguments from a single document
+   * Note: Document fetching is now handled by Rust backend
    */
   async extractArguments(documentId: string, caseId: string): Promise<ToulminArgument[]> {
-    // Get document content
-    const { data: doc, error } = await this.supabase
-      .from('documents')
-      .select('id, name, content, extracted_text')
-      .eq('id', documentId)
-      .single()
+    console.warn(
+      '[ArgumentationEngine] Document fetching now handled by Rust backend. Using mock data.'
+    )
+    return this.getMockArguments('Unknown')
+  }
 
-    if (error || !doc) {
-      console.error('Failed to fetch document:', error)
-      return []
-    }
-
-    const content = doc.extracted_text || doc.content
+  /**
+   * Extract arguments from pre-loaded document content (for use with Rust backend)
+   */
+  async extractArgumentsFromContent(
+    documentId: string,
+    documentName: string,
+    content: string,
+    caseId: string
+  ): Promise<ToulminArgument[]> {
     if (!content) {
       return []
     }
 
     // Use AI to extract arguments
-    const rawArguments = await this.aiExtractArguments(content, doc.name)
+    const rawArguments = await this.aiExtractArguments(content, documentName)
 
     // Process and enhance each argument
     const processedArguments: ToulminArgument[] = rawArguments.map((arg, index) => {
@@ -572,7 +571,7 @@ export class ArgumentationEngine {
         data: (arg.data || []).map((d: any, i: number) => ({
           id: `${documentId}-datum-${index}-${i}`,
           description: d.description || '',
-          source: d.source || doc.name,
+          source: d.source || documentName,
           pageReference: d.pageReference,
           documentId: documentId,
           quotedText: d.quotedText,
@@ -1065,51 +1064,78 @@ export class ArgumentationEngine {
   }
 
   /**
-   * Store findings in database
+   * Prepare findings for storage (Rust backend handles actual persistence)
    */
-  private async storeFindings(result: ArgumentAnalysisResult): Promise<void> {
-    try {
-      const weakArgs = result.allArguments.filter(
-        a => a.overallStrength === 'weak' || a.overallStrength === 'speculative'
-      )
+  prepareFindings(result: ArgumentAnalysisResult): Array<{
+    case_id: string
+    engine: string
+    title: string
+    description: string
+    severity: string
+    document_ids?: string[]
+    evidence: Record<string, unknown>
+    confidence: number
+  }> {
+    const findings: Array<{
+      case_id: string
+      engine: string
+      title: string
+      description: string
+      severity: string
+      document_ids?: string[]
+      evidence: Record<string, unknown>
+      confidence: number
+    }> = []
 
-      // Store summary finding
-      await this.supabase.from('findings').insert({
+    const weakArgs = result.allArguments.filter(
+      a => a.overallStrength === 'weak' || a.overallStrength === 'speculative'
+    )
+
+    // Summary finding
+    findings.push({
+      case_id: result.caseId,
+      engine: 'argumentation',
+      title: `Argument Analysis: ${result.allArguments.length} arguments across ${result.chains.length} chains`,
+      description: result.recommendations.join('\n'),
+      severity: weakArgs.length > 3 ? 'high' : weakArgs.length > 0 ? 'medium' : 'low',
+      document_ids: result.documentIds,
+      evidence: {
+        totalArguments: result.allArguments.length,
+        chains: result.chains.length,
+        strengthDistribution: result.strengthDistribution,
+        domainCoverage: result.domainCoverage,
+        vulnerabilities: result.vulnerabilityReport,
+        recommendations: result.recommendations,
+      },
+      confidence: this.calculateOverallConfidence(result),
+    })
+
+    // Individual weak argument findings
+    for (const arg of weakArgs) {
+      findings.push({
         case_id: result.caseId,
         engine: 'argumentation',
-        title: `Argument Analysis: ${result.allArguments.length} arguments across ${result.chains.length} chains`,
-        description: result.recommendations.join('\n'),
-        severity: weakArgs.length > 3 ? 'high' : weakArgs.length > 0 ? 'medium' : 'low',
-        document_ids: result.documentIds,
+        title: `Weak Argument: ${arg.claim.statement.substring(0, 50)}...`,
+        description: arg.vulnerabilities.join('; '),
+        severity: arg.overallStrength === 'speculative' ? 'high' : 'medium',
         evidence: {
-          totalArguments: result.allArguments.length,
-          chains: result.chains.length,
-          strengthDistribution: result.strengthDistribution,
-          domainCoverage: result.domainCoverage,
-          vulnerabilities: result.vulnerabilityReport,
-          recommendations: result.recommendations,
+          argument: arg,
+          improvements: arg.improvements,
         },
-        confidence: this.calculateOverallConfidence(result),
+        confidence: arg.claim.confidence,
       })
-
-      // Store individual weak argument findings
-      for (const arg of weakArgs) {
-        await this.supabase.from('findings').insert({
-          case_id: result.caseId,
-          engine: 'argumentation',
-          title: `Weak Argument: ${arg.claim.statement.substring(0, 50)}...`,
-          description: arg.vulnerabilities.join('; '),
-          severity: arg.overallStrength === 'speculative' ? 'high' : 'medium',
-          evidence: {
-            argument: arg,
-            improvements: arg.improvements,
-          },
-          confidence: arg.claim.confidence,
-        })
-      }
-    } catch (error) {
-      console.error('Failed to store findings:', error)
     }
+
+    console.log('[ArgumentationEngine] Prepared findings for storage:', findings.length)
+    return findings
+  }
+
+  /**
+   * @deprecated Use prepareFindings instead - Rust backend handles persistence
+   */
+  private async storeFindings(result: ArgumentAnalysisResult): Promise<void> {
+    const findings = this.prepareFindings(result)
+    console.log('[ArgumentationEngine] storeFindings called - persistence handled by Rust backend')
   }
 
   private calculateOverallConfidence(result: ArgumentAnalysisResult): number {

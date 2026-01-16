@@ -196,15 +196,15 @@ function formatRole(role: string | undefined): string | undefined {
   if (!role) return undefined
 
   const roleMap: Record<string, string> = {
-    'social_worker': 'Social Worker',
-    'judge': 'Judge',
-    'doctor': 'Doctor',
-    'professor': 'Professor',
-    'psychologist': 'Psychologist',
-    'psychiatrist': 'Psychiatrist',
-    'barrister': 'Barrister',
-    'solicitor': 'Solicitor',
-    'guardian': 'Guardian',
+    social_worker: 'Social Worker',
+    judge: 'Judge',
+    doctor: 'Doctor',
+    professor: 'Professor',
+    psychologist: 'Psychologist',
+    psychiatrist: 'Psychiatrist',
+    barrister: 'Barrister',
+    solicitor: 'Solicitor',
+    guardian: 'Guardian',
   }
 
   return roleMap[role] || role
@@ -237,9 +237,10 @@ const FUZZY_MATCH_OPTIONS: MatchOptions = {
  * Use fuzzy matching to find and merge similar entities
  * Returns merged entities and the linkages that were identified
  */
-function applyFuzzyMatching(
-  entities: ResolvedEntity[]
-): { mergedEntities: ResolvedEntity[]; linkages: EntityLinkageProposal[] } {
+function applyFuzzyMatching(entities: ResolvedEntity[]): {
+  mergedEntities: ResolvedEntity[]
+  linkages: EntityLinkageProposal[]
+} {
   if (entities.length <= 1) {
     return { mergedEntities: entities, linkages: [] }
   }
@@ -296,11 +297,10 @@ function applyFuzzyMatching(
         const matchEntityType = entity1.type === 'organization' ? 'organization' : 'person'
 
         // Try matching canonical names
-        const result = fuzzyMatch(
-          entity1.canonicalName,
-          entity2.canonicalName,
-          { ...FUZZY_MATCH_OPTIONS, entityType: matchEntityType }
-        )
+        const result = fuzzyMatch(entity1.canonicalName, entity2.canonicalName, {
+          ...FUZZY_MATCH_OPTIONS,
+          entityType: matchEntityType,
+        })
 
         if (result.isMatch && result.confidence >= 0.5) {
           // Create linkage proposal
@@ -325,11 +325,10 @@ function applyFuzzyMatching(
           for (const alias1 of entity1.aliases) {
             if (foundAliasMatch) break
             for (const alias2 of entity2.aliases) {
-              const aliasResult = fuzzyMatch(
-                alias1,
-                alias2,
-                { ...FUZZY_MATCH_OPTIONS, entityType: matchEntityType }
-              )
+              const aliasResult = fuzzyMatch(alias1, alias2, {
+                ...FUZZY_MATCH_OPTIONS,
+                entityType: matchEntityType,
+              })
               if (aliasResult.isMatch && aliasResult.confidence >= 0.6) {
                 const linkage: EntityLinkageProposal = {
                   id: generateLinkageId(linkageIndex++),
@@ -505,7 +504,7 @@ export function buildEntityGraph(
   // Add entity nodes
   for (const entity of entities) {
     // Extract unique document IDs from mentions
-    const documentIds = [...new Set(entity.mentions.map((m) => m.docId))]
+    const documentIds = [...new Set(entity.mentions.map(m => m.docId))]
 
     const nodeAttributes: EntityGraphNode = {
       id: entity.id,
@@ -534,12 +533,8 @@ export function buildEntityGraph(
   let edgeIndex = 0
   for (const linkage of linkages) {
     // Find entity IDs for the linked names
-    const sourceId =
-      linkage.entityIds[0] ||
-      nameToEntityId.get(linkage.entity1Name.toLowerCase())
-    const targetId =
-      linkage.entityIds[1] ||
-      nameToEntityId.get(linkage.entity2Name.toLowerCase())
+    const sourceId = linkage.entityIds[0] || nameToEntityId.get(linkage.entity1Name.toLowerCase())
+    const targetId = linkage.entityIds[1] || nameToEntityId.get(linkage.entity2Name.toLowerCase())
 
     // Only add edge if both entities exist in graph and are different
     if (
@@ -629,8 +624,9 @@ export async function resolveEntities(
 ): Promise<EntityResolutionResult> {
   const startTime = Date.now()
 
-  // Mock Mode Check - return mock data for development
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
+  // TypeScript engine uses mock mode - real AI calls handled by Rust backend
+  // eslint-disable-next-line no-constant-condition
+  if (true) {
     await new Promise(resolve => setTimeout(resolve, 500))
 
     // Mock entities demonstrating 5+ name variations for same entity
@@ -641,25 +637,32 @@ export async function resolveEntities(
         type: 'professional',
         role: 'Social Worker',
         // 6 name variations for Sarah Jones
-        aliases: ['Dr. Sarah Jones', 'Sarah Jones', 'S. Jones', 'SW Jones', 'Ms. Jones', 'Dr. Jones'],
+        aliases: [
+          'Dr. Sarah Jones',
+          'Sarah Jones',
+          'S. Jones',
+          'SW Jones',
+          'Ms. Jones',
+          'Dr. Jones',
+        ],
         mentions: [
           {
             docId: documents[0]?.id || 'd1',
             text: 'SW Jones',
-            context: '...SW Jones attended the meeting on behalf of the local authority...'
+            context: '...SW Jones attended the meeting on behalf of the local authority...',
           },
           {
             docId: documents[0]?.id || 'd1',
             text: 'Dr. Sarah Jones',
-            context: '...Dr. Sarah Jones provided her professional opinion...'
+            context: '...Dr. Sarah Jones provided her professional opinion...',
           },
           {
             docId: documents[1]?.id || 'd2',
             text: 'S. Jones',
-            context: '...report prepared by S. Jones on behalf of...'
-          }
+            context: '...report prepared by S. Jones on behalf of...',
+          },
         ],
-        confidence: 0.92
+        confidence: 0.92,
       },
       {
         id: generateEntityId(1),
@@ -672,15 +675,15 @@ export async function resolveEntities(
           {
             docId: documents[0]?.id || 'd1',
             text: 'Dr. Grant',
-            context: '...Dr. Grant provided a psychological assessment...'
+            context: '...Dr. Grant provided a psychological assessment...',
           },
           {
             docId: documents[1]?.id || 'd2',
             text: 'Professor Grant',
-            context: '...Professor Grant testified regarding...'
-          }
+            context: '...Professor Grant testified regarding...',
+          },
         ],
-        confidence: 0.9
+        confidence: 0.9,
       },
       {
         id: generateEntityId(2),
@@ -691,11 +694,11 @@ export async function resolveEntities(
           {
             docId: documents[0]?.id || 'd1',
             text: 'Family Court',
-            context: '...the matter was heard at the Family Court...'
-          }
+            context: '...the matter was heard at the Family Court...',
+          },
         ],
-        confidence: 0.95
-      }
+        confidence: 0.95,
+      },
     ]
 
     // Mock linkages showing fuzzy matching identified name variations
@@ -707,7 +710,7 @@ export async function resolveEntities(
         confidence: 0.85,
         algorithm: 'variant',
         status: 'confirmed',
-        entityIds: [mockEntities[0].id, mockEntities[0].id]
+        entityIds: [mockEntities[0].id, mockEntities[0].id],
       },
       {
         id: generateLinkageId(1),
@@ -716,7 +719,7 @@ export async function resolveEntities(
         confidence: 0.9,
         algorithm: 'variant',
         status: 'confirmed',
-        entityIds: [mockEntities[0].id, mockEntities[0].id]
+        entityIds: [mockEntities[0].id, mockEntities[0].id],
       },
       {
         id: generateLinkageId(2),
@@ -725,8 +728,8 @@ export async function resolveEntities(
         confidence: 0.88,
         algorithm: 'partial',
         status: 'confirmed',
-        entityIds: [mockEntities[1].id, mockEntities[1].id]
-      }
+        entityIds: [mockEntities[1].id, mockEntities[1].id],
+      },
     ]
 
     const highConfidenceLinkages = mockLinkages.filter(l => l.confidence >= 0.8).length
@@ -745,23 +748,26 @@ export async function resolveEntities(
         organizationCount: 0,
         courtCount: 1,
         linkagesIdentified: mockLinkages.length,
-        highConfidenceLinkages
+        highConfidenceLinkages,
       },
       metadata: {
         textLength: 0,
         processingTimeMs: Date.now() - startTime,
         extractionMethod: 'compromise',
-        fuzzyMatchingApplied: true
-      }
+        fuzzyMatchingApplied: true,
+      },
     }
   }
 
   // Prepare documents for extraction
   // Limit to first 5 documents and 10000 chars each for performance
-  const docsForExtraction = documents.slice(0, 5).map(doc => ({
-    id: doc.id,
-    text: doc.extracted_text?.slice(0, 10000) || ''
-  })).filter(doc => doc.text.length > 0)
+  const docsForExtraction = documents
+    .slice(0, 5)
+    .map(doc => ({
+      id: doc.id,
+      text: doc.extracted_text?.slice(0, 10000) || '',
+    }))
+    .filter(doc => doc.text.length > 0)
 
   // Handle empty documents
   if (docsForExtraction.length === 0) {
@@ -776,14 +782,14 @@ export async function resolveEntities(
         organizationCount: 0,
         courtCount: 0,
         linkagesIdentified: 0,
-        highConfidenceLinkages: 0
+        highConfidenceLinkages: 0,
       },
       metadata: {
         textLength: 0,
         processingTimeMs: Date.now() - startTime,
         extractionMethod: 'compromise',
-        fuzzyMatchingApplied: false
-      }
+        fuzzyMatchingApplied: false,
+      },
     }
   }
 
@@ -791,7 +797,7 @@ export async function resolveEntities(
   const extractionResult = extractEntitiesFromDocuments(docsForExtraction, {
     minConfidence: 0.4,
     includePlaces: false,
-    contextWindow: 100
+    contextWindow: 100,
   })
 
   // Map extracted entities to resolved entities
@@ -802,24 +808,27 @@ export async function resolveEntities(
     const mappedType = mapEntityType(extracted.type)
 
     // Skip unsupported types (like 'place')
-    if (!mappedType) continue
+    if (mappedType === null) continue
+
+    // Type assertion - mappedType is guaranteed non-null after the check above
+    const entityType = mappedType as NonNullable<typeof mappedType>
 
     // Map mentions to include document ID
     // Since extractEntitiesFromDocuments groups across docs, we need to track doc IDs
     const mentions = extracted.mentions.map(mention => ({
       docId: findDocumentIdForMention(mention.text, docsForExtraction),
       text: mention.text,
-      context: mention.context
+      context: mention.context,
     }))
 
     const resolvedEntity: ResolvedEntity = {
       id: generateEntityId(entityIndex++),
       canonicalName: extracted.canonicalName,
-      type: mappedType,
+      type: entityType,
       role: formatRole(extracted.role),
       mentions,
       aliases: extracted.aliases,
-      confidence: extracted.confidence
+      confidence: extracted.confidence,
     }
 
     resolvedEntities.push(resolvedEntity)
@@ -845,14 +854,14 @@ export async function resolveEntities(
       organizationCount: mergedEntities.filter(e => e.type === 'organization').length,
       courtCount: mergedEntities.filter(e => e.type === 'court').length,
       linkagesIdentified: linkages.length,
-      highConfidenceLinkages
+      highConfidenceLinkages,
     },
     metadata: {
       textLength: extractionResult.metadata.textLength,
       processingTimeMs: Date.now() - startTime,
       extractionMethod: 'compromise',
-      fuzzyMatchingApplied: true
-    }
+      fuzzyMatchingApplied: true,
+    },
   }
 }
 

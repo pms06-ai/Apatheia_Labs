@@ -78,7 +78,10 @@
       "Bash(timeout:*)",
       "Bash(more:*)",
       "Bash(start /wait \"\" \"C:\\\\Users\\\\pstep\\\\RustroverProjects\\\\apatheia-scaffold\\\\src-tauri\\\\target\\\\release\\\\bundle\\\\nsis\\\\Phronesis_0.1.0_x64-setup.exe\" /S)",
-      "Bash(start \"\" \"$LOCALAPPDATA\\\\Phronesis\\\\phronesis.exe\")"
+      "Bash(start \"\" \"$LOCALAPPDATA\\\\Phronesis\\\\phronesis.exe\")",
+      "mcp__obsidian-phronesis__search_files",
+      "Bash(npm run tauri:build:*)",
+      "Bash(done)"
     ]
   }
 }

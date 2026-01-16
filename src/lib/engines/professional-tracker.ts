@@ -10,7 +10,7 @@
  * Apatheia Labs - Phronesis Platform
  */
 
-import { createClient } from '@/lib/supabase/client'
+// Supabase removed - using Tauri backend for data operations
 import Anthropic from '@anthropic-ai/sdk'
 
 // ============================================================================
@@ -391,14 +391,11 @@ Return JSON:
 // ============================================================================
 
 export class ProfessionalTrackerEngine {
-  private supabase
   private anthropic: Anthropic | null = null
   private professionals: Map<string, Professional> = new Map()
   private incidents: Map<string, ConductIncident[]> = new Map()
 
   constructor() {
-    this.supabase = createClient()
-
     if (typeof window !== 'undefined') {
       const apiKey = process.env.NEXT_PUBLIC_ANTHROPIC_API_KEY
       if (apiKey && apiKey !== 'placeholder') {
@@ -459,18 +456,13 @@ export class ProfessionalTrackerEngine {
   /**
    * Process a single document for professional conduct
    */
-  private async processDocument(documentId: string, caseId: string): Promise<void> {
-    const { data: doc, error } = await this.supabase
-      .from('documents')
-      .select('id, name, content, extracted_text')
-      .eq('id', documentId)
-      .single()
+  private async processDocument(documentId: string, _caseId: string): Promise<void> {
+    // Document fetching handled by Rust backend - this is a stub for TS engine compatibility
+    console.warn('[Professional Tracker] processDocument called - use Rust backend for actual data')
 
-    if (error || !doc) {
-      console.error('Failed to fetch document:', error)
-      return
-    }
-
+    // In production, documents are passed in via Tauri commands
+    // This stub allows the engine to be imported without errors
+    const doc = { id: documentId, name: 'stub', extracted_text: '', content: '' }
     const content = doc.extracted_text || doc.content
     if (!content) return
 
@@ -966,7 +958,10 @@ export class ProfessionalTrackerEngine {
     }))
 
     if (findings.length > 0) {
-      await this.supabase.from('findings').insert(findings)
+      // Findings storage handled by Rust backend via Tauri commands
+      console.log(
+        `[Professional Tracker] Generated ${findings.length} findings - storage handled by Rust backend`
+      )
     }
   }
 

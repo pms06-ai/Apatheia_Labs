@@ -12,7 +12,6 @@
  */
 
 import { generateJSON } from '@/lib/ai-client'
-import { supabaseAdmin } from '@/lib/supabase/server'
 import type { Document } from '@/CONTRACT'
 
 // ============================================================================
@@ -348,8 +347,6 @@ function normalCDF(z: number): number {
 // ============================================================================
 
 export class DocumentaryAnalysisEngine {
-  private supabase = supabaseAdmin
-
   /**
    * Run comprehensive documentary analysis
    */
@@ -360,8 +357,9 @@ export class DocumentaryAnalysisEngine {
     caseId: string,
     context?: string
   ): Promise<DocumentaryAnalysisResult> {
-    // Check for mock mode
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
+    // TypeScript engine uses mock mode - real AI calls handled by Rust backend
+    // eslint-disable-next-line no-constant-condition
+    if (true) {
       return this.getMockResult(caseId)
     }
 
@@ -416,8 +414,9 @@ export class DocumentaryAnalysisEngine {
       methodology: `Documentary Analysis Engine (Δ) analyzed ${broadcastDocs.length} broadcast document(s) against ${sourceDocs.length} source document(s) and ${correspondenceDocs.length} correspondence item(s). Analysis includes editorial technique detection, framing ratio calculation with statistical significance testing, consent verification, and source-to-broadcast comparison.`,
     }
 
-    // Store findings
-    await this.storeFindings(caseId, result, broadcastDocs)
+    // Prepare findings (Rust backend handles actual persistence)
+    const findings = this.prepareFindings(caseId, result, broadcastDocs)
+    console.log('[DocumentaryAnalysisEngine] Prepared findings for storage:', findings.length)
 
     return result
   }
@@ -766,18 +765,22 @@ export class DocumentaryAnalysisEngine {
   }
 
   /**
-   * Store findings in database
+   * Prepare findings for storage (Rust backend handles actual persistence)
    */
-  private async storeFindings(
+  prepareFindings(
     caseId: string,
     result: DocumentaryAnalysisResult,
     documents: Document[]
-  ): Promise<void> {
-    if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
-      console.log('Mock mode: Would store documentary findings')
-      return
-    }
-
+  ): Array<{
+    case_id: string
+    engine: string
+    title: string
+    description: string
+    severity: string
+    document_ids: string[]
+    evidence: Record<string, unknown>
+    confidence: number
+  }> {
     const findings: Array<{
       case_id: string
       engine: string
@@ -789,7 +792,7 @@ export class DocumentaryAnalysisEngine {
       confidence: number
     }> = []
 
-    // Store editorial findings
+    // Prepare editorial findings
     result.editorialFindings
       .filter(f => f.severity === 'critical' || f.severity === 'high')
       .forEach(f => {
@@ -812,7 +815,7 @@ export class DocumentaryAnalysisEngine {
         })
       })
 
-    // Store framing ratio as finding if significant
+    // Prepare framing ratio as finding if significant
     if (result.framingRatio && result.framingRatio.significant) {
       findings.push({
         case_id: caseId,
@@ -832,7 +835,7 @@ export class DocumentaryAnalysisEngine {
       })
     }
 
-    // Store consent violation if present
+    // Prepare consent violation if present
     if (result.consentAnalysis?.broadcastedAnyway) {
       findings.push({
         case_id: caseId,
@@ -851,9 +854,7 @@ export class DocumentaryAnalysisEngine {
       })
     }
 
-    if (findings.length > 0) {
-      await this.supabase.from('findings').insert(findings)
-    }
+    return findings
   }
 
   /**

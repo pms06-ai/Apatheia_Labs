@@ -1008,8 +1008,10 @@ export async function parseTemporalEvents(
 
   let result: AITemporalExtractionResult
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
-    // Mock mode for development/testing
+  // TypeScript engine uses mock mode - real AI calls handled by Rust backend
+  // eslint-disable-next-line no-constant-condition
+  if (true) {
+    // Mock mode - Rust backend handles actual AI-powered analysis
     await new Promise(resolve => setTimeout(resolve, 1500))
     result = getMockTemporalResult(documents)
   } else {

@@ -86,6 +86,7 @@ packages/*/dist/
 .worktrees/
 .auto-claude-status
 .claude_settings.json
+.claude/settings.local.json
 
 # Claude Code temporary working directories
 tmpclaude-*/
@@ -106,3 +107,9 @@ python-output/
 infra/architect-brain/audits/
 infra/architect-brain/knowledge/*.db
 infra/architect-brain/knowledge/*.db-*
+
+# Obsidian Vault (local working copy - master is in OneDrive)
+Obsidian Vault/
+
+# SWC compiler cache
+.swc/

@@ -1,6 +1,6 @@
 /**
  * TEST UTILITIES
- * 
+ *
  * Custom render function and utilities for testing React components
  * with all necessary providers and mocks.
  */
@@ -40,11 +40,7 @@ interface AllProvidersProps {
 function AllProviders({ children }: AllProvidersProps) {
   const queryClient = createTestQueryClient()
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
-  )
+  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 }
 
 // ============================================
@@ -89,25 +85,15 @@ export function mockApiResponse<T>(data: T, options: { delay?: number; error?: b
     const response = options.error
       ? Promise.reject(new Error('API Error'))
       : Promise.resolve({
-        ok: !options.error,
-        json: () => Promise.resolve(data),
-      })
+          ok: !options.error,
+          json: () => Promise.resolve(data),
+        })
 
     if (options.delay) {
       return new Promise(resolve => setTimeout(() => resolve(response), options.delay))
     }
     return response
   })
-}
-
-/**
- * Create mock Supabase query result
- */
-export function mockSupabaseResult<T>(data: T | null, error: Error | null = null) {
-  return {
-    data,
-    error,
-  }
 }
 
 /**
@@ -166,13 +152,15 @@ export function createDragEvent(type: string, files: File[]) {
  * Remove dynamic values from component for stable snapshots
  */
 export function stabilizeForSnapshot(html: string): string {
-  return html
-    // Remove UUIDs
-    .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, 'UUID')
-    // Remove timestamps
-    .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/g, 'TIMESTAMP')
-    // Remove dynamic IDs
-    .replace(/id="[^"]*"/g, 'id="STABLE_ID"')
+  return (
+    html
+      // Remove UUIDs
+      .replace(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi, 'UUID')
+      // Remove timestamps
+      .replace(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/g, 'TIMESTAMP')
+      // Remove dynamic IDs
+      .replace(/id="[^"]*"/g, 'id="STABLE_ID"')
+  )
 }
 
 // ============================================
@@ -207,4 +195,3 @@ export { customRender as render }
 // Re-export a typed expect that includes jest-dom matchers
 // This is necessary because the global expect is augmented by jest-dom
 export { expect } from '@jest/globals'
-

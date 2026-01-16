@@ -9,7 +9,6 @@
  */
 
 import { generateJSON } from '@/lib/ai-client'
-import { supabaseAdmin } from '@/lib/supabase/server'
 import type { Document } from '@/CONTRACT'
 
 // AI Response Types
@@ -119,26 +118,68 @@ Respond in JSON:
 }`
 
 /**
+ * Detect contradictions across a set of documents with pre-loaded content
+ * (for use with Rust backend)
+ */
+export async function detectContradictionsWithContent(
+  documentsWithContent: Array<{
+    id: string
+    filename: string
+    doc_type?: string
+    created_at?: string
+    content: string
+  }>,
+  caseId: string
+): Promise<ContradictionAnalysisResult> {
+  // Format documents for prompt
+  const docContents = documentsWithContent.map(doc => ({
+    id: doc.id,
+    name: doc.filename,
+    type: doc.doc_type,
+    date: doc.created_at,
+    content: doc.content.slice(0, 50000), // Limit for context window
+  }))
+
+  return runContradictionAnalysis(docContents, caseId)
+}
+
+/**
  * Detect contradictions across a set of documents
+ * Note: Document content fetching is now handled by Rust backend
  */
 export async function detectContradictions(
   documents: Document[],
   caseId: string
 ): Promise<ContradictionAnalysisResult> {
-  // Get content from all documents
-  const docContents = await Promise.all(
-    documents.map(async doc => {
-      const content = await getDocumentContent(doc.id)
-      return {
-        id: doc.id,
-        name: doc.filename,
-        type: doc.doc_type,
-        date: doc.created_at,
-        content: content.slice(0, 50000), // Limit for context window
-      }
-    })
+  console.warn(
+    '[ContradictionEngine] Document content fetching now handled by Rust backend. Using empty content.'
   )
 
+  // Return documents with empty content - Rust backend should provide content
+  const docContents = documents.map(doc => ({
+    id: doc.id,
+    name: doc.filename,
+    type: doc.doc_type ?? undefined,
+    date: doc.created_at ?? undefined,
+    content: '', // Empty - Rust backend should provide content
+  }))
+
+  return runContradictionAnalysis(docContents, caseId)
+}
+
+/**
+ * Internal function to run the actual analysis
+ */
+async function runContradictionAnalysis(
+  docContents: Array<{
+    id: string
+    name: string
+    type?: string
+    date?: string
+    content: string
+  }>,
+  caseId: string
+): Promise<ContradictionAnalysisResult> {
   // Format documents for prompt
   const formattedDocs = docContents
     .map(d => `=== DOCUMENT: ${d.name} (ID: ${d.id}, Type: ${d.type}) ===\n${d.content}`)
@@ -146,25 +187,26 @@ export async function detectContradictions(
 
   const prompt = CONTRADICTION_PROMPT.replace('{documents}', formattedDocs)
 
-  // Mock Mode Check
+  // Check if we have actual content to analyze
   let result: any
+  const hasContent = docContents.some(d => d.content && d.content.length > 0)
 
-  if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('placeholder')) {
-    console.log('[MOCK ENGINE] Using Mock Contradiction Results')
+  if (!hasContent) {
+    console.log('[ContradictionEngine] No content provided, using mock analysis')
     const mockResult = {
       contradictions: [
         {
           type: 'direct',
           severity: 'critical',
           claim1: {
-            documentId: documents[0]?.id || 'mock-doc-1',
+            documentId: docContents[0]?.id || 'mock-doc-1',
             text: 'Subject was at home all night',
             date: '2023-01-12T10:00:00Z',
             author: 'Officer A',
             pageRef: 2,
           },
           claim2: {
-            documentId: documents[1]?.id || 'mock-doc-2',
+            documentId: docContents[1]?.id || 'mock-doc-2',
             text: 'Subject was seen at the pub at 9pm',
             date: '2023-01-15T14:30:00Z',
             author: 'Social Worker B',
@@ -179,12 +221,12 @@ export async function detectContradictions(
           type: 'temporal',
           severity: 'high',
           claim1: {
-            documentId: documents[0]?.id || 'mock-doc-1',
+            documentId: docContents[0]?.id || 'mock-doc-1',
             text: 'Incident occurred at 10:00 PM',
             date: '2023-01-12T10:00:00Z',
           },
           claim2: {
-            documentId: documents[2]?.id || 'mock-doc-3',
+            documentId: docContents[2]?.id || 'mock-doc-3',
             text: 'Ambulance called at 9:45 PM',
             date: '2023-01-20T09:00:00Z',
           },
@@ -197,8 +239,8 @@ export async function detectContradictions(
         {
           topic: 'Subject Location',
           claims: [
-            { docId: documents[0]?.id, text: 'At home', stance: 'Defense' },
-            { docId: documents[1]?.id, text: 'At pub', stance: 'Prosecution' },
+            { docId: docContents[0]?.id, text: 'At home', stance: 'Defense' },
+            { docId: docContents[1]?.id, text: 'At pub', stance: 'Prosecution' },
           ],
           consensus: false,
         },
@@ -254,8 +296,9 @@ export async function detectContradictions(
     },
   }
 
-  // Store in database
-  await storeContradictions(caseId, contradictions)
+  // Prepare findings (Rust backend handles actual persistence)
+  const findings = prepareContradictionFindings(caseId, contradictions)
+  console.log('[ContradictionEngine] Prepared findings for storage:', findings.length)
 
   return analysisResult
 }
@@ -301,11 +344,17 @@ Respond in JSON:
 }
 
 /**
- * Track how a specific claim evolves across documents over time
+ * Track how a specific claim evolves across documents over time with pre-loaded content
+ * (for use with Rust backend)
  */
-export async function trackClaimEvolution(
+export async function trackClaimEvolutionWithContent(
   claim: string,
-  documents: Document[],
+  documentsWithContent: Array<{
+    id: string
+    filename: string
+    created_at?: string
+    content: string
+  }>,
   caseId: string
 ): Promise<{
   versions: {
@@ -319,7 +368,7 @@ export async function trackClaimEvolution(
   summary: string
 }> {
   // Sort documents by date
-  const sortedDocs = [...documents].sort(
+  const sortedDocs = [...documentsWithContent].sort(
     (a, b) => new Date(a.created_at || 0).getTime() - new Date(b.created_at || 0).getTime()
   )
 
@@ -333,12 +382,10 @@ export async function trackClaimEvolution(
   }[] = []
 
   for (const doc of sortedDocs) {
-    const content = await getDocumentContent(doc.id)
-
     const findPrompt = `In this document, find any statement related to this claim: "${claim}"
 
 Document content:
-${content.slice(0, 30000)}
+${doc.content.slice(0, 30000)}
 
 Return the exact quote(s) that relate to this claim, or "NOT_FOUND" if not mentioned.
 Respond in JSON: { "found": boolean, "quotes": ["..."] }`
@@ -380,17 +427,38 @@ Respond in JSON: { "found": boolean, "quotes": ["..."] }`
   }
 }
 
-// Helper functions
+/**
+ * Track how a specific claim evolves across documents over time
+ * Note: Document content fetching is now handled by Rust backend
+ */
+export async function trackClaimEvolution(
+  claim: string,
+  documents: Document[],
+  caseId: string
+): Promise<{
+  versions: {
+    documentId: string
+    documentName: string
+    date: string
+    text: string
+    changesFromPrevious?: string
+  }[]
+  evolutionPattern: 'stable' | 'escalating' | 'de-escalating' | 'inconsistent'
+  summary: string
+}> {
+  console.warn(
+    '[ContradictionEngine] trackClaimEvolution: Document content fetching now handled by Rust backend.'
+  )
 
-async function getDocumentContent(docId: string): Promise<string> {
-  const { data } = await supabaseAdmin
-    .from('document_chunks')
-    .select('content, chunk_index')
-    .eq('document_id', docId)
-    .order('chunk_index')
-
-  return (data || []).map((c: any) => c.content).join('\n\n')
+  // Return empty result - use trackClaimEvolutionWithContent with pre-loaded content
+  return {
+    versions: [],
+    evolutionPattern: 'stable',
+    summary: 'Document content must be provided via trackClaimEvolutionWithContent',
+  }
 }
+
+// Helper functions
 
 function extractTopics(clusters: any[]): string[] {
   return (clusters || [])
@@ -438,8 +506,22 @@ Respond in JSON: { "pattern": "...", "summary": "..." }`
   }
 }
 
-async function storeContradictions(caseId: string, contradictions: ContradictionFinding[]) {
-  const findings = contradictions.map(c => ({
+/**
+ * Prepare contradiction findings for storage (Rust backend handles actual persistence)
+ */
+function prepareContradictionFindings(
+  caseId: string,
+  contradictions: ContradictionFinding[]
+): Array<{
+  case_id: string
+  engine: string
+  title: string
+  description: string
+  severity: string
+  document_ids: string[]
+  evidence: Record<string, unknown>
+}> {
+  return contradictions.map(c => ({
     case_id: caseId,
     engine: 'contradiction',
     title: `${c.type} contradiction: ${c.explanation.slice(0, 50)}...`,
@@ -453,14 +535,13 @@ async function storeContradictions(caseId: string, contradictions: Contradiction
       implication: c.implication,
     },
   }))
-
-  if (findings.length > 0) {
-    await supabaseAdmin.from('findings').insert(findings)
-  }
 }
 
 export const contradictionEngine = {
   detectContradictions,
+  detectContradictionsWithContent,
   compareSpecificClaims,
   trackClaimEvolution,
+  trackClaimEvolutionWithContent,
+  prepareContradictionFindings,
 }
