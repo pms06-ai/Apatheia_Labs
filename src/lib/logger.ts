@@ -1,6 +1,6 @@
 /**
  * APATHEIA LABS - LOGGING SERVICE
- * 
+ *
  * Structured logging with levels, context, and formatting.
  * Supports both development (pretty) and production (JSON) output.
  */
@@ -32,23 +32,27 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   fatal: 4,
 }
 
+const env =
+  typeof process !== 'undefined' && process.env
+    ? process.env
+    : ({} as Record<string, string | undefined>)
+
 // Get minimum log level from environment
-const MIN_LEVEL = (process.env.LOG_LEVEL as LogLevel) || 
-  (process.env.NODE_ENV === 'production' ? 'info' : 'debug')
+const MIN_LEVEL = (env.LOG_LEVEL as LogLevel) || (env.NODE_ENV === 'production' ? 'info' : 'debug')
 
 // Check if running in production
-const IS_PRODUCTION = process.env.NODE_ENV === 'production'
+const IS_PRODUCTION = env.NODE_ENV === 'production'
 
 // ANSI colors for development
 const COLORS = {
   reset: '\x1b[0m',
   dim: '\x1b[2m',
   bold: '\x1b[1m',
-  debug: '\x1b[36m',  // Cyan
-  info: '\x1b[32m',   // Green
-  warn: '\x1b[33m',   // Yellow
-  error: '\x1b[31m',  // Red
-  fatal: '\x1b[35m',  // Magenta
+  debug: '\x1b[36m', // Cyan
+  info: '\x1b[32m', // Green
+  warn: '\x1b[33m', // Yellow
+  error: '\x1b[31m', // Red
+  fatal: '\x1b[35m', // Magenta
 }
 
 /**
@@ -58,13 +62,13 @@ function formatDev(entry: LogEntry): string {
   const color = COLORS[entry.level]
   const levelStr = entry.level.toUpperCase().padEnd(5)
   const time = new Date(entry.timestamp).toLocaleTimeString()
-  
+
   let output = `${COLORS.dim}${time}${COLORS.reset} ${color}${levelStr}${COLORS.reset} ${entry.message}`
-  
+
   if (entry.context && Object.keys(entry.context).length > 0) {
     output += ` ${COLORS.dim}${JSON.stringify(entry.context)}${COLORS.reset}`
   }
-  
+
   if (entry.error) {
     output += `\n  ${COLORS.dim}└─${COLORS.reset} ${color}${entry.error.name}: ${entry.error.message}${COLORS.reset}`
     if (entry.error.stack && entry.level !== 'warn') {
@@ -72,7 +76,7 @@ function formatDev(entry: LogEntry): string {
       output += `\n${COLORS.dim}${stackLines.join('\n')}${COLORS.reset}`
     }
   }
-  
+
   return output
 }
 
@@ -111,7 +115,7 @@ function log(level: LogLevel, message: string, context?: LogContext, error?: Err
   }
 
   const formatted = IS_PRODUCTION ? formatProd(entry) : formatDev(entry)
-  
+
   switch (level) {
     case 'error':
     case 'fatal':
@@ -132,9 +136,12 @@ function log(level: LogLevel, message: string, context?: LogContext, error?: Err
 export const logger = {
   debug: (message: string, context?: LogContext) => log('debug', message, context),
   info: (message: string, context?: LogContext) => log('info', message, context),
-  warn: (message: string, context?: LogContext, error?: Error) => log('warn', message, context, error),
-  error: (message: string, error?: Error, context?: LogContext) => log('error', message, context, error),
-  fatal: (message: string, error?: Error, context?: LogContext) => log('fatal', message, context, error),
+  warn: (message: string, context?: LogContext, error?: Error) =>
+    log('warn', message, context, error),
+  error: (message: string, error?: Error, context?: LogContext) =>
+    log('error', message, context, error),
+  fatal: (message: string, error?: Error, context?: LogContext) =>
+    log('fatal', message, context, error),
 }
 
 /**
@@ -142,15 +149,15 @@ export const logger = {
  */
 export function createLogger(baseContext: LogContext) {
   return {
-    debug: (message: string, context?: LogContext) => 
+    debug: (message: string, context?: LogContext) =>
       log('debug', message, { ...baseContext, ...context }),
-    info: (message: string, context?: LogContext) => 
+    info: (message: string, context?: LogContext) =>
       log('info', message, { ...baseContext, ...context }),
-    warn: (message: string, context?: LogContext, error?: Error) => 
+    warn: (message: string, context?: LogContext, error?: Error) =>
       log('warn', message, { ...baseContext, ...context }, error),
-    error: (message: string, error?: Error, context?: LogContext) => 
+    error: (message: string, error?: Error, context?: LogContext) =>
       log('error', message, { ...baseContext, ...context }, error),
-    fatal: (message: string, error?: Error, context?: LogContext) => 
+    fatal: (message: string, error?: Error, context?: LogContext) =>
       log('fatal', message, { ...baseContext, ...context }, error),
   }
 }
