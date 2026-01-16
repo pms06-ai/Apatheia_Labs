@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
+import { useCallback, memo } from 'react'
 import { FileText, Download, Eye, Upload } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Card } from '@/components/ui/card'
@@ -108,8 +108,9 @@ export function DocumentsList() {
 
 /**
  * Individual document row component - extracted for virtualization support
+ * Wrapped with memo to prevent re-renders when document data hasn't changed
  */
-function DocumentRow({ doc }: { doc: Document }) {
+const DocumentRow = memo(function DocumentRow({ doc }: { doc: Document }) {
   return (
     <Link to={`/documents/${doc.id}`} className="group block">
       <Card className="flex items-center gap-4 border-charcoal-700 bg-charcoal-800/40 p-4 transition-all duration-300 hover:border-bronze-500/50 hover:bg-charcoal-800/80 hover:shadow-[0_0_15px_rgba(184,134,11,0.1)]">
@@ -172,7 +173,8 @@ function DocumentRow({ doc }: { doc: Document }) {
       </Card>
     </Link>
   )
-}
+})
+DocumentRow.displayName = 'DocumentRow'
 
 function formatFileSize(bytes: number): string {
   if (bytes === 0) return '0 B'

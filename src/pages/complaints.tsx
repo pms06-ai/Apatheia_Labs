@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, memo, useCallback } from 'react'
 import {
   FileText,
   Download,
@@ -695,6 +695,68 @@ export default function ComplaintsPage() {
 
 // Helper components
 
+interface FindingItemProps {
+  finding: Finding
+  isSelected: boolean
+  onToggle: (id: string) => void
+}
+
+/**
+ * Individual finding item - memoized to prevent re-renders in large finding lists
+ */
+const FindingItem = memo(function FindingItem({ finding, isSelected, onToggle }: FindingItemProps) {
+  const handleClick = useCallback(() => {
+    onToggle(finding.id)
+  }, [onToggle, finding.id])
+
+  return (
+    <div
+      onClick={handleClick}
+      className={`cursor-pointer rounded-lg border p-3 transition-all ${
+        isSelected
+          ? 'border-bronze-500/50 bg-bronze-500/10'
+          : 'border-charcoal-700 bg-charcoal-800/50 hover:border-charcoal-600'
+      }`}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+            isSelected ? 'border-bronze-500 bg-bronze-500' : 'border-charcoal-600 bg-transparent'
+          }`}
+        >
+          {isSelected && <CheckCircle className="h-3 w-3 text-white" />}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="truncate font-medium text-charcoal-100">{finding.title}</span>
+            <Badge
+              variant={
+                finding.severity === 'critical'
+                  ? 'critical'
+                  : finding.severity === 'high'
+                    ? 'high'
+                    : finding.severity === 'medium'
+                      ? 'medium'
+                      : 'low'
+              }
+              className="shrink-0 text-[10px]"
+            >
+              {finding.severity || 'info'}
+            </Badge>
+          </div>
+          {finding.description && (
+            <p className="mt-1 line-clamp-2 text-xs text-charcoal-400">{finding.description}</p>
+          )}
+          <div className="mt-1 text-[10px] uppercase tracking-wider text-charcoal-500">
+            {finding.engine.replace(/_/g, ' ')}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
+FindingItem.displayName = 'FindingItem'
+
 interface FindingsListProps {
   findings: Finding[]
   selectedIds: string[]
@@ -702,14 +764,21 @@ interface FindingsListProps {
   onSelectAll: () => void
 }
 
+/**
+ * Findings list component - uses memoized FindingItem for each finding
+ */
 function FindingsList({ findings, selectedIds, onToggle, onSelectAll }: FindingsListProps) {
+  // Memoize the allSelected calculation
+  const allSelected = useMemo(
+    () => findings.every(f => selectedIds.includes(f.id)),
+    [findings, selectedIds]
+  )
+
   if (findings.length === 0) {
     return (
       <div className="py-8 text-center text-sm text-charcoal-500">No findings in this category</div>
     )
   }
-
-  const allSelected = findings.every(f => selectedIds.includes(f.id))
 
   return (
     <div className="space-y-2">
@@ -719,59 +788,14 @@ function FindingsList({ findings, selectedIds, onToggle, onSelectAll }: Findings
       >
         {allSelected ? 'Deselect all' : 'Select all'} ({findings.length})
       </button>
-      {findings.map(finding => {
-        const isSelected = selectedIds.includes(finding.id)
-        return (
-          <div
-            key={finding.id}
-            onClick={() => onToggle(finding.id)}
-            className={`cursor-pointer rounded-lg border p-3 transition-all ${
-              isSelected
-                ? 'border-bronze-500/50 bg-bronze-500/10'
-                : 'border-charcoal-700 bg-charcoal-800/50 hover:border-charcoal-600'
-            }`}
-          >
-            <div className="flex items-start gap-3">
-              <div
-                className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
-                  isSelected
-                    ? 'border-bronze-500 bg-bronze-500'
-                    : 'border-charcoal-600 bg-transparent'
-                }`}
-              >
-                {isSelected && <CheckCircle className="h-3 w-3 text-white" />}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <span className="truncate font-medium text-charcoal-100">{finding.title}</span>
-                  <Badge
-                    variant={
-                      finding.severity === 'critical'
-                        ? 'critical'
-                        : finding.severity === 'high'
-                          ? 'high'
-                          : finding.severity === 'medium'
-                            ? 'medium'
-                            : 'low'
-                    }
-                    className="shrink-0 text-[10px]"
-                  >
-                    {finding.severity || 'info'}
-                  </Badge>
-                </div>
-                {finding.description && (
-                  <p className="mt-1 line-clamp-2 text-xs text-charcoal-400">
-                    {finding.description}
-                  </p>
-                )}
-                <div className="mt-1 text-[10px] uppercase tracking-wider text-charcoal-500">
-                  {finding.engine.replace(/_/g, ' ')}
-                </div>
-              </div>
-            </div>
-          </div>
-        )
-      })}
+      {findings.map(finding => (
+        <FindingItem
+          key={finding.id}
+          finding={finding}
+          isSelected={selectedIds.includes(finding.id)}
+          onToggle={onToggle}
+        />
+      ))}
     </div>
   )
 }

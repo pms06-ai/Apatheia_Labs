@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Filter, Network, List, ChevronDown } from 'lucide-react'
 import { Card } from '@/components/ui/card'
@@ -342,10 +342,7 @@ export function NativeEntityGraphViewer({
                         }`}
                       >
                         <span className="capitalize">{type.replace(/_/g, ' ')}</span>
-                        <Badge
-                          variant={isActive ? 'default' : 'outline'}
-                          className="ml-2 text-xs"
-                        >
+                        <Badge variant={isActive ? 'default' : 'outline'} className="ml-2 text-xs">
                           {count}
                         </Badge>
                       </button>
@@ -448,9 +445,7 @@ function EntityListView({
             key={entity.id}
             entity={entity}
             isSelected={selectedEntity?.id === entity.id}
-            onClick={() =>
-              onEntitySelect(selectedEntity?.id === entity.id ? null : entity)
-            }
+            onClick={() => onEntitySelect(selectedEntity?.id === entity.id ? null : entity)}
           />
         ))}
       </div>
@@ -464,7 +459,14 @@ interface EntityListItemProps {
   onClick: () => void
 }
 
-function EntityListItem({ entity, isSelected, onClick }: EntityListItemProps) {
+/**
+ * Entity list item component - memoized to prevent re-renders in large entity lists
+ */
+const EntityListItem = memo(function EntityListItem({
+  entity,
+  isSelected,
+  onClick,
+}: EntityListItemProps) {
   return (
     <div
       onClick={onClick}
@@ -496,7 +498,8 @@ function EntityListItem({ entity, isSelected, onClick }: EntityListItemProps) {
       </div>
     </div>
   )
-}
+})
+EntityListItem.displayName = 'EntityListItem'
 
 // ============================================
 // NATIVE ENTITY DETAIL PANEL

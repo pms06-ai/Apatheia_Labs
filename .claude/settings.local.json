@@ -23,7 +23,16 @@
       "Bash(npm install)",
       "Bash(npx tauri init:*)",
       "Bash(npm install:*)",
-      "Bash(npx tailwindcss:*)"
+      "Bash(npx tailwindcss:*)",
+      "Bash(cargo check:*)",
+      "mcp__obsidian-phronesis__read_text_file",
+      "Bash(npm test)",
+      "Bash(find:*)",
+      "Bash(for f in src/hooks/use-*.ts)",
+      "Bash(done)",
+      "Bash(npm run validate:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm test:*)"
     ]
   }
 }

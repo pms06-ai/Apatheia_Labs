@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, memo } from 'react'
 import { motion } from 'framer-motion'
 import { Card } from '@/components/ui/card'
 import { ArrowDown, AlertCircle, BarChart3 } from 'lucide-react'
@@ -73,6 +73,78 @@ function transformToCascade(findings: Finding[]): { stages: CascadeStage[]; fact
   return { stages, factor }
 }
 
+/**
+ * Cascade step component - memoized for performance in list rendering
+ */
+const CascadeStep = memo(function CascadeStep({
+  step,
+  index,
+  isLast,
+}: {
+  step: CascadeStage
+  index: number
+  isLast: boolean
+}) {
+  return (
+    <div className="relative pb-5 last:pb-0">
+      {/* Animated Connector Line */}
+      {!isLast && (
+        <motion.div
+          initial={{ height: 0 }}
+          animate={{ height: '100%' }}
+          transition={{ duration: 0.5, delay: index * 0.2 }}
+          className="absolute bottom-[-10px] left-[13px] top-7 w-0.5 bg-gradient-to-b from-bronze-500/50 to-status-critical/50 shadow-[0_0_8px_rgba(239,68,68,0.2)]"
+        />
+      )}
+
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: index * 0.15 }}
+        className="relative z-10 flex items-start gap-3"
+      >
+        {/* Node */}
+        <div
+          className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border shadow-lg backdrop-blur-md transition-all duration-500 ${
+            step.severity === 'critical'
+              ? 'border-status-critical bg-status-critical/10 text-status-critical shadow-status-critical/20'
+              : step.severity === 'high'
+                ? 'border-status-high bg-status-high/10 text-status-high shadow-status-high/20'
+                : 'border-bronze-500 bg-bronze-500/10 text-bronze-500 shadow-bronze-500/20'
+          } `}
+        >
+          <span className="font-mono text-xs font-bold">{step.count}</span>
+        </div>
+
+        {/* Content */}
+        <div className="min-w-0 flex-1 border-b border-charcoal-800/50 pb-4 pt-0.5 last:border-0 last:pb-0">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-medium text-charcoal-200">{step.stage}</span>
+            <span
+              className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                step.severity === 'critical'
+                  ? 'bg-status-critical/10 text-status-critical'
+                  : step.severity === 'high'
+                    ? 'bg-status-high/10 text-status-high'
+                    : 'bg-bronze-500/10 text-bronze-500'
+              }`}
+            >
+              {step.bias}
+            </span>
+          </div>
+          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-charcoal-400">
+            {step.description}
+          </p>
+        </div>
+      </motion.div>
+    </div>
+  )
+})
+CascadeStep.displayName = 'CascadeStep'
+
+/**
+ * Bias cascades widget - shows amplification of bias through investigation stages
+ */
 export function BiasCascadesWidget({ caseId }: BiasCascadesWidgetProps) {
   const { data: findings } = useFindings(caseId)
 
@@ -130,58 +202,12 @@ export function BiasCascadesWidget({ caseId }: BiasCascadesWidgetProps) {
         <div className="absolute bottom-6 left-[29px] top-6 w-0.5 bg-charcoal-700/30" />
 
         {cascadeData.map((step, index) => (
-          <div key={step.stage} className="relative pb-5 last:pb-0">
-            {/* Animated Connector Line */}
-            {index < cascadeData.length - 1 && (
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: '100%' }}
-                transition={{ duration: 0.5, delay: index * 0.2 }}
-                className="absolute bottom-[-10px] left-[13px] top-7 w-0.5 bg-gradient-to-b from-bronze-500/50 to-status-critical/50 shadow-[0_0_8px_rgba(239,68,68,0.2)]"
-              />
-            )}
-
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.15 }}
-              className="relative z-10 flex items-start gap-3"
-            >
-              {/* Node */}
-              <div
-                className={`relative flex h-7 w-7 shrink-0 items-center justify-center rounded-full border shadow-lg backdrop-blur-md transition-all duration-500 ${
-                  step.severity === 'critical'
-                    ? 'border-status-critical bg-status-critical/10 text-status-critical shadow-status-critical/20'
-                    : step.severity === 'high'
-                      ? 'border-status-high bg-status-high/10 text-status-high shadow-status-high/20'
-                      : 'border-bronze-500 bg-bronze-500/10 text-bronze-500 shadow-bronze-500/20'
-                } `}
-              >
-                <span className="font-mono text-xs font-bold">{step.count}</span>
-              </div>
-
-              {/* Content */}
-              <div className="min-w-0 flex-1 border-b border-charcoal-800/50 pb-4 pt-0.5 last:border-0 last:pb-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-charcoal-200">{step.stage}</span>
-                  <span
-                    className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                      step.severity === 'critical'
-                        ? 'bg-status-critical/10 text-status-critical'
-                        : step.severity === 'high'
-                          ? 'bg-status-high/10 text-status-high'
-                          : 'bg-bronze-500/10 text-bronze-500'
-                    }`}
-                  >
-                    {step.bias}
-                  </span>
-                </div>
-                <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-charcoal-400">
-                  {step.description}
-                </p>
-              </div>
-            </motion.div>
-          </div>
+          <CascadeStep
+            key={step.stage}
+            step={step}
+            index={index}
+            isLast={index === cascadeData.length - 1}
+          />
         ))}
       </div>
 

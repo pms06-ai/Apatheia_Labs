@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, memo } from 'react'
 import { FileText, Users, AlertTriangle, Scale, Activity, ArrowUpRight } from 'lucide-react'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +9,50 @@ import { useDocuments, useFindings } from '@/hooks/use-api'
 import { useCaseStore } from '@/hooks/use-case-store'
 import { PremiumFindingCard } from '@/components/analysis/premium-finding-card'
 import { Link } from 'react-router-dom'
+import type { LucideIcon } from 'lucide-react'
+
+interface StatCardData {
+  name: string
+  value: string
+  icon: LucideIcon
+  change: string
+  color: string
+  bg: string
+  border: string
+}
+
+/**
+ * Stats card component - memoized to prevent re-renders when stats haven't changed
+ */
+const StatsCard = memo(function StatsCard({ stat }: { stat: StatCardData }) {
+  const Icon = stat.icon
+  return (
+    <Card
+      className={`relative overflow-hidden border ${stat.border} ${stat.bg} group p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-elevated`}
+    >
+      <div className="absolute right-0 top-0 p-4 opacity-0 transition-opacity duration-500 group-hover:opacity-10">
+        <Icon className="-mr-4 -mt-4 h-24 w-24 rotate-12" />
+      </div>
+
+      <div className="relative z-10">
+        <div
+          className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-white/5 bg-black/20 backdrop-blur-sm`}
+        >
+          <Icon className={`h-5 w-5 ${stat.color}`} />
+        </div>
+        <div className={`mb-1 font-display text-3xl tracking-tight text-white`}>{stat.value}</div>
+        <div className="flex items-center gap-2">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-charcoal-400">
+            {stat.name}
+          </div>
+          <div className="h-px flex-1 bg-gradient-to-r from-charcoal-700/50 to-transparent" />
+          <div className="font-mono text-[10px] text-charcoal-500">{stat.change}</div>
+        </div>
+      </div>
+    </Card>
+  )
+})
+StatsCard.displayName = 'StatsCard'
 
 export function Dashboard() {
   const { activeCase } = useCaseStore()
@@ -78,6 +122,9 @@ export function Dashboard() {
     [documents?.length, statsData]
   )
 
+  // Memoize recent findings to avoid recalculating on every render
+  const recentFindings = useMemo(() => findings?.slice(0, 5) || [], [findings])
+
   return (
     <div className="space-y-8 p-2">
       {/* Header */}
@@ -100,32 +147,7 @@ export function Dashboard() {
       {/* Stats Grid */}
       <div className="grid grid-cols-4 gap-4">
         {stats.map(stat => (
-          <Card
-            key={stat.name}
-            className={`relative overflow-hidden border ${stat.border} ${stat.bg} group p-5 transition-all duration-300 hover:scale-[1.02] hover:shadow-elevated`}
-          >
-            <div className="absolute right-0 top-0 p-4 opacity-0 transition-opacity duration-500 group-hover:opacity-10">
-              <stat.icon className="-mr-4 -mt-4 h-24 w-24 rotate-12" />
-            </div>
-
-            <div className="relative z-10">
-              <div
-                className={`mb-3 flex h-10 w-10 items-center justify-center rounded-lg border border-white/5 bg-black/20 backdrop-blur-sm`}
-              >
-                <stat.icon className={`h-5 w-5 ${stat.color}`} />
-              </div>
-              <div className={`mb-1 font-display text-3xl tracking-tight text-white`}>
-                {stat.value}
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="text-[10px] font-bold uppercase tracking-widest text-charcoal-400">
-                  {stat.name}
-                </div>
-                <div className="h-px flex-1 bg-gradient-to-r from-charcoal-700/50 to-transparent" />
-                <div className="font-mono text-[10px] text-charcoal-500">{stat.change}</div>
-              </div>
-            </div>
-          </Card>
+          <StatsCard key={stat.name} stat={stat} />
         ))}
       </div>
 
@@ -144,10 +166,10 @@ export function Dashboard() {
           </div>
 
           <div className="space-y-3">
-            {findings && findings.length > 0 ? (
-              findings
-                .slice(0, 5)
-                .map(finding => <PremiumFindingCard key={finding.id} finding={finding} />)
+            {recentFindings.length > 0 ? (
+              recentFindings.map(finding => (
+                <PremiumFindingCard key={finding.id} finding={finding} />
+              ))
             ) : (
               <div className="rounded-xl border border-dashed border-charcoal-700 bg-charcoal-800/20 p-8 text-center">
                 <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-charcoal-600" />
