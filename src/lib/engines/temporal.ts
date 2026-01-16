@@ -623,17 +623,6 @@ function resolveRelativeDates<
 }
 
 /**
- * Backdating Detection Result for a single event
- */
-interface BackdatingResult {
-  eventId: string
-  eventDate: Date
-  documentDate: Date
-  daysDifference: number
-  description: string
-}
-
-/**
  * Layer 5: Backdating Detection
  * Detects temporal impossibilities where events are dated after the document's creation date.
  * This indicates potential backdating - a document cannot reference future events.
@@ -1023,7 +1012,7 @@ export async function parseTemporalEvents(
   }
 
   // Map AI extraction results to intermediate format for validation
-  const aiExtractedEvents = (result.events || []).map((e: any) => ({
+  const aiExtractedEvents = (result.events || []).map(e => ({
     date: e.date,
     time: e.time || undefined,
     rawText: e.rawText || undefined,
@@ -1067,14 +1056,12 @@ export async function parseTemporalEvents(
   }))
 
   // Map AI-detected inconsistencies with Phase 1 type categorization
-  const aiInconsistencies: TemporalInconsistency[] = (result.inconsistencies || []).map(
-    (inc: any) => ({
-      description: inc.description,
-      events: (inc.conflictingIndices || []).map((idx: number) => `time-${idx}`),
-      severity: inc.severity || 'medium',
-      type: inc.type || undefined,
-    })
-  )
+  const aiInconsistencies: TemporalInconsistency[] = (result.inconsistencies || []).map(inc => ({
+    description: inc.description,
+    events: (inc.conflictingIndices || []).map((idx: number) => `time-${idx}`),
+    severity: (inc.severity || 'medium') as 'critical' | 'high' | 'medium',
+    type: inc.type as 'BACKDATING' | 'IMPOSSIBLE_SEQUENCE' | 'CONTRADICTION' | undefined,
+  }))
 
   // Layer 5: Backdating Detection - detect temporal impossibilities
   // Check if any events are dated after their source document's creation date
@@ -1109,10 +1096,6 @@ export async function parseTemporalEvents(
     'sequence-detection',
     'cross-document-contradiction-detection',
   ]
-  const chronoValidatedCount = resolvedEvents.filter(e => e.chronoValidated).length
-  const dateFnsValidatedCount = resolvedEvents.filter(e => e.dateFnsValidated).length
-  const relativesResolvedCount = resolvedEvents.filter(e => e.resolvedFromRelative).length
-  const requiresAnchorCount = resolvedEvents.filter(e => e.requiresAnchor).length
 
   return {
     timeline: events,

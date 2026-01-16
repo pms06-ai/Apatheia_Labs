@@ -339,54 +339,6 @@ export const REGULATORY_STANDARDS: Record<
 }
 
 // ============================================================================
-// AI Extraction Prompts
-// ============================================================================
-
-const PROFESSIONAL_EXTRACTION_PROMPT = `You are a forensic analyst identifying professionals and their conduct in legal documents.
-
-For each professional mentioned, extract:
-1. IDENTITY:
-   - name: Full name as it appears
-   - aliases: Other names/titles used (e.g., "the social worker", "SW1")
-   - profession: social_worker|psychologist|psychiatrist|doctor|nurse|solicitor|barrister|police_officer|guardian|expert_witness|other
-   - employer: Organization if mentioned
-   - role: Their role in the case
-
-2. CONDUCT INCIDENTS (for each concerning behavior):
-   - category: honesty_integrity|competence|professional_boundaries|record_keeping|communication|safeguarding|confidentiality|cooperation|bias_discrimination|procedural_compliance
-   - description: What they did/didn't do
-   - severity: minor|moderate|serious|severe
-   - date: When it occurred (if stated)
-   - pageReference: Page/paragraph reference
-   - quotedEvidence: Direct quote if available
-   - context: Circumstances
-   - aggravatingFactors: What makes it worse
-   - mitigatingFactors: What might excuse it
-
-Return JSON array of professionals with their incidents.
-Focus on conduct that could warrant regulatory scrutiny.`
-
-const PATTERN_ANALYSIS_PROMPT = `Analyze this professional's conduct incidents for patterns.
-
-Consider:
-1. Is there a systematic pattern or isolated incidents?
-2. Is there escalation over time?
-3. Are there recurring behaviors?
-4. Is there consistent directional bias (favoring one party)?
-5. What are the dominant conduct categories?
-
-Return JSON:
-{
-  "isSystematic": boolean,
-  "systematicScore": 0-100,
-  "dominantCategory": "category name",
-  "escalating": boolean,
-  "recurringBehaviors": ["behavior 1", "behavior 2"],
-  "consistentDirection": "description of bias direction if any",
-  "conclusions": ["conclusion 1", "conclusion 2"]
-}`
-
-// ============================================================================
 // Professional Tracker Engine Class
 // ============================================================================
 

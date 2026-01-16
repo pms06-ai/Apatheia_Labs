@@ -737,7 +737,7 @@ export class BiasDetectionEngine {
         id: `bias-${Date.now()}-${i}`,
         description: item.description,
         direction: item.direction as BiasDirection,
-        materiality: item.materiality,
+        materiality: (item.materiality || 'medium') as 'critical' | 'high' | 'medium' | 'low',
         source: item.source,
         pageReference: item.pageReference,
         quotedText: item.quotedText,

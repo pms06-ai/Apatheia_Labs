@@ -5,7 +5,7 @@
  * evidence → analysis → conclusion reasoning chains.
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals'
+import { describe, it, expect } from '@jest/globals'
 import type { Document, Entity, Finding, Contradiction, Engine, DocType } from '@/CONTRACT'
 import type { AuditTrail, AuditTrailStep, AuditStepType } from '@/lib/types/export'
 import {
@@ -143,7 +143,7 @@ describe('AUDIT_STEP_LABELS', () => {
       'verification_step',
     ]
 
-    stepTypes.forEach((stepType) => {
+    stepTypes.forEach(stepType => {
       expect(AUDIT_STEP_LABELS[stepType]).toBeDefined()
       expect(typeof AUDIT_STEP_LABELS[stepType]).toBe('string')
     })
@@ -174,7 +174,7 @@ describe('ENGINE_LABELS', () => {
       'evidence_chain',
     ]
 
-    engines.forEach((engine) => {
+    engines.forEach(engine => {
       expect(ENGINE_LABELS[engine]).toBeDefined()
       expect(typeof ENGINE_LABELS[engine]).toBe('string')
     })
@@ -323,9 +323,7 @@ describe('calculateOverallConfidence', () => {
   })
 
   it('should return 0 for all null confidences', () => {
-    const steps: AuditTrailStep[] = [
-      { ...createBaseStep(), confidence: null },
-    ]
+    const steps: AuditTrailStep[] = [{ ...createBaseStep(), confidence: null }]
 
     const result = calculateOverallConfidence(steps)
     expect(result).toBe(0)
@@ -546,7 +544,7 @@ describe('traceEvidence', () => {
     expect(steps.length).toBeGreaterThan(0)
 
     // Should have source identification, evidence extraction, analysis, and conclusion
-    const stepTypes = steps.map((s) => s.stepType)
+    const stepTypes = steps.map(s => s.stepType)
     expect(stepTypes).toContain('source_identification')
     expect(stepTypes).toContain('analysis_performed')
     expect(stepTypes).toContain('conclusion_reached')
@@ -559,9 +557,7 @@ describe('traceEvidence', () => {
     const context = createTestContext()
     const steps = traceEvidence(finding, context)
 
-    const extractionSteps = steps.filter(
-      (s) => s.stepType === 'evidence_extraction'
-    )
+    const extractionSteps = steps.filter(s => s.stepType === 'evidence_extraction')
     expect(extractionSteps.length).toBe(1)
   })
 
@@ -571,7 +567,7 @@ describe('traceEvidence', () => {
     const steps = traceEvidence(finding, context)
 
     // Later steps should reference earlier steps
-    const conclusionStep = steps.find((s) => s.stepType === 'conclusion_reached')
+    const conclusionStep = steps.find(s => s.stepType === 'conclusion_reached')
     expect(conclusionStep?.previousStepIds.length).toBeGreaterThan(0)
   })
 
@@ -581,7 +577,7 @@ describe('traceEvidence', () => {
     const steps = traceEvidence(finding, context)
 
     // Should still have analysis and conclusion steps
-    const stepTypes = steps.map((s) => s.stepType)
+    const stepTypes = steps.map(s => s.stepType)
     expect(stepTypes).toContain('analysis_performed')
     expect(stepTypes).toContain('conclusion_reached')
   })
@@ -591,9 +587,7 @@ describe('traceEvidence', () => {
     const context = createTestContext()
     const steps = traceEvidence(finding, context)
 
-    const extractionSteps = steps.filter(
-      (s) => s.stepType === 'evidence_extraction'
-    )
+    const extractionSteps = steps.filter(s => s.stepType === 'evidence_extraction')
     // Should not create extraction step without quotes
     expect(extractionSteps.length).toBe(0)
   })
@@ -607,7 +601,7 @@ describe('buildReasoningChain', () => {
 
     expect(steps.length).toBeGreaterThan(0)
 
-    const stepTypes = steps.map((s) => s.stepType)
+    const stepTypes = steps.map(s => s.stepType)
     expect(stepTypes).toContain('source_identification')
     expect(stepTypes).toContain('contradiction_detected')
     expect(stepTypes).toContain('verification_step')
@@ -618,9 +612,7 @@ describe('buildReasoningChain', () => {
     const context = createTestContext()
     const steps = buildReasoningChain(contradiction, context)
 
-    const sourceSteps = steps.filter(
-      (s) => s.stepType === 'source_identification'
-    )
+    const sourceSteps = steps.filter(s => s.stepType === 'source_identification')
     expect(sourceSteps.length).toBe(2)
   })
 
@@ -629,9 +621,7 @@ describe('buildReasoningChain', () => {
     const context = createTestContext()
     const steps = buildReasoningChain(contradiction, context)
 
-    const extractionSteps = steps.filter(
-      (s) => s.stepType === 'evidence_extraction'
-    )
+    const extractionSteps = steps.filter(s => s.stepType === 'evidence_extraction')
     expect(extractionSteps.length).toBe(2)
   })
 
@@ -641,7 +631,7 @@ describe('buildReasoningChain', () => {
     const steps = buildReasoningChain(contradiction, emptyContext)
 
     // Should still create contradiction and verification steps
-    const stepTypes = steps.map((s) => s.stepType)
+    const stepTypes = steps.map(s => s.stepType)
     expect(stepTypes).toContain('contradiction_detected')
     expect(stepTypes).toContain('verification_step')
   })
@@ -651,9 +641,7 @@ describe('buildReasoningChain', () => {
     const context = createTestContext()
     const steps = buildReasoningChain(contradiction, context)
 
-    const verificationStep = steps.find(
-      (s) => s.stepType === 'verification_step'
-    )
+    const verificationStep = steps.find(s => s.stepType === 'verification_step')
     expect(verificationStep?.description).toContain('[CRITICAL]')
   })
 })
@@ -776,10 +764,7 @@ describe('summarizeAuditTrail', () => {
   it('should number steps', () => {
     const auditTrail: AuditTrail = {
       findingId: 'finding-123',
-      steps: [
-        createBaseStep(),
-        { ...createBaseStep(), stepType: 'conclusion_reached' },
-      ],
+      steps: [createBaseStep(), { ...createBaseStep(), stepType: 'conclusion_reached' }],
       summary: 'Summary',
       overallConfidence: 0.8,
     }
@@ -795,9 +780,7 @@ describe('formatAuditTrailAsMarkdown', () => {
   it('should generate markdown format', () => {
     const auditTrail: AuditTrail = {
       findingId: 'finding-123',
-      steps: [
-        createBaseStep(),
-      ],
+      steps: [createBaseStep()],
       summary: 'Test summary',
       overallConfidence: 0.85,
     }
@@ -828,22 +811,26 @@ describe('formatAuditTrailAsMarkdown', () => {
   it('should include evidence quotes', () => {
     const auditTrail: AuditTrail = {
       findingId: 'finding-123',
-      steps: [{
-        ...createBaseStep(),
-        evidence: [{
-          text: 'This is quoted evidence text',
-          documentId: 'doc-1',
-          pageNumber: 5,
-          citation: {
-            formatted: 'Document A, at 5',
-            documentId: 'doc-1',
-            documentName: 'Document A',
-            pageNumber: 5,
-            docType: null,
-          },
-          truncated: false,
-        }],
-      }],
+      steps: [
+        {
+          ...createBaseStep(),
+          evidence: [
+            {
+              text: 'This is quoted evidence text',
+              documentId: 'doc-1',
+              pageNumber: 5,
+              citation: {
+                formatted: 'Document A, at 5',
+                documentId: 'doc-1',
+                documentName: 'Document A',
+                pageNumber: 5,
+                docType: null,
+              },
+              truncated: false,
+            },
+          ],
+        },
+      ],
       summary: 'Summary',
       overallConfidence: 0.8,
     }
@@ -858,22 +845,26 @@ describe('formatAuditTrailAsMarkdown', () => {
     const longQuote = 'A'.repeat(150)
     const auditTrail: AuditTrail = {
       findingId: 'finding-123',
-      steps: [{
-        ...createBaseStep(),
-        evidence: [{
-          text: longQuote,
-          documentId: 'doc-1',
-          pageNumber: null,
-          citation: {
-            formatted: 'Document',
-            documentId: 'doc-1',
-            documentName: 'Document',
-            pageNumber: null,
-            docType: null,
-          },
-          truncated: false,
-        }],
-      }],
+      steps: [
+        {
+          ...createBaseStep(),
+          evidence: [
+            {
+              text: longQuote,
+              documentId: 'doc-1',
+              pageNumber: null,
+              citation: {
+                formatted: 'Document',
+                documentId: 'doc-1',
+                documentName: 'Document',
+                pageNumber: null,
+                docType: null,
+              },
+              truncated: false,
+            },
+          ],
+        },
+      ],
       summary: 'Summary',
       overallConfidence: 0.8,
     }

@@ -118,6 +118,26 @@ interface FindingsResult {
   error?: string
 }
 
+interface SAMProgressRaw {
+  analysis_id: string
+  status: string
+  current_phase: string | null
+  anchor_started_at?: string
+  anchor_completed_at?: string
+  inherit_started_at?: string
+  inherit_completed_at?: string
+  compound_started_at?: string
+  compound_completed_at?: string
+  arrive_started_at?: string
+  arrive_completed_at?: string
+  false_premises_found: number
+  propagation_chains_found: number
+  authority_accumulations_found: number
+  outcomes_linked: number
+  error_message?: string
+  error_phase?: string
+}
+
 // Use RustAnalysisResult from CONTRACT.ts for the actual Rust response
 
 interface EngineRunResponse {
@@ -577,7 +597,7 @@ export class TauriClient {
   } | null> {
     const result = await this.call<{
       success: boolean
-      progress?: any
+      progress?: SAMProgressRaw
       error?: string
     }>('get_sam_progress', { analysis_id: analysisId })
     return result.progress || null

@@ -61,6 +61,21 @@ export interface ExpertAnalysisResult {
   recommendations: string[]
 }
 
+interface RawExpertViolation {
+  type: ExpertViolationType
+  severity: ExpertViolation['severity']
+  title: string
+  description: string
+  report_section?: string
+  page_reference?: string
+  quoted_text?: string
+  rule_violated?: string
+  explanation?: string
+  instructed_scope?: string
+  actual_scope?: string
+  confidence?: number
+}
+
 // FPR Part 25 and Practice Direction 25B rules
 const EXPERT_RULES = {
   pd25b: {
@@ -276,20 +291,22 @@ export class ExpertWitnessEngine {
 
     try {
       const parsed = JSON.parse(response)
-      const rawViolations = Array.isArray(parsed) ? parsed : parsed.violations || []
+      const rawViolations = (
+        Array.isArray(parsed) ? parsed : parsed.violations || []
+      ) as RawExpertViolation[]
 
-      return rawViolations.map((v: any, i: number) => ({
+      return rawViolations.map((v, i) => ({
         id: `expert-${Date.now()}-${i}`,
         type: v.type as ExpertViolationType,
         severity: v.severity,
         title: v.title,
         description: v.description,
-        reportSection: v.report_section,
-        pageReference: v.page_reference,
-        quotedText: v.quoted_text,
-        ruleViolated: v.rule_violated,
-        ruleText: this.getRuleText(v.rule_violated),
-        explanation: v.explanation,
+        reportSection: v.report_section || '',
+        pageReference: v.page_reference || '',
+        quotedText: v.quoted_text || '',
+        ruleViolated: v.rule_violated || '',
+        ruleText: this.getRuleText(v.rule_violated || ''),
+        explanation: v.explanation || '',
         instructedScope: v.instructed_scope,
         actualScope: v.actual_scope,
         confidence: v.confidence || 75,

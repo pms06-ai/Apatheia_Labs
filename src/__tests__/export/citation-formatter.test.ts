@@ -6,7 +6,7 @@
 
 import { describe, it, expect, beforeEach } from '@jest/globals'
 import type { Document, DocType, Finding } from '@/CONTRACT'
-import type { Citation, CitationOptions, CitationStyle } from '@/lib/types/export'
+import type { Citation } from '@/lib/types/export'
 import {
   // Constants
   DOC_TYPE_LABELS,
@@ -634,8 +634,8 @@ describe('CitationTracker', () => {
     const all = tracker.getAllCitations()
 
     expect(all.length).toBe(2)
-    expect(all.map((c) => c.documentId)).toContain('doc-1')
-    expect(all.map((c) => c.documentId)).toContain('doc-2')
+    expect(all.map(c => c.documentId)).toContain('doc-1')
+    expect(all.map(c => c.documentId)).toContain('doc-2')
   })
 
   it('should reset tracker', () => {
@@ -719,7 +719,7 @@ describe('DOC_TYPE_LABELS', () => {
       'other',
     ]
 
-    docTypes.forEach((docType) => {
+    docTypes.forEach(docType => {
       expect(DOC_TYPE_LABELS[docType]).toBeDefined()
       expect(typeof DOC_TYPE_LABELS[docType]).toBe('string')
     })

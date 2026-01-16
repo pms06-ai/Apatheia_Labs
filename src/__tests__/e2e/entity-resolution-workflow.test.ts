@@ -23,17 +23,7 @@ import {
   areEntitiesSame,
   type ResolvedEntity,
   type EntityLinkageProposal,
-  type EntityResolutionResult,
-  type EntityGraphData,
 } from '@/lib/engines/entity-resolution'
-import { extractEntitiesFromDocuments } from '@/lib/nlp/entity-extractor'
-import { fuzzyMatch, generateLinkageProposals } from '@/lib/nlp/fuzzy-matcher'
-let useEntityResolution: typeof import('@/hooks/use-entity-resolution').useEntityResolution
-let useUpdateLinkageStatus: typeof import('@/hooks/use-entity-resolution').useUpdateLinkageStatus
-let useConfirmLinkage: typeof import('@/hooks/use-entity-resolution').useConfirmLinkage
-let useRejectLinkage: typeof import('@/hooks/use-entity-resolution').useRejectLinkage
-let usePendingLinkages: typeof import('@/hooks/use-entity-resolution').usePendingLinkages
-let useEntityGraph: typeof import('@/hooks/use-entity-resolution').useEntityGraph
 import type { Document } from '@/CONTRACT'
 
 // ============================================
@@ -206,14 +196,11 @@ jest.mock('@/lib/data', () => ({
   ),
 }))
 
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const hooks = require('@/hooks/use-entity-resolution') as typeof import('@/hooks/use-entity-resolution')
-useEntityResolution = hooks.useEntityResolution
-useUpdateLinkageStatus = hooks.useUpdateLinkageStatus
-useConfirmLinkage = hooks.useConfirmLinkage
-useRejectLinkage = hooks.useRejectLinkage
-usePendingLinkages = hooks.usePendingLinkages
-useEntityGraph = hooks.useEntityGraph
+/* eslint-disable @typescript-eslint/no-require-imports */
+const hooks =
+  require('@/hooks/use-entity-resolution') as typeof import('@/hooks/use-entity-resolution')
+/* eslint-enable @typescript-eslint/no-require-imports */
+const { useUpdateLinkageStatus, useConfirmLinkage, useRejectLinkage } = hooks
 
 // Mock localStorage for persistence testing
 const localStorageMock = (() => {
@@ -808,12 +795,6 @@ describe('E2E: Entity Resolution Workflow', () => {
 
     it('should handle multi-document entity tracking', async () => {
       const result = await resolveEntities(testDocuments, 'case-e2e-123')
-
-      // Find entities that appear in multiple documents
-      const multiDocEntities = result.entities.filter(entity => {
-        const uniqueDocIds = new Set(entity.mentions.map(m => m.docId))
-        return uniqueDocIds.size > 1
-      })
 
       // Verify graph nodes track document IDs
       for (const node of result.graph.nodes) {

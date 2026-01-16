@@ -14,23 +14,7 @@
  */
 
 import { describe, it, expect, beforeEach } from '@jest/globals'
-import {
-  generateDOCX,
-  generateDOCXBlob,
-  generateDOCXBuffer,
-  buildDOCXDocument,
-} from '@/lib/export/docx-generator'
-import type {
-  ExportData,
-  ExportFinding,
-  ExportContradiction,
-  ExportEntity,
-  ExportSummary,
-  MethodologyStatement,
-  Citation,
-  AuditTrail,
-} from '@/lib/types/export'
-import { DEFAULT_EXPORT_OPTIONS } from '@/lib/types/export'
+import { generateDOCX } from '@/lib/export/docx-generator'
 import type { Case, Document, Entity, Finding, Contradiction, Severity, Engine } from '@/CONTRACT'
 import * as dataLayer from '@/lib/data'
 
@@ -165,7 +149,13 @@ function createRealisticTestData() {
   // Create 25 findings across multiple engines and severities
   const findings: Finding[] = []
   const severities: Severity[] = ['critical', 'high', 'medium', 'low', 'info']
-  const engines: Engine[] = ['contradiction', 'omission', 'entity_resolution', 'temporal_parser', 'accountability']
+  const engines: Engine[] = [
+    'contradiction',
+    'omission',
+    'entity_resolution',
+    'temporal_parser',
+    'accountability',
+  ]
 
   for (let i = 0; i < 25; i++) {
     findings.push({
@@ -197,7 +187,8 @@ function createRealisticTestData() {
       id: 'contradiction-1',
       case_id: 'case-e2e-docx-test',
       title: 'Timeline Discrepancy - Incident Date',
-      description: 'The police report and social worker report give conflicting dates for the initial incident.',
+      description:
+        'The police report and social worker report give conflicting dates for the initial incident.',
       source_a_document_id: 'doc-social-report',
       source_a_entity_id: 'entity-social-worker',
       source_a_text: 'The incident was first reported to social services on June 5th, 2024.',
@@ -242,12 +233,14 @@ function createRealisticTestData() {
       description: 'Expert and social worker reach different conclusions about child welfare.',
       source_a_document_id: 'doc-expert-psych',
       source_a_entity_id: 'entity-psychologist',
-      source_a_text: 'The psychological assessment indicates the home environment is suitable with monitoring.',
+      source_a_text:
+        'The psychological assessment indicates the home environment is suitable with monitoring.',
       source_a_page: 15,
       source_a_date: '2024-07-10',
       source_b_document_id: 'doc-social-report',
       source_b_entity_id: 'entity-social-worker',
-      source_b_text: 'The home environment assessment indicates significant concerns requiring intervention.',
+      source_b_text:
+        'The home environment assessment indicates significant concerns requiring intervention.',
       source_b_page: 20,
       source_b_date: '2024-06-20',
       contradiction_type: 'opinion',
@@ -268,7 +261,7 @@ function createRealisticTestData() {
       source_a_date: '2024-05-15',
       source_b_document_id: 'doc-social-report',
       source_b_entity_id: 'entity-social-worker',
-      source_b_text: 'The incident reportedly took place at the grandmother\'s house on Elm Road.',
+      source_b_text: "The incident reportedly took place at the grandmother's house on Elm Road.",
       source_b_page: 5,
       source_b_date: '2024-06-20',
       contradiction_type: 'factual',
@@ -314,7 +307,9 @@ function createRealisticTestData() {
 // ============================================
 
 describe('E2E Word Export Verification (subtask-7-2)', () => {
-  const mockGetDataLayer = dataLayer.getDataLayer as jest.MockedFunction<typeof dataLayer.getDataLayer>
+  const mockGetDataLayer = dataLayer.getDataLayer as jest.MockedFunction<
+    typeof dataLayer.getDataLayer
+  >
   let testData: ReturnType<typeof createRealisticTestData>
 
   beforeEach(() => {
@@ -832,7 +827,10 @@ describe('E2E Word Export Verification (subtask-7-2)', () => {
       expect(result.data?.summary.entityCount).toBe(3)
 
       // Check severity distribution
-      const totalBySeverity = Object.values(result.data?.summary.findingsBySeverity || {}).reduce((a, b) => a + b, 0)
+      const totalBySeverity = Object.values(result.data?.summary.findingsBySeverity || {}).reduce(
+        (a, b) => a + b,
+        0
+      )
       expect(totalBySeverity).toBe(25)
     })
 
@@ -949,7 +947,9 @@ describe('E2E Word Export Verification (subtask-7-2)', () => {
         getFindings: jest.fn().mockResolvedValue([]),
         getContradictions: jest.fn().mockResolvedValue([]),
         getEntities: jest.fn().mockResolvedValue([]),
-        getAnalysis: jest.fn().mockResolvedValue({ findings: [], contradictions: [], omissions: [] }),
+        getAnalysis: jest
+          .fn()
+          .mockResolvedValue({ findings: [], contradictions: [], omissions: [] }),
       } as any)
 
       const result = await generateDOCX('nonexistent-case')
@@ -965,7 +965,9 @@ describe('E2E Word Export Verification (subtask-7-2)', () => {
         getFindings: jest.fn().mockResolvedValue([]),
         getContradictions: jest.fn().mockResolvedValue([]),
         getEntities: jest.fn().mockResolvedValue(testData.entities),
-        getAnalysis: jest.fn().mockResolvedValue({ findings: [], contradictions: [], omissions: [] }),
+        getAnalysis: jest
+          .fn()
+          .mockResolvedValue({ findings: [], contradictions: [], omissions: [] }),
       } as any)
 
       const result = await generateDOCX('case-e2e-docx-test')
@@ -981,7 +983,9 @@ describe('E2E Word Export Verification (subtask-7-2)', () => {
         getFindings: jest.fn().mockResolvedValue([]),
         getContradictions: jest.fn().mockResolvedValue([]),
         getEntities: jest.fn().mockResolvedValue([]),
-        getAnalysis: jest.fn().mockResolvedValue({ findings: [], contradictions: [], omissions: [] }),
+        getAnalysis: jest
+          .fn()
+          .mockResolvedValue({ findings: [], contradictions: [], omissions: [] }),
       } as any)
 
       const result = await generateDOCX('case-e2e-docx-test')
@@ -1065,12 +1069,14 @@ describe('E2E Word Export Verification (subtask-7-2)', () => {
   describe('Large Dataset Handling', () => {
     it('should handle export with 50+ findings without timeout', async () => {
       // Create larger dataset
-      const largeFindingsSet = Array(50).fill(null).map((_, i) => ({
-        ...testData.findings[0],
-        id: `finding-${i + 1}`,
-        title: `Finding ${i + 1}: Test Analysis`,
-        description: `Detailed analysis finding #${i + 1} discovered during examination.`,
-      }))
+      const largeFindingsSet = Array(50)
+        .fill(null)
+        .map((_, i) => ({
+          ...testData.findings[0],
+          id: `finding-${i + 1}`,
+          title: `Finding ${i + 1}: Test Analysis`,
+          description: `Detailed analysis finding #${i + 1} discovered during examination.`,
+        }))
 
       mockGetDataLayer.mockResolvedValue({
         getCase: jest.fn().mockResolvedValue(testData.caseData),

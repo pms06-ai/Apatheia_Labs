@@ -15,7 +15,6 @@ import {
   buildGraph,
   type ResolvedEntity,
   type EntityLinkageProposal,
-  type EntityGraphData,
 } from '@/lib/engines/entity-resolution'
 import { extractEntitiesFromDocuments } from '@/lib/nlp/entity-extractor'
 import type { Document } from '@/CONTRACT'
@@ -185,11 +184,7 @@ describe('E2E: Multi-Document Entity Tracking', () => {
   describe('Step 1: Upload 3 Documents with Same Entity (Different Names)', () => {
     it('should have 3 distinct documents with the same entity', () => {
       expect(testDocuments.length).toBe(3)
-      expect(testDocuments.map((d) => d.id)).toEqual([
-        'doc-multi-1',
-        'doc-multi-2',
-        'doc-multi-3',
-      ])
+      expect(testDocuments.map(d => d.id)).toEqual(['doc-multi-1', 'doc-multi-2', 'doc-multi-3'])
     })
 
     it('should have different name variations for the same entity across documents', () => {
@@ -229,13 +224,13 @@ describe('E2E: Multi-Document Entity Tracking', () => {
     })
 
     it('should prepare documents for extraction with extracted text', () => {
-      const docsForExtraction = testDocuments.map((doc) => ({
+      const docsForExtraction = testDocuments.map(doc => ({
         id: doc.id,
         text: doc.extracted_text || '',
       }))
 
       expect(docsForExtraction.length).toBe(3)
-      expect(docsForExtraction.every((d) => d.text.length > 0)).toBe(true)
+      expect(docsForExtraction.every(d => d.text.length > 0)).toBe(true)
 
       // Each document should have substantial text
       expect(docsForExtraction[0].text.length).toBeGreaterThan(500)
@@ -276,7 +271,7 @@ describe('E2E: Multi-Document Entity Tracking', () => {
 
     it('should extract entities from all three documents', async () => {
       // Use the entity extractor directly to verify document coverage
-      const docsForExtraction = testDocuments.map((doc) => ({
+      const docsForExtraction = testDocuments.map(doc => ({
         id: doc.id,
         text: doc.extracted_text || '',
       }))
@@ -301,10 +296,7 @@ describe('E2E: Multi-Document Entity Tracking', () => {
 
       // With fuzzy matching, entities with name variations should be merged
       // So total entities should be less than total raw name mentions
-      const totalMentions = result.entities.reduce(
-        (sum, entity) => sum + entity.mentions.length,
-        0
-      )
+      const totalMentions = result.entities.reduce((sum, entity) => sum + entity.mentions.length, 0)
 
       expect(result.entities.length).toBeLessThan(totalMentions)
     })
@@ -314,7 +306,7 @@ describe('E2E: Multi-Document Entity Tracking', () => {
 
       // At least one entity should have multiple aliases (merged name variations)
       const entitiesWithMultipleAliases = result.entities.filter(
-        (entity) => entity.aliases.length > 1
+        entity => entity.aliases.length > 1
       )
 
       expect(entitiesWithMultipleAliases.length).toBeGreaterThan(0)
@@ -324,8 +316,8 @@ describe('E2E: Multi-Document Entity Tracking', () => {
       const result = await resolveEntities(testDocuments, 'case-multi-doc-test')
 
       // Find entities that have mentions across multiple documents
-      const entitiesWithCrossDocMentions = result.entities.filter((entity) => {
-        const uniqueDocIds = new Set(entity.mentions.map((m) => m.docId))
+      const entitiesWithCrossDocMentions = result.entities.filter(entity => {
+        const uniqueDocIds = new Set(entity.mentions.map(m => m.docId))
         return uniqueDocIds.size > 1
       })
 
@@ -363,12 +355,10 @@ describe('E2E: Multi-Document Entity Tracking', () => {
       expect(result.summary.totalEntities).toBe(result.entities.length)
 
       const manualCounts = {
-        people: result.entities.filter((e) => e.type === 'person').length,
-        professionals: result.entities.filter((e) => e.type === 'professional')
-          .length,
-        organizations: result.entities.filter((e) => e.type === 'organization')
-          .length,
-        courts: result.entities.filter((e) => e.type === 'court').length,
+        people: result.entities.filter(e => e.type === 'person').length,
+        professionals: result.entities.filter(e => e.type === 'professional').length,
+        organizations: result.entities.filter(e => e.type === 'organization').length,
+        courts: result.entities.filter(e => e.type === 'court').length,
       }
 
       expect(result.summary.peopleCount).toBe(manualCounts.people)
@@ -434,9 +424,7 @@ describe('E2E: Multi-Document Entity Tracking', () => {
         expect(node.attributes.name).toBeDefined()
         expect(node.attributes.type).toBeDefined()
         expect(
-          ['person', 'organization', 'professional', 'court'].includes(
-            node.attributes.type
-          )
+          ['person', 'organization', 'professional', 'court'].includes(node.attributes.type)
         ).toBe(true)
 
         // Array attributes
@@ -463,9 +451,7 @@ describe('E2E: Multi-Document Entity Tracking', () => {
         expect(edge.attributes.confidence).toBeGreaterThanOrEqual(0)
         expect(edge.attributes.confidence).toBeLessThanOrEqual(1)
         expect(edge.attributes.algorithm).toBeDefined()
-        expect(['pending', 'confirmed', 'rejected']).toContain(
-          edge.attributes.status
-        )
+        expect(['pending', 'confirmed', 'rejected']).toContain(edge.attributes.status)
       }
     })
 
@@ -477,12 +463,7 @@ describe('E2E: Multi-Document Entity Tracking', () => {
           canonicalName: 'Dr. Michael Roberts',
           type: 'professional',
           role: 'Psychologist',
-          aliases: [
-            'Dr. Michael Roberts',
-            'Dr. Roberts',
-            'Prof. Roberts',
-            'M. Roberts',
-          ],
+          aliases: ['Dr. Michael Roberts', 'Dr. Roberts', 'Prof. Roberts', 'M. Roberts'],
           mentions: [
             { docId: 'doc-multi-1', text: 'Dr. Michael Roberts', context: '...' },
             { docId: 'doc-multi-2', text: 'Prof. Roberts', context: '...' },
@@ -561,14 +542,14 @@ describe('E2E: Multi-Document Entity Tracking', () => {
       const result = await resolveEntities(testDocuments, 'case-multi-doc-test')
 
       // Find any entity appearing in multiple documents
-      const crossDocEntities = result.entities.filter((entity) => {
-        const docIds = new Set(entity.mentions.map((m) => m.docId))
+      const crossDocEntities = result.entities.filter(entity => {
+        const docIds = new Set(entity.mentions.map(m => m.docId))
         return docIds.size > 1
       })
 
       // Verify graph nodes track this correctly
       for (const entity of crossDocEntities) {
-        const node = result.graph.nodes.find((n) => n.key === entity.id)
+        const node = result.graph.nodes.find(n => n.key === entity.id)
         if (node) {
           expect(node.attributes.documentIds.length).toBeGreaterThan(1)
         }
@@ -579,9 +560,7 @@ describe('E2E: Multi-Document Entity Tracking', () => {
       const result = await resolveEntities(testDocuments, 'case-multi-doc-test')
 
       // At least one professional should be identified (the psychologist)
-      const professionals = result.entities.filter(
-        (e) => e.type === 'professional'
-      )
+      const professionals = result.entities.filter(e => e.type === 'professional')
 
       expect(professionals.length).toBeGreaterThanOrEqual(0)
 
@@ -596,8 +575,8 @@ describe('E2E: Multi-Document Entity Tracking', () => {
       const result = await resolveEntities(testDocuments, 'case-multi-doc-test')
 
       // Entity IDs should match graph node keys
-      const entityIds = result.entities.map((e) => e.id)
-      const nodeKeys = result.graph.nodes.map((n) => n.key)
+      const entityIds = result.entities.map(e => e.id)
+      const nodeKeys = result.graph.nodes.map(n => n.key)
 
       for (const entityId of entityIds) {
         expect(nodeKeys).toContain(entityId)

@@ -218,11 +218,11 @@ async function runContradictionAnalysis(
 
   if (!hasContent) {
     console.log('[ContradictionEngine] No content provided, using mock analysis')
-    const mockResult = {
+    const mockResult: ContradictionAnalysisResponse = {
       contradictions: [
         {
-          type: 'direct',
-          severity: 'critical',
+          type: 'direct' as const,
+          severity: 'critical' as const,
           claim1: {
             documentId: docContents[0]?.id || 'mock-doc-1',
             text: 'Subject was at home all night',
@@ -243,8 +243,8 @@ async function runContradictionAnalysis(
           suggestedResolution: 'Verify CCTV footage or third-party witness statements.',
         },
         {
-          type: 'temporal',
-          severity: 'high',
+          type: 'temporal' as const,
+          severity: 'high' as const,
           claim1: {
             documentId: docContents[0]?.id || 'mock-doc-1',
             text: 'Incident occurred at 10:00 PM',
@@ -264,8 +264,8 @@ async function runContradictionAnalysis(
         {
           topic: 'Subject Location',
           claims: [
-            { docId: docContents[0]?.id, text: 'At home', stance: 'Defense' },
-            { docId: docContents[1]?.id, text: 'At pub', stance: 'Prosecution' },
+            { docId: docContents[0]?.id || '', text: 'At home', stance: 'Defense' },
+            { docId: docContents[1]?.id || '', text: 'At pub', stance: 'Prosecution' },
           ],
           consensus: false,
         },
@@ -317,7 +317,7 @@ async function runContradictionAnalysis(
     summary: {
       totalContradictions: contradictions.length,
       criticalCount: contradictions.filter(c => c.severity === 'critical').length,
-      mostContradictedTopics: extractTopics(result.claimClusters),
+      mostContradictedTopics: extractTopics(result.claimClusters || []),
       credibilityImpact: calculateCredibilityImpact(contradictions),
     },
   }

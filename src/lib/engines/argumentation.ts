@@ -608,7 +608,57 @@ export class ArgumentationEngine {
     console.warn(
       '[ArgumentationEngine] Document fetching now handled by Rust backend. Using mock data.'
     )
-    return this.getMockArguments('Unknown')
+    // Process raw mock arguments into full ToulminArguments
+    const rawArgs = this.getMockArguments('Unknown')
+    return rawArgs.map((arg, index) => ({
+      id: `${documentId}-arg-${index}`,
+      claim: {
+        id: `${documentId}-claim-${index}`,
+        statement: arg.claim?.statement || '',
+        type: arg.claim?.type || 'factual',
+        domain: arg.claim?.domain || 'general',
+        strength: 'moderate' as const,
+        confidence: 70,
+      },
+      data: (arg.data || []).map((d, dIdx) => ({
+        id: `${documentId}-datum-${index}-${dIdx}`,
+        description: d.description || '',
+        source: d.source || '',
+        reliability: d.reliability || ('medium' as const),
+        pageReference: d.pageReference,
+        quotedText: d.quotedText,
+      })),
+      warrant: {
+        id: `${documentId}-warrant-${index}`,
+        principle: arg.warrant?.principle || '',
+        type: arg.warrant?.type || ('legal_rule' as const),
+        authority: arg.warrant?.authority,
+        citation: arg.warrant?.citation,
+      },
+      backing: (arg.backing || []).map((b, bIdx) => ({
+        id: `${documentId}-backing-${index}-${bIdx}`,
+        support: b.support || '',
+        type: b.type || ('logical' as const),
+        citation: b.citation,
+        strength: b.strength || ('informative' as const),
+      })),
+      qualifiers: (arg.qualifiers || []).map((q, qIdx) => ({
+        id: `${documentId}-qualifier-${index}-${qIdx}`,
+        limitation: q.limitation || '',
+        type: q.type || ('scope' as const),
+        impact: q.impact || ('minor' as const),
+      })),
+      rebuttals: (arg.rebuttals || []).map((r, rIdx) => ({
+        id: `${documentId}-rebuttal-${index}-${rIdx}`,
+        counterArgument: r.counterArgument || '',
+        source: r.source || ('anticipated' as const),
+        strength: r.strength || ('weak' as const),
+        response: r.response,
+      })),
+      overallStrength: 'moderate' as const,
+      vulnerabilities: ['Mock data - needs real analysis'],
+      improvements: ['Conduct full argument extraction'],
+    }))
   }
 
   /**
@@ -893,7 +943,7 @@ export class ArgumentationEngine {
         if (vector.strength === 'strong' || vector.strength === 'decisive') {
           report.anticipatedRebuttals.push({
             argumentId: arg.id,
-            rebuttal: vector.vector,
+            rebuttal: vector.vector || 'Unknown attack vector',
             suggestedResponse: vector.suggested_response || 'Response needed',
           })
         }
@@ -1205,7 +1255,7 @@ export class ArgumentationEngine {
    * @deprecated Use prepareFindings instead - Rust backend handles persistence
    */
   private async storeFindings(result: ArgumentAnalysisResult): Promise<void> {
-    const findings = this.prepareFindings(result)
+    this.prepareFindings(result)
     console.log('[ArgumentationEngine] storeFindings called - persistence handled by Rust backend')
   }
 

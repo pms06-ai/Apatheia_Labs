@@ -71,6 +71,29 @@ export interface NarrativeAnalysisResult {
   }
 }
 
+interface NarrativeAIResponse {
+  lineages?: Array<{
+    rootClaim: string
+    versions: Array<{
+      documentId: string
+      documentName?: string
+      date: string
+      author?: string
+      claimText: string
+      strength: NarrativeVersion['strength']
+      sourceCited?: string
+    }>
+    mutationType: ClaimLineage['mutationType']
+    driftDirection: ClaimLineage['driftDirection']
+    summary: string
+  }>
+  circularCitations?: Array<{
+    claim: string
+    citationChain: CircularCitation['citationChain']
+    explanation: string
+  }>
+}
+
 const NARRATIVE_ANALYSIS_PROMPT = `You are a forensic analyst tracking how claims evolve across documents in legal proceedings.
 
 DOCUMENTS (in chronological order):
@@ -216,12 +239,12 @@ async function runNarrativeAnalysis(
   const prompt = NARRATIVE_ANALYSIS_PROMPT.replace('{documents}', formattedDocs)
 
   // Check if we have actual content to analyze
-  let result: any
+  let result: NarrativeAIResponse
   const hasContent = docContents.some(d => d.content && d.content.length > 0)
 
   if (!hasContent) {
     console.log('[NarrativeEngine] No content provided, using mock analysis')
-    const mockResult = {
+    const mockResult: NarrativeAIResponse = {
       lineages: [
         {
           rootClaim: 'Child was neglected',
@@ -231,15 +254,15 @@ async function runNarrativeAnalysis(
               documentName: 'Police Report',
               date: '2023-01-12',
               claimText: 'Officers noted potential neglect',
-              strength: 'concern',
-              sourceCited: null,
+              strength: 'concern' as const,
+              sourceCited: undefined,
             },
             {
               documentId: docContents[1]?.id || 'mock-doc-2',
               documentName: 'SW Assessment',
               date: '2023-02-15',
               claimText: 'Neglect concerns substantiated',
-              strength: 'established',
+              strength: 'established' as const,
               sourceCited: 'Police Report',
             },
             {
@@ -247,12 +270,12 @@ async function runNarrativeAnalysis(
               documentName: 'Expert Report',
               date: '2023-03-20',
               claimText: 'Clear evidence of chronic neglect',
-              strength: 'fact',
+              strength: 'fact' as const,
               sourceCited: 'SW Assessment',
             },
           ],
-          mutationType: 'amplification',
-          driftDirection: 'toward_finding',
+          mutationType: 'amplification' as const,
+          driftDirection: 'toward_finding' as const,
           summary:
             'Claim evolved from initial concern to established fact through sequential citations.',
         },
@@ -277,22 +300,21 @@ async function runNarrativeAnalysis(
     result = mockResult
   } else {
     // Real AI Analysis via Router
-    result = await generateJSON('You are a forensic document analyst.', prompt)
+    result = await generateJSON<NarrativeAIResponse>('You are a forensic document analyst.', prompt)
   }
 
-  const rawLineages = Array.isArray((result as any).lineages) ? (result as any).lineages : []
-  const rawCircular = Array.isArray((result as any).circularCitations)
-    ? (result as any).circularCitations
-    : []
+  const rawLineages = result.lineages ?? []
+  const rawCircular = result.circularCitations ?? []
 
   // Process lineages
-  const lineages: ClaimLineage[] = rawLineages.map((l: any, idx: number) => ({
+  const lineages: ClaimLineage[] = rawLineages.map((l, idx) => ({
     id: `lineage-${caseId.slice(0, 8)}-${idx}`,
     rootClaim: l.rootClaim,
-    versions: l.versions.map((v: any, vIdx: number) => ({
+    versions: l.versions.map((v, vIdx) => ({
       id: `version-${idx}-${vIdx}`,
       documentId: v.documentId,
-      documentName: v.documentName || docContents.find(d => d.id === v.documentId)?.name,
+      documentName:
+        v.documentName || docContents.find(d => d.id === v.documentId)?.name || 'Unknown',
       date: v.date,
       author: v.author,
       claimText: v.claimText,
@@ -308,7 +330,7 @@ async function runNarrativeAnalysis(
   }))
 
   // Process circular citations
-  const circularCitations: CircularCitation[] = rawCircular.map((c: any, idx: number) => ({
+  const circularCitations: CircularCitation[] = rawCircular.map((c, idx) => ({
     id: `circular-${idx}`,
     claim: c.claim,
     citationChain: c.citationChain,
@@ -613,55 +635,6 @@ function findCitationCycles(
   })
 
   return cycles
-}
-
-async function storeNarrativeFindings(caseId: string, result: NarrativeAnalysisResult) {
-  const findings = []
-
-  // Store amplified claims as findings
-  for (const lineage of result.lineages.filter(l => l.mutationType === 'amplification')) {
-    findings.push({
-      case_id: caseId,
-      engine: 'narrative',
-      title: `Narrative Amplification: ${lineage.rootClaim.slice(0, 50)}...`,
-      description: lineage.summary,
-      severity: lineage.driftDirection === 'toward_finding' ? 'high' : 'medium',
-      document_ids: lineage.versions.map(v => v.documentId),
-      evidence: {
-        mutationType: lineage.mutationType,
-        versions: lineage.versions.length,
-        driftDirection: lineage.driftDirection,
-      },
-    })
-  }
-
-  // Store circular citations
-  for (const circular of result.circularCitations) {
-    findings.push({
-      case_id: caseId,
-      engine: 'narrative',
-      title: 'Circular Citation Detected',
-      description: circular.explanation,
-      severity: 'critical',
-      document_ids: circular.citationChain.map(c => c.documentId),
-      evidence: {
-        claim: circular.claim,
-        chain: circular.citationChain,
-      },
-    })
-  }
-
-  const hasNarrativeSignals = result.lineages.length > 0 || result.circularCitations.length > 0
-  if (!hasNarrativeSignals) {
-    return
-  }
-
-  // Findings storage handled by Rust backend via Tauri commands
-  if (findings.length > 0) {
-    console.log(
-      `[Narrative Engine] Generated ${findings.length} findings - storage handled by Rust backend`
-    )
-  }
 }
 
 export const narrativeEngine = {

@@ -14,13 +14,7 @@ import Graph from 'graphology'
 import { extractEntitiesFromDocuments } from '@/lib/nlp/entity-extractor'
 import type { ExtractedEntityType } from '@/lib/nlp/entity-extractor'
 import type { Document } from '@/CONTRACT'
-import {
-  fuzzyMatch,
-  generateLinkageProposals,
-  type MatchOptions,
-  type EntityLinkage,
-  type MatchAlgorithm,
-} from '@/lib/nlp/fuzzy-matcher'
+import { fuzzyMatch, type MatchOptions, type MatchAlgorithm } from '@/lib/nlp/fuzzy-matcher'
 
 /**
  * A resolved entity with all its mentions across documents
