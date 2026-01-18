@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://apatheialabs.com/sitemap.xml
