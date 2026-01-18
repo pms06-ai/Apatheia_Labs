@@ -314,12 +314,16 @@ export function useYourFeature() {
 
 ```bash
 # TypeScript tests
-npm test                 # Run all tests
-npm run test:watch       # Watch mode
-npm run test:coverage    # With coverage report
+npm test                                    # Run all tests
+npm test -- --testPathPattern="entity"      # Run tests matching pattern
+npm test -- src/__tests__/engines/          # Run tests in directory
+npm run test:watch                          # Watch mode
+npm run test:coverage                       # With coverage report
 
 # Rust tests
-cargo test --manifest-path src-tauri/Cargo.toml
+cargo test --manifest-path src-tauri/Cargo.toml                    # All tests
+cargo test --manifest-path src-tauri/Cargo.toml test_entity        # Single test
+cargo test --manifest-path src-tauri/Cargo.toml -- --nocapture     # With output
 ```
 
 ## Cargo Features
