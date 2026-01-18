@@ -9,6 +9,16 @@
   <meta property="og:title" content="Phronesis by Apatheia Labs">
   <meta property="og:description" content="Forensic intelligence platform for institutional accountability analysis. Local-first. Evidence-driven. Built for clarity.">
   <meta property="og:type" content="website">
+  <meta property="og:url" content="https://apatheialabs.com">
+  <meta property="og:image" content="https://apatheialabs.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Phronesis by Apatheia Labs">
+  <meta name="twitter:description" content="Forensic intelligence platform for institutional accountability analysis. Local-first. Evidence-driven. Built for clarity.">
+  <meta name="twitter:image" content="https://apatheialabs.com/og-image.png">
+  <link rel="canonical" href="https://apatheialabs.com">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.ico">
+  <script defer data-domain="apatheialabs.com" src="https://plausible.io/js/script.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -501,6 +511,110 @@
       font-size: 14px;
       color: var(--charcoal-400);
       line-height: 1.7;
+    }
+
+    /* Comparison Section */
+    .comparison {
+      background: var(--charcoal-900);
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    @media (max-width: 768px) {
+      .comparison-grid { grid-template-columns: 1fr; }
+    }
+
+    .comparison-card {
+      border-radius: 16px;
+      padding: 32px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .comparison-card.enterprise {
+      background: linear-gradient(135deg, rgba(201, 74, 74, 0.08), rgba(201, 74, 74, 0.02));
+      border: 1px solid rgba(201, 74, 74, 0.3);
+    }
+
+    .comparison-card.phronesis {
+      background: linear-gradient(135deg, rgba(74, 154, 106, 0.12), rgba(74, 154, 106, 0.04));
+      border: 1px solid rgba(74, 154, 106, 0.4);
+    }
+
+    .comparison-header {
+      margin-bottom: 24px;
+    }
+
+    .comparison-header h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--charcoal-100);
+      margin-bottom: 8px;
+    }
+
+    .comparison-label {
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--charcoal-400);
+    }
+
+    .comparison-card.phronesis .comparison-label {
+      color: var(--status-success);
+    }
+
+    .comparison-list {
+      list-style: none;
+      margin-bottom: 20px;
+    }
+
+    .comparison-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--charcoal-700);
+    }
+
+    .comparison-list li:last-child {
+      border-bottom: none;
+    }
+
+    .tool-name {
+      font-size: 14px;
+      color: var(--charcoal-200);
+    }
+
+    .tool-price {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--charcoal-400);
+    }
+
+    .comparison-card.enterprise .tool-price {
+      color: var(--status-critical);
+    }
+
+    .comparison-card.phronesis .tool-price {
+      color: var(--status-success);
+      font-size: 16px;
+    }
+
+    .comparison-note {
+      font-size: 13px;
+      color: var(--charcoal-400);
+      font-style: italic;
+    }
+
+    .comparison-card.phronesis .comparison-note {
+      color: var(--charcoal-300);
     }
 
     /* SAM Section */
@@ -1163,6 +1277,294 @@
       color: var(--charcoal-400);
     }
 
+    /* Research */
+    .research {
+      background: var(--charcoal-900);
+      border-top: 1px solid var(--charcoal-700);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .research::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at 15% 10%, rgba(184, 134, 11, 0.12), transparent 45%),
+        radial-gradient(circle at 85% 30%, rgba(91, 138, 154, 0.08), transparent 40%);
+      pointer-events: none;
+    }
+
+    .research-layout {
+      position: relative;
+      display: grid;
+      grid-template-columns: 0.9fr 1.1fr;
+      gap: 64px;
+      align-items: start;
+    }
+
+    @media (max-width: 968px) {
+      .research-layout { grid-template-columns: 1fr; }
+    }
+
+    .research-intro h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 500;
+      margin-bottom: 18px;
+    }
+
+    .research-intro p {
+      font-size: 16px;
+      color: var(--charcoal-300);
+      line-height: 1.8;
+      margin-bottom: 28px;
+    }
+
+    .research-stats {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .research-stat {
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(184, 134, 11, 0.06);
+      border: 1px solid rgba(184, 134, 11, 0.2);
+    }
+
+    .research-stat-value {
+      font-family: 'Playfair Display', serif;
+      font-size: 28px;
+      color: var(--bronze-500);
+      margin-bottom: 6px;
+      line-height: 1;
+    }
+
+    .research-stat-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--charcoal-400);
+    }
+
+    .research-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .research-cards {
+      display: grid;
+      gap: 20px;
+    }
+
+    .research-card {
+      background: linear-gradient(135deg, var(--charcoal-800), var(--charcoal-900));
+      border: 1px solid var(--charcoal-700);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+      transition: transform 0.3s, border-color 0.3s;
+    }
+
+    .research-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(184, 134, 11, 0.35);
+    }
+
+    .research-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .research-tagline {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.18em;
+      color: var(--charcoal-500);
+    }
+
+    .research-chip {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(74, 154, 106, 0.4);
+      color: var(--status-success);
+      background: rgba(74, 154, 106, 0.12);
+    }
+
+    .research-chip.planned {
+      border-color: rgba(212, 160, 23, 0.35);
+      color: var(--status-high);
+      background: rgba(212, 160, 23, 0.12);
+    }
+
+    .research-card h4 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .research-card p {
+      font-size: 14px;
+      color: var(--charcoal-400);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .research-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .research-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--charcoal-300);
+      border-bottom: 1px solid var(--charcoal-700);
+      padding-bottom: 10px;
+    }
+
+    .research-list li:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .research-list svg {
+      width: 14px;
+      height: 14px;
+      stroke: var(--bronze-500);
+    }
+
+    /* Documentation */
+    .documentation {
+      background: var(--charcoal-900);
+    }
+
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      margin-top: 48px;
+    }
+
+    @media (max-width: 968px) {
+      .doc-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 568px) {
+      .doc-grid { grid-template-columns: 1fr; }
+    }
+
+    .doc-category {
+      background: linear-gradient(135deg, var(--charcoal-800), var(--charcoal-900));
+      border: 1px solid var(--charcoal-700);
+      border-radius: 16px;
+      padding: 32px;
+      transition: all 0.3s;
+    }
+
+    .doc-category:hover {
+      border-color: rgba(184, 134, 11, 0.3);
+      transform: translateY(-4px);
+    }
+
+    .doc-icon {
+      width: 56px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(184, 134, 11, 0.1);
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+
+    .doc-icon svg {
+      width: 28px;
+      height: 28px;
+      stroke: var(--bronze-500);
+    }
+
+    .doc-category h3 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--charcoal-100);
+    }
+
+    .doc-category > p {
+      font-size: 14px;
+      color: var(--charcoal-400);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+
+    .doc-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .doc-links li {
+      border-bottom: 1px solid var(--charcoal-700);
+    }
+
+    .doc-links li:last-child {
+      border-bottom: none;
+    }
+
+    .doc-links a {
+      display: block;
+      padding: 12px 0;
+      font-size: 14px;
+      color: var(--charcoal-300);
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .doc-links a:hover {
+      color: var(--bronze-500);
+      padding-left: 8px;
+    }
+
+    .doc-footer {
+      margin-top: 48px;
+      text-align: center;
+      padding: 32px;
+      background: rgba(184, 134, 11, 0.05);
+      border-radius: 12px;
+      border: 1px solid rgba(184, 134, 11, 0.1);
+    }
+
+    .doc-footer p {
+      font-size: 14px;
+      color: var(--charcoal-400);
+    }
+
+    .doc-footer a {
+      color: var(--bronze-500);
+      text-decoration: none;
+      font-weight: 500;
+      transition: color 0.2s;
+    }
+
+    .doc-footer a:hover {
+      color: var(--bronze-400);
+    }
+
     /* CTA */
     .cta {
       background: linear-gradient(180deg, var(--charcoal-800) 0%, var(--charcoal-900) 100%);
@@ -1200,6 +1602,86 @@
 
     .cta-note strong {
       color: var(--charcoal-300);
+    }
+
+    /* Waitlist */
+    .waitlist {
+      background: linear-gradient(180deg, var(--charcoal-900) 0%, var(--charcoal-800) 50%, var(--charcoal-900) 100%);
+      border-top: 1px solid var(--charcoal-700);
+      border-bottom: 1px solid var(--charcoal-700);
+      text-align: center;
+      padding: 100px 0;
+    }
+
+    .waitlist h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 4vw, 40px);
+      margin-bottom: 16px;
+      color: var(--charcoal-50);
+    }
+
+    .waitlist > .container > p {
+      font-size: 16px;
+      color: var(--charcoal-400);
+      max-width: 500px;
+      margin: 0 auto 32px;
+      line-height: 1.6;
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    .waitlist-form input[type="email"] {
+      flex: 1;
+      min-width: 240px;
+      padding: 14px 20px;
+      border: 1px solid var(--charcoal-600);
+      border-radius: 8px;
+      background: var(--charcoal-800);
+      color: var(--charcoal-100);
+      font-size: 15px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .waitlist-form input[type="email"]:focus {
+      outline: none;
+      border-color: var(--bronze-600);
+      box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.15);
+    }
+
+    .waitlist-form input[type="email"]::placeholder {
+      color: var(--charcoal-500);
+    }
+
+    .waitlist-form button {
+      padding: 14px 28px;
+      background: var(--bronze-600);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: background 0.2s, box-shadow 0.2s;
+    }
+
+    .waitlist-form button:hover {
+      background: var(--bronze-500);
+      box-shadow: 0 0 30px rgba(184, 134, 11, 0.3);
+    }
+
+    .waitlist-privacy {
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--charcoal-500);
     }
 
     /* Footer */
@@ -1296,8 +1778,6 @@
       transform: translateY(0) scale(1);
     }
 
-    .modal-container.modal-small { max-width: 480px; }
-    .modal-container.modal-medium { max-width: 720px; }
     .modal-container.modal-large { max-width: 960px; }
 
     .modal-close {
@@ -1646,18 +2126,21 @@
   <!-- Header -->
   <header>
     <div class="container">
-      <a href="#" class="logo">
+      <a href="/" class="logo">
         <div class="logo-icon">A</div>
         <div class="logo-text">
           <span class="logo-brand">APATHEIA LABS</span>
-          <span class="logo-tagline">Forensic Intelligence</span>
+          <span class="logo-tagline">Clarity Without Distortion</span>
         </div>
       </a>
       <nav>
         <a href="#about">About</a>
         <a href="#methodology">Methodology</a>
         <a href="#engines">Engines</a>
+        <a href="#research">Research</a>
+        <a href="#documentation">Documentation</a>
         <a href="#roadmap">Roadmap</a>
+        <a href="#waitlist">Waitlist</a>
         <a href="https://github.com/apatheia-labs/phronesis" target="_blank">GitHub</a>
         <a href="#download" class="btn btn-primary">Download</a>
       </nav>
@@ -1678,14 +2161,14 @@
         <div class="hero-text">
           <div class="hero-badge">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
-            Local-First Desktop Platform
+            Free &amp; Local-First
           </div>
           <h1><span>Phronesis</span><br>by Apatheia Labs</h1>
-          <p class="hero-tagline">"Clarity Without Distortion"</p>
+          <p class="hero-tagline">Forensic document analysis for evidence-based investigations.</p>
           <p class="hero-description">
-            Professional forensic intelligence software for researchers, journalists, and advocates
-            investigating institutional dysfunction. Analyze documents systematically.
-            Surface contradictions automatically. Build evidence-based accountability cases.
+            Professional-grade document analysis software—previously limited to large legal teams
+            and enterprise budgets—now available as a free, open-source desktop application.
+            Detect contradictions, construct timelines, and map entity relationships across hundreds of documents.
           </p>
           <div class="hero-cta">
             <a href="#download" class="btn btn-primary btn-large">
@@ -1752,21 +2235,23 @@
     <div class="container">
       <div class="about-grid">
         <div class="about-content">
-          <h2>What is Apatheia Labs?</h2>
+          <h2>Why We Built This</h2>
           <p>
-            <strong>Apatheia Labs</strong> is a forensic intelligence company building tools that help
-            expose institutional dysfunction through systematic, evidence-based analysis.
+            Complex investigations require rigorous document analysis. Medical records, legal filings,
+            correspondence archives—evidence is often scattered across hundreds of documents where
+            inconsistencies and patterns are difficult to identify manually.
           </p>
           <p>
-            Our flagship product, <strong>Phronesis</strong>, is a desktop application that applies
-            rigorous analytical methodology to document corpora—surfacing contradictions, tracking
-            claim propagation, and identifying patterns that humans might miss when reviewing
-            hundreds or thousands of pages.
+            <strong>Phronesis</strong> applies systematic methodology to documentary analysis:
+            detecting contradictions, constructing timelines, mapping entity relationships,
+            and tracing how claims propagate across institutional records.
           </p>
           <p>
-            We believe that accountability requires clarity. When institutions fail, the evidence
-            is often buried in procedural complexity, scattered across documents, and obscured by
-            technical language. Phronesis cuts through the noise.
+            <strong>Free and open source. Fully local. Your documents never leave your machine.</strong>
+          </p>
+          <p>
+            Built for journalists, researchers, legal professionals, and anyone conducting
+            evidence-based investigations who needs reliable, auditable document analysis.
           </p>
         </div>
         <div class="about-features">
@@ -1838,6 +2323,71 @@
             appear authoritative. Without systematic source comparison, cherry-picking masquerades as
             thorough analysis.
           </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Cost Comparison -->
+  <section class="comparison">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">The Playing Field</p>
+        <h2 class="section-title">What You're Up Against</h2>
+        <p class="section-description">
+          These are the tools institutions use to build cases against people like you.
+        </p>
+      </div>
+      <div class="comparison-grid">
+        <div class="comparison-card enterprise">
+          <div class="comparison-header">
+            <h3>What They Have</h3>
+            <span class="comparison-label">Enterprise Tools</span>
+          </div>
+          <ul class="comparison-list">
+            <li>
+              <span class="tool-name">Relativity</span>
+              <span class="tool-price">$150,000+/year</span>
+            </li>
+            <li>
+              <span class="tool-name">Nuix</span>
+              <span class="tool-price">$100,000+/year</span>
+            </li>
+            <li>
+              <span class="tool-name">Concordance</span>
+              <span class="tool-price">$50,000+/year</span>
+            </li>
+            <li>
+              <span class="tool-name">i2 Analyst's Notebook</span>
+              <span class="tool-price">$10,000+/license</span>
+            </li>
+          </ul>
+          <p class="comparison-note">Plus teams of analysts trained to use them.</p>
+        </div>
+        <div class="comparison-card phronesis">
+          <div class="comparison-header">
+            <h3>What You Have Now</h3>
+            <span class="comparison-label">Phronesis</span>
+          </div>
+          <ul class="comparison-list highlight">
+            <li>
+              <span class="tool-name">Contradiction Detection</span>
+              <span class="tool-price">Free</span>
+            </li>
+            <li>
+              <span class="tool-name">Timeline Construction</span>
+              <span class="tool-price">Free</span>
+            </li>
+            <li>
+              <span class="tool-name">Entity Mapping</span>
+              <span class="tool-price">Free</span>
+            </li>
+            <li>
+              <span class="tool-name">Professional Exports</span>
+              <span class="tool-price">Free</span>
+            </li>
+          </ul>
+          <p class="comparison-note">And it runs on your computer. No subscriptions. No cloud.</p>
         </div>
       </div>
     </div>
@@ -2047,72 +2597,71 @@
   <section class="use-cases" id="use-cases">
     <div class="container">
       <div class="section-header">
-        <p class="section-label">Applications</p>
-        <h2 class="section-title">Who Uses Phronesis?</h2>
+        <p class="section-label">Built For You</p>
+        <h2 class="section-title">People Fighting Back</h2>
         <p class="section-description">
-          Phronesis is designed for anyone who needs to analyze institutional documents systematically
-          and build evidence-based cases for accountability.
+          Phronesis is for anyone who's been told "you can't fight this"—and decided to anyway.
         </p>
       </div>
       <div class="use-cases-grid">
+        <div class="use-case" data-modal="usecase-medical" data-modal-size="medium" role="button" tabindex="0">
+          <div class="use-case-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>
+          </div>
+          <h3>Fighting Medical Malpractice</h3>
+          <p>
+            Your loved one died and the hospital's story doesn't add up. Find the contradictions
+            in medical records that prove something went wrong.
+          </p>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Timeline of care vs. what records claim</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Spot contradictions between providers</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Generate reports for attorneys</li>
+          </ul>
+        </div>
         <div class="use-case" data-modal="usecase-journalist" data-modal-size="medium" role="button" tabindex="0">
           <div class="use-case-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/></svg>
           </div>
-          <h3>Investigative Journalists</h3>
+          <h3>Freelance Journalists</h3>
           <p>
-            Analyze document dumps, FOIA responses, and leaked materials at scale. Surface the
-            contradictions and patterns that become the foundation for accountability reporting.
+            No newsroom budget? No problem. Analyze FOIA dumps and leaked documents with the same
+            power that large publications have—for free.
           </p>
           <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Process thousands of documents systematically</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Track claims across institutional boundaries</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Generate timeline visualizations for stories</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Process hundreds of documents fast</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Build airtight evidence chains</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Visualize timelines for your story</li>
           </ul>
         </div>
-        <div class="use-case" data-modal="usecase-legal" data-modal-size="medium" role="button" tabindex="0">
+        <div class="use-case" data-modal="usecase-whistleblower" data-modal-size="medium" role="button" tabindex="0">
+          <div class="use-case-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg>
+          </div>
+          <h3>Whistleblowers</h3>
+          <p>
+            Build an airtight complaint before going to regulators. Documents stay on your computer—
+            never uploaded anywhere. Complete privacy for high-stakes situations.
+          </p>
+          <ul>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> 100% local—no cloud upload</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Document patterns of misconduct</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Export evidence packages for regulators</li>
+          </ul>
+        </div>
+        <div class="use-case" data-modal="usecase-prose" data-modal-size="medium" role="button" tabindex="0">
           <div class="use-case-icon">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/></svg>
           </div>
-          <h3>Legal Professionals</h3>
+          <h3>Representing Yourself in Court</h3>
           <p>
-            Support litigation with systematic document analysis. Build chronologies, identify
-            inconsistencies in witness accounts, and prepare cross-examination materials.
+            Can't afford a lawyer but need to fight? Organize your evidence, find contradictions in
+            the other side's story, and present like a professional.
           </p>
           <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Contradiction detection for depositions</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Timeline reconstruction from case files</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Expert report analysis and comparison</li>
-          </ul>
-        </div>
-        <div class="use-case" data-modal="usecase-advocacy" data-modal-size="medium" role="button" tabindex="0">
-          <div class="use-case-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg>
-          </div>
-          <h3>Advocacy Organizations</h3>
-          <p>
-            Build evidence bases for systemic advocacy. Track patterns across cases, document
-            institutional failures, and generate materials for regulatory complaints.
-          </p>
-          <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Pattern detection across case portfolios</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Regulatory complaint generation</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Evidence packaging for submissions</li>
-          </ul>
-        </div>
-        <div class="use-case" data-modal="usecase-academic" data-modal-size="medium" role="button" tabindex="0">
-          <div class="use-case-icon">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5"/></svg>
-          </div>
-          <h3>Academic Researchers</h3>
-          <p>
-            Conduct systematic reviews of institutional documents for research. Analyze policy
-            implementation, study decision-making patterns, and document institutional behavior.
-          </p>
-          <ul>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Systematic document coding</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Cross-case pattern analysis</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Evidence chain documentation</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Build clear chronologies for judges</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Find holes in opposing filings</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Generate professional PDF reports</li>
           </ul>
         </div>
       </div>
@@ -2390,6 +2939,272 @@
     </div>
   </section>
 
+  <!-- Research -->
+  <section class="research" id="research">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Research Hub</p>
+        <h2 class="section-title">Open Methods, Public Standards</h2>
+        <p class="section-description">
+          Phronesis is grounded in professional investigation frameworks, evidence standards, and
+          quality control methods. The research hub is where we publish the sources, comparisons,
+          and reasoning behind every engine.
+        </p>
+      </div>
+
+      <div class="research-layout">
+        <div class="research-intro">
+          <h3>Built on a documented investigative canon.</h3>
+          <p>
+            We mapped the workflows of police investigations, investigative journalism, legal
+            eDiscovery, regulatory enforcement, intelligence analysis, and academic research.
+            Phronesis adapts those standards for people without institutional budgets.
+          </p>
+
+          <div class="research-stats">
+            <div class="research-stat">
+              <div class="research-stat-value">6</div>
+              <div class="research-stat-label">Methodology Frameworks</div>
+            </div>
+            <div class="research-stat">
+              <div class="research-stat-value">12</div>
+              <div class="research-stat-label">Research Domains</div>
+            </div>
+            <div class="research-stat">
+              <div class="research-stat-value">6</div>
+              <div class="research-stat-label">Quickstart Guides</div>
+            </div>
+            <div class="research-stat">
+              <div class="research-stat-value">2</div>
+              <div class="research-stat-label">Cross-Method Comparisons</div>
+            </div>
+          </div>
+
+          <div class="research-actions">
+            <a class="btn btn-secondary" href="https://github.com/apatheia-labs/phronesis/blob/main/research/INDEX.md" target="_blank" rel="noopener noreferrer">
+              Browse Research Index
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/apatheia-labs/phronesis/blob/main/research/methodologies/quickstart/02-journalism-quickstart.md" target="_blank" rel="noopener noreferrer">
+              Start with a 5-minute Quickstart
+            </a>
+          </div>
+        </div>
+
+        <div class="research-cards">
+          <div class="research-card">
+            <div class="research-card-header">
+              <span class="research-chip">Complete</span>
+              <span class="research-tagline">Methodologies</span>
+            </div>
+            <h4>Professional Investigation Frameworks</h4>
+            <p>Six end-to-end models distilled into field-ready practices and mapped directly to engines.</p>
+            <ul class="research-list">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Police investigation doctrine + PEACE interviews
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Investigative journalism verification pipelines
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Legal eDiscovery and chain-of-custody standards
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Regulatory investigations and standards mapping
+              </li>
+            </ul>
+          </div>
+
+          <div class="research-card">
+            <div class="research-card-header">
+              <span class="research-chip">Complete</span>
+              <span class="research-tagline">Quality Control</span>
+            </div>
+            <h4>Reliability, Review, and Auditability</h4>
+            <p>Cross-method comparison matrices and quality thresholds inform export integrity and QA.</p>
+            <ul class="research-list">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Methodology comparison matrix across six disciplines
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Quality control benchmarks (IRR, peer review, validation)
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Evidence hierarchy and citation standards
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Audit trail guidelines for defensible reporting
+              </li>
+            </ul>
+          </div>
+
+          <div class="research-card">
+            <div class="research-card-header">
+              <span class="research-chip planned">Planned</span>
+              <span class="research-tagline">Foundations</span>
+            </div>
+            <h4>Cognitive Science, Ethics, and Law</h4>
+            <p>Expanding coverage into bias mitigation, epistemology, ethics, and legal admissibility.</p>
+            <ul class="research-list">
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Cognitive bias countermeasures and memory reliability
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Epistemology, argumentation theory, and fallacy mapping
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Ethics, governance, and safeguards for citizen investigations
+              </li>
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12.75L11.25 15 15 9.75"/></svg>
+                Legal admissibility guidance for non-lawyers
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Documentation -->
+  <section class="documentation" id="documentation">
+    <div class="container">
+      <div class="section-header">
+        <p class="section-label">Resources</p>
+        <h2 class="section-title">Comprehensive Documentation</h2>
+        <p class="section-description">
+          Academic rigor, professional standards, and practical guidance for forensic intelligence work.
+        </p>
+      </div>
+
+      <div class="doc-grid">
+        <!-- Research & Methodology -->
+        <div class="doc-category">
+          <div class="doc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/>
+            </svg>
+          </div>
+          <h3>Research & Methodology</h3>
+          <p>Academic foundations, S.A.M. framework, validation studies, and theoretical grounding.</p>
+          <ul class="doc-links">
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/research/methodology-paper.md" target="_blank">S.A.M. Methodology Paper</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/research/epistemology.md" target="_blank">Epistemological Foundations</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/research/contradiction-taxonomy.md" target="_blank">Contradiction Taxonomy</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/research/cascade-theory.md" target="_blank">Cascade Theory</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/research/validation-studies.md" target="_blank">Validation Studies</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/research/bibliography.md" target="_blank">Bibliography</a></li>
+          </ul>
+        </div>
+
+        <!-- Technical Documentation -->
+        <div class="doc-category">
+          <div class="doc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5"/>
+            </svg>
+          </div>
+          <h3>Technical Documentation</h3>
+          <p>System architecture, security model, and complete API reference for developers.</p>
+          <ul class="doc-links">
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/technical/architecture.md" target="_blank">System Architecture</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/technical/security-whitepaper.md" target="_blank">Security Whitepaper</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/technical/api-reference.md" target="_blank">API Reference</a></li>
+          </ul>
+        </div>
+
+        <!-- User Guides -->
+        <div class="doc-category">
+          <div class="doc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z"/>
+            </svg>
+          </div>
+          <h3>User Guides</h3>
+          <p>Practical documentation for investigators, journalists, and legal professionals.</p>
+          <ul class="doc-links">
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/guides/getting-started.md" target="_blank">Getting Started</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/guides/analysis-workflow.md" target="_blank">Analysis Workflow</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/guides/engine-guide.md" target="_blank">Engine Guide</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/guides/export-compliance.md" target="_blank">Export Compliance</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/guides/best-practices.md" target="_blank">Best Practices</a></li>
+          </ul>
+        </div>
+
+        <!-- Legal & Compliance -->
+        <div class="doc-category">
+          <div class="doc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z"/>
+            </svg>
+          </div>
+          <h3>Legal & Compliance</h3>
+          <p>GDPR compliance, professional ethics, and regulatory body standards.</p>
+          <ul class="doc-links">
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/legal/privacy-policy.md" target="_blank">Privacy Policy</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/legal/terms-of-service.md" target="_blank">Terms of Service</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/legal/data-handling.md" target="_blank">Data Handling</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/legal/ethical-guidelines.md" target="_blank">Ethical Guidelines</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/legal/regulatory-compliance.md" target="_blank">Regulatory Compliance</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/legal/expert-witness-standards.md" target="_blank">Expert Witness Standards</a></li>
+          </ul>
+        </div>
+
+        <!-- Resources -->
+        <div class="doc-category">
+          <div class="doc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"/>
+            </svg>
+          </div>
+          <h3>Resources</h3>
+          <p>Reading list, glossary, FAQ, and educational materials.</p>
+          <ul class="doc-links">
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/resources/reading-list.md" target="_blank">Reading List (153 Books)</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/resources/glossary.md" target="_blank">Glossary</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/resources/faq.md" target="_blank">FAQ</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/tree/main/docs/resources/video-tutorials" target="_blank">Video Tutorials</a></li>
+          </ul>
+        </div>
+
+        <!-- Case Studies -->
+        <div class="doc-category">
+          <div class="doc-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6"/>
+            </svg>
+          </div>
+          <h3>Case Studies & Validation</h3>
+          <p>Templates, redaction guidelines, effectiveness metrics, and validation framework.</p>
+          <ul class="doc-links">
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/case-studies/template.md" target="_blank">Case Study Template</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/case-studies/redaction-guidelines.md" target="_blank">Redaction Guidelines</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/blob/main/docs/case-studies/effectiveness-metrics.md" target="_blank">Effectiveness Metrics</a></li>
+            <li><a href="https://github.com/apatheia-labs/phronesis/tree/main/docs/case-studies/validation-reports" target="_blank">Validation Reports</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="doc-footer">
+        <p>
+          All documentation is open source and available on
+          <a href="https://github.com/apatheia-labs/phronesis/tree/main/docs" target="_blank">GitHub</a>.
+          Contributions welcome.
+        </p>
+      </div>
+    </div>
+  </section>
+
   <!-- CTA -->
   <section class="cta" id="download">
     <div class="container">
@@ -2418,16 +3233,30 @@
     </div>
   </section>
 
+  <!-- Waitlist -->
+  <section class="waitlist" id="waitlist">
+    <div class="container">
+      <h2>Join the Waitlist</h2>
+      <p>Get notified when new features launch and receive early access to beta releases.</p>
+      <!-- TODO: Replace YOUR_FORM_ID with actual Formspree form ID from https://formspree.io -->
+      <form class="waitlist-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+        <input type="email" name="email" placeholder="Enter your email" required>
+        <button type="submit">Subscribe</button>
+      </form>
+      <p class="waitlist-privacy">No spam. Unsubscribe anytime. Privacy respected.</p>
+    </div>
+  </section>
+
   <!-- Footer -->
   <footer>
     <div class="container">
       <div class="footer-content">
         <div class="footer-brand">
-          <a href="#" class="logo">
+          <a href="/" class="logo">
             <div class="logo-icon">A</div>
             <div class="logo-text">
               <span class="logo-brand">APATHEIA LABS</span>
-              <span class="logo-tagline">Forensic Intelligence</span>
+              <span class="logo-tagline">Clarity Without Distortion</span>
             </div>
           </a>
           <p>Building tools for institutional accountability.</p>
