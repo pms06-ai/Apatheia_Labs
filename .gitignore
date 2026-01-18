@@ -123,5 +123,11 @@ Obsidian Vault/
 # Local screenshots
 test-screenshots/
 
+# Playwright test artifacts
+/test-results/
+/playwright-report/
+/playwright/.cache/
+playwright-results.xml
+
 # Husky runtime dir
 .husky/_/

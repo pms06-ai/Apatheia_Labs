@@ -49,7 +49,12 @@
     "vault:sync": "node scripts/obsidian-sync.js sync",
     "vault:import": "node scripts/obsidian-sync.js import",
     "vault:export": "node scripts/obsidian-sync.js export",
-    "vault:status": "node scripts/obsidian-sync.js status"
+    "vault:status": "node scripts/obsidian-sync.js status",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:ui": "playwright test --ui",
+    "e2e:debug": "playwright test --debug",
+    "e2e:report": "playwright show-report"
   },
   "lint-staged": {
     "*.{ts,tsx}": [

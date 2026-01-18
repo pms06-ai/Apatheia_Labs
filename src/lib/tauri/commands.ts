@@ -18,7 +18,10 @@ import type {
   AnalysisResult,
   GoogleConnectionStatus,
   CloudFileListResult,
+  CloudFile,
   AuthFlowResult,
+  BulkImportProgress,
+  BulkImportResult,
 } from '@/CONTRACT'
 
 // Re-export settings types for convenience
@@ -906,6 +909,73 @@ export async function downloadDriveFile(
   return getTauriClient().downloadDriveFile(fileId, fileName, caseId, docType)
 }
 
+async function listAllDriveFiles(): Promise<CloudFile[]> {
+  const foldersToVisit: Array<string | null> = [null]
+  const visitedFolders = new Set<string | null>()
+  const files: CloudFile[] = []
+
+  while (foldersToVisit.length > 0) {
+    const folderId = foldersToVisit.shift() ?? null
+    if (visitedFolders.has(folderId)) {
+      continue
+    }
+    visitedFolders.add(folderId)
+
+    let pageToken: string | undefined
+    do {
+      const result = await listDriveFiles(folderId ?? undefined, pageToken)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to list Drive files')
+      }
+      for (const file of result.files) {
+        if (file.is_folder) {
+          foldersToVisit.push(file.id)
+        } else {
+          files.push(file)
+        }
+      }
+      pageToken = result.next_page_token ?? undefined
+    } while (pageToken)
+  }
+
+  return files
+}
+
+/**
+ * Import all accessible Google Drive files into the case
+ */
+export async function bulkImportDriveFiles(caseId: string): Promise<BulkImportProgress> {
+  if (!isDesktop()) {
+    throw new Error('Drive import only available in desktop mode')
+  }
+
+  const files = await listAllDriveFiles()
+  const results: BulkImportResult[] = []
+
+  for (const file of files) {
+    try {
+      const document = await downloadDriveFile(file.id, file.name, caseId)
+      results.push({
+        file_id: file.id,
+        file_name: file.name,
+        success: true,
+        document_id: document.id,
+        error: null,
+      })
+    } catch (error) {
+      results.push({
+        file_id: file.id,
+        file_name: file.name,
+        success: false,
+        document_id: null,
+        error: error instanceof Error ? error.message : 'Failed to import file',
+      })
+    }
+  }
+
+  return { total: files.length, results }
+}
+
 // ============================================
 // Investigation Commands
 // ============================================
@@ -922,9 +992,7 @@ import type {
  * Start a unified investigation
  * Tauri command: commands::investigate::start_investigation
  */
-export async function startInvestigation(
-  input: InvestigateInput
-): Promise<InvestigateStartResult> {
+export async function startInvestigation(input: InvestigateInput): Promise<InvestigateStartResult> {
   if (!isDesktop()) {
     throw new Error('Investigation only available in desktop mode')
   }

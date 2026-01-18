@@ -2268,6 +2268,25 @@ export interface CloudFileListResult {
 }
 
 /**
+ * Result for a single file during bulk Drive import
+ */
+export interface BulkImportResult {
+  file_id: string
+  file_name: string
+  success: boolean
+  document_id: string | null
+  error: string | null
+}
+
+/**
+ * Summary of a bulk Drive import
+ */
+export interface BulkImportProgress {
+  total: number
+  results: BulkImportResult[]
+}
+
+/**
  * Result of starting OAuth flow
  * Rust: src-tauri/src/cloud/mod.rs::AuthFlowResult
  */
