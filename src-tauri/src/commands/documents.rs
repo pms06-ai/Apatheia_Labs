@@ -94,8 +94,8 @@ pub async fn get_document(
     }
 }
 
-/// Maximum upload size: 50MB
-const MAX_UPLOAD_SIZE_BYTES: usize = 50 * 1024 * 1024;
+/// Maximum upload size: 300MB
+const MAX_UPLOAD_SIZE_BYTES: usize = 300 * 1024 * 1024;
 
 /// Internal helper to store file and insert document record
 /// Reduces code duplication between upload_document and upload_from_path
@@ -595,4 +595,3 @@ pub async fn upload_from_path(
         }
     }
 }
-

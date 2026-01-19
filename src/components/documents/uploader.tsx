@@ -97,7 +97,7 @@ export function DocumentUploader() {
   } = useDropzone({
     onDrop,
     accept: ACCEPTED_TYPES,
-    maxSize: 50 * 1024 * 1024, // 50MB
+    maxSize: 300 * 1024 * 1024, // 300MB
     disabled: true, // Dropzone disabled - desktop mode uses native picker, web mode doesn't support uploads
   })
 
@@ -211,7 +211,7 @@ export function DocumentUploader() {
             <FolderOpen className="mx-auto h-10 w-10 text-charcoal-500" />
             <p className="mt-4 text-sm text-charcoal-300">Click to select documents</p>
             <p className="mt-1 text-xs text-charcoal-500">
-              PDF, DOCX, TXT, MD, JSON, CSV, HTML (max 50MB)
+              PDF, DOCX, TXT, MD, JSON, CSV, HTML (max 300MB)
             </p>
           </div>
 
